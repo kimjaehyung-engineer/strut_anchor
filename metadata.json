@@ -1,0 +1,6 @@
+{
+  "name": "지하정거장 개착가시설 안정성 해석 시뮬레이터",
+  "description": "지하철 및 지하정거장 개착공사(Cut & Cover) 가시설(H-Pile+토류판, 시트파일, 슬러리월, 띠장 및 버팀보)의 단계별 굴착 해석, 토압·모멘트·변위·축력 산정 및 히빙·보일링·파이핑 지반안정성 검토 프로그램",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
