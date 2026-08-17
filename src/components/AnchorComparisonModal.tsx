@@ -1836,159 +1836,208 @@ ${(anchorResult.angleSensitivityMatrix || [])
                         [수평 평면도] 광간격 버팀보(@10m~15m) + 사이 구간 앵커(@2m) 배치도
                        ══════════════════════════════════════════════════════════════ */
                     <div className="space-y-2">
-                      <div className="w-full bg-slate-900 rounded-xl border border-slate-800 overflow-hidden flex flex-col p-2 text-slate-100 shadow-md">
-                        <div className="flex items-center justify-between px-2 py-1 border-b border-slate-800 text-xs">
-                          <span className="font-extrabold text-purple-300 flex items-center space-x-1.5">
+                      <div className="w-full bg-slate-950 rounded-xl border border-slate-800 overflow-hidden flex flex-col p-2.5 text-slate-100 shadow-xl">
+                        {/* Header Banner */}
+                        <div className="flex items-center justify-between px-2.5 py-1.5 bg-slate-900/90 rounded-lg border border-slate-800 text-xs">
+                          <span className="font-black text-purple-300 flex items-center space-x-2">
                             <SplitSquareVertical className="w-4 h-4 text-purple-400" />
-                            <span>수평 평면 배치도: 광간격 버팀보(@{hybrid3StrutSpacing}m) + 사이 4공 앵커 긴장</span>
+                            <span className="text-sm">제3안 수평 평면 배치도 (Top-down Plan Layout)</span>
                           </span>
-                          <span className="text-[10px] font-mono bg-purple-950 text-purple-200 px-2 py-0.5 rounded border border-purple-800">
-                            띠장 휨모멘트 65% 상쇄 (무지주 쾌속굴착)
+                          <span className="text-[11px] font-bold font-mono bg-purple-950 text-purple-200 px-2.5 py-0.5 rounded-full border border-purple-700">
+                            버팀보 간격 @{hybrid3StrutSpacing}m (광간격) + 사이 4공 앵커 긴장
                           </span>
                         </div>
 
-                        <svg viewBox="0 0 760 380" className="w-full h-auto max-h-[420px] select-none font-sans mt-1">
+                        {/* Enhanced Plan SVG */}
+                        <svg viewBox="0 0 760 390" className="w-full h-auto max-h-[440px] select-none font-sans mt-2">
+                          <defs>
+                            {/* Linear Gradient for excavation work bay */}
+                            <linearGradient id="bayGradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#7c3aed" stopOpacity="0.12" />
+                              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.08" />
+                            </linearGradient>
+                            {/* Hatch for soldier pile soil retaining */}
+                            <pattern id="soilHatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                              <line x1="0" y1="0" x2="0" y2="8" stroke="#334155" strokeWidth="1" />
+                            </pattern>
+                          </defs>
+
                           {/* 1. Background Ground */}
-                          <rect x="0" y="0" width="760" height="380" fill="#0f172a" />
+                          <rect x="0" y="0" width="760" height="390" fill="#090d16" />
 
-                          {/* 2. Top & Bottom Retaining Walls (Soil Retaining System) */}
-                          {/* Top Wall (GL 북측 벽체) */}
-                          <rect x="60" y="60" width="640" height="14" fill="#334155" stroke="#64748b" strokeWidth="1" />
-                          <rect x="60" y="74" width="640" height="8" fill="#1e293b" stroke="#475569" strokeWidth="1" />
+                          {/* 2. Top & Bottom Retaining Soil Backfill */}
+                          <rect x="50" y="0" width="660" height="70" fill="url(#soilHatch)" />
+                          <rect x="50" y="320" width="660" height="70" fill="url(#soilHatch)" />
+
+                          {/* Top Wall (GL 북측 흙막이벽) */}
+                          <rect x="50" y="60" width="660" height="12" fill="#1e293b" stroke="#475569" strokeWidth="1" />
+                          <rect x="50" y="72" width="660" height="6" fill="#334155" />
                           {/* 2H-350 Top Wale */}
-                          <rect x="60" y="82" width="640" height="10" fill="#2563eb" stroke="#1d4ed8" strokeWidth="1" />
+                          <rect x="50" y="78" width="660" height="12" fill="#2563eb" stroke="#1d4ed8" strokeWidth="1" />
 
-                          {/* Bottom Wall (GL 남측 벽체) */}
-                          <rect x="60" y="286" width="640" height="10" fill="#2563eb" stroke="#1d4ed8" strokeWidth="1" />
-                          <rect x="60" y="296" width="640" height="8" fill="#1e293b" stroke="#475569" strokeWidth="1" />
-                          <rect x="60" y="304" width="640" height="14" fill="#334155" stroke="#64748b" strokeWidth="1" />
+                          {/* Bottom Wall (GL 남측 흙막이벽) */}
+                          <rect x="50" y="300" width="660" height="12" fill="#2563eb" stroke="#1d4ed8" strokeWidth="1" />
+                          <rect x="50" y="312" width="660" height="6" fill="#334155" />
+                          <rect x="50" y="318" width="660" height="12" fill="#1e293b" stroke="#475569" strokeWidth="1" />
 
-                          {/* Soldier Piles along the walls (@1.8m) */}
-                          {Array.from({ length: 17 }).map((_, i) => {
-                            const px = 80 + i * 36;
+                          {/* Soldier Piles along the walls (@1.8m Spacing) */}
+                          {Array.from({ length: 18 }).map((_, i) => {
+                            const px = 70 + i * 36;
                             return (
                               <g key={`pile-${i}`}>
-                                <rect x={px - 4} y="56" width="8" height="8" fill="#f59e0b" stroke="#78350f" strokeWidth="1" />
-                                <rect x={px - 4} y="314" width="8" height="8" fill="#f59e0b" stroke="#78350f" strokeWidth="1" />
+                                <rect x={px - 4} y="56" width="8" height="8" fill="#f59e0b" stroke="#78350f" strokeWidth="1" rx="1" />
+                                <rect x={px - 4} y="326" width="8" height="8" fill="#f59e0b" stroke="#78350f" strokeWidth="1" rx="1" />
                               </g>
                             );
                           })}
 
                           {/* 3. Wide-Span Struts (Left & Right @ 10m~15m Spacing) */}
-                          {/* Strut 1 (Left) */}
+                          {/* Strut 1 (Left S1) */}
                           <g>
-                            <rect x="145" y="92" width="20" height="194" fill="#d97706" stroke="#92400e" strokeWidth="1.5" />
-                            <line x1="155" y1="92" x2="155" y2="286" stroke="#fbbf24" strokeWidth="2" strokeDasharray="4 2" />
-                            {/* Jack & Stiffener Bracket */}
-                            <polygon points="135,92 175,92 165,110 145,110" fill="#b45309" />
-                            <polygon points="135,286 175,286 165,268 145,268" fill="#b45309" />
-                            <text x="155" y="195" fill="#fef3c7" fontSize="10" fontWeight="black" textAnchor="middle" transform="rotate(-90 155 195)">
-                              버팀보 S1 (H-300)
+                            <rect x="140" y="90" width="24" height="210" fill="#d97706" stroke="#92400e" strokeWidth="2" rx="2" />
+                            <line x1="152" y1="90" x2="152" y2="300" stroke="#fde68a" strokeWidth="2" strokeDasharray="5 3" />
+                            {/* Left Hydraulic Jacks & Brackets */}
+                            <polygon points="128,90 176,90 164,112 140,112" fill="#b45309" stroke="#78350f" strokeWidth="1" />
+                            <polygon points="128,300 176,300 164,278 140,278" fill="#b45309" stroke="#78350f" strokeWidth="1" />
+                            <circle cx="152" cy="195" r="5" fill="#fef08a" stroke="#b45309" strokeWidth="1.5" />
+                            <text x="152" y="195" fill="#ffffff" fontSize="10" fontWeight="black" textAnchor="middle" transform="rotate(-90 152 195)">
+                              H-300 버팀보 S1 (좌측)
                             </text>
                           </g>
 
-                          {/* Strut 2 (Right) */}
+                          {/* Strut 2 (Right S2) */}
                           <g>
-                            <rect x="595" y="92" width="20" height="194" fill="#d97706" stroke="#92400e" strokeWidth="1.5" />
-                            <line x1="605" y1="92" x2="605" y2="286" stroke="#fbbf24" strokeWidth="2" strokeDasharray="4 2" />
-                            {/* Jack & Stiffener Bracket */}
-                            <polygon points="585,92 625,92 615,110 595,110" fill="#b45309" />
-                            <polygon points="585,286 625,286 615,268 595,268" fill="#b45309" />
-                            <text x="605" y="195" fill="#fef3c7" fontSize="10" fontWeight="black" textAnchor="middle" transform="rotate(-90 605 195)">
-                              버팀보 S2 (H-300)
+                            <rect x="596" y="90" width="24" height="210" fill="#d97706" stroke="#92400e" strokeWidth="2" rx="2" />
+                            <line x1="608" y1="90" x2="608" y2="300" stroke="#fde68a" strokeWidth="2" strokeDasharray="5 3" />
+                            {/* Right Hydraulic Jacks & Brackets */}
+                            <polygon points="584,90 632,90 620,112 596,112" fill="#b45309" stroke="#78350f" strokeWidth="1" />
+                            <polygon points="584,300 632,300 620,278 596,278" fill="#b45309" stroke="#78350f" strokeWidth="1" />
+                            <circle cx="608" cy="195" r="5" fill="#fef08a" stroke="#b45309" strokeWidth="1.5" />
+                            <text x="608" y="195" fill="#ffffff" fontSize="10" fontWeight="black" textAnchor="middle" transform="rotate(-90 608 195)">
+                              H-300 버팀보 S2 (우측)
                             </text>
                           </g>
 
                           {/* 4. Intermediate Earth Anchors between Struts (4 Anchors @ 2m) */}
                           {/* Top Wall Anchors (Drilled outward to top) */}
-                          {[235, 325, 415, 505].map((ax, idx) => (
+                          {[230, 320, 410, 500].map((ax, idx) => (
                             <g key={`top-anc-${idx}`}>
-                              {/* Anchor Body & Tendons */}
-                              <line x1={ax} y1="82" x2={ax} y2="15" stroke="#0284c7" strokeWidth="2.5" strokeDasharray="4 2" />
-                              <line x1={ax} y1="15" x2={ax} y2="0" stroke="#10b981" strokeWidth="5" strokeLinecap="round" />
-                              <circle cx={ax} cy="82" r="4.5" fill="#38bdf8" stroke="#0284c7" strokeWidth="1" />
-                              {/* Tension Force Arrow (Upward Pull) */}
-                              <polygon points={`${ax-3},70 ${ax+3},70 ${ax},60`} fill="#38bdf8" />
-                              <text x={ax} y="76" fill="#38bdf8" fontSize="8" fontWeight="bold" textAnchor="middle">
+                              {/* Anchor Tendon & Grout Body */}
+                              <line x1={ax} y1="78" x2={ax} y2="18" stroke="#38bdf8" strokeWidth="2.5" strokeDasharray="4 2" />
+                              <line x1={ax} y1="18" x2={ax} y2="2" stroke="#10b981" strokeWidth="6" strokeLinecap="round" />
+                              {/* Anchor Bearing Plate & Head */}
+                              <rect x={ax - 5} y="74" width="10" height="5" fill="#0284c7" rx="1" />
+                              <circle cx={ax} cy="76" r="4.5" fill="#0284c7" stroke="#ffffff" strokeWidth="1" />
+                              {/* Tension Force Arrow (Upward Pull Vector) */}
+                              <polygon points={`${ax-4},64 ${ax+4},64 ${ax},52`} fill="#38bdf8" />
+                              <text x={ax} y="70" fill="#bae6fd" fontSize="9" fontWeight="extrabold" textAnchor="middle">
                                 A{idx+1}
+                              </text>
+                              <text x={ax} y="44" fill="#38bdf8" fontSize="8" fontWeight="bold" textAnchor="middle">
+                                420kN
                               </text>
                             </g>
                           ))}
 
                           {/* Bottom Wall Anchors (Drilled outward to bottom) */}
-                          {[235, 325, 415, 505].map((ax, idx) => (
+                          {[230, 320, 410, 500].map((ax, idx) => (
                             <g key={`bot-anc-${idx}`}>
-                              {/* Anchor Body & Tendons */}
-                              <line x1={ax} y1="296" x2={ax} y2="365" stroke="#0284c7" strokeWidth="2.5" strokeDasharray="4 2" />
-                              <line x1={ax} y1="365" x2={ax} y2="380" stroke="#10b981" strokeWidth="5" strokeLinecap="round" />
-                              <circle cx={ax} cy="296" r="4.5" fill="#38bdf8" stroke="#0284c7" strokeWidth="1" />
-                              {/* Tension Force Arrow (Downward Pull) */}
-                              <polygon points={`${ax-3},308 ${ax+3},308 ${ax},318`} fill="#38bdf8" />
-                              <text x={ax} y="304" fill="#38bdf8" fontSize="8" fontWeight="bold" textAnchor="middle">
+                              {/* Anchor Tendon & Grout Body */}
+                              <line x1={ax} y1="312" x2={ax} y2="372" stroke="#38bdf8" strokeWidth="2.5" strokeDasharray="4 2" />
+                              <line x1={ax} y1="372" x2={ax} y2="388" stroke="#10b981" strokeWidth="6" strokeLinecap="round" />
+                              {/* Anchor Bearing Plate & Head */}
+                              <rect x={ax - 5} y="311" width="10" height="5" fill="#0284c7" rx="1" />
+                              <circle cx={ax} cy="314" r="4.5" fill="#0284c7" stroke="#ffffff" strokeWidth="1" />
+                              {/* Tension Force Arrow (Downward Pull Vector) */}
+                              <polygon points={`${ax-4},326 ${ax+4},326 ${ax},338`} fill="#38bdf8" />
+                              <text x={ax} y="324" fill="#bae6fd" fontSize="9" fontWeight="extrabold" textAnchor="middle">
                                 A{idx+1}
+                              </text>
+                              <text x={ax} y="350" fill="#38bdf8" fontSize="8" fontWeight="bold" textAnchor="middle">
+                                420kN
                               </text>
                             </g>
                           ))}
 
-                          {/* 5. Center Wide Excavation Opening Zone */}
+                          {/* 5. Center Wide Excavation Opening Zone (Super Bay) */}
                           <rect
-                            x="175"
-                            y="102"
-                            width="410"
-                            height="174"
-                            fill="#8b5cf6"
-                            fillOpacity="0.08"
-                            stroke="#a855f7"
-                            strokeWidth="1.5"
+                            x="172"
+                            y="98"
+                            width="416"
+                            height="194"
+                            fill="url(#bayGradient)"
+                            stroke="#8b5cf6"
+                            strokeWidth="2"
                             strokeDasharray="6 4"
-                            rx="8"
+                            rx="10"
                           />
-                          <text x="380" y="170" fill="#e9d5ff" fontSize="14" fontWeight="black" textAnchor="middle">
-                            ★ {hybrid3StrutSpacing}m 초대형 무지주 굴착 작업구 (Wide Opening)
+                          
+                          {/* Excavation Bay Title & High-Efficiency Badges */}
+                          <text x="380" y="155" fill="#f5d0fe" fontSize="15" fontWeight="black" textAnchor="middle">
+                            ★ {hybrid3StrutSpacing}m 초대형 무지주 굴착 작업구 (Super Wide Work Bay)
                           </text>
-                          <text x="380" y="195" fill="#c084fc" fontSize="11" fontWeight="bold" textAnchor="middle">
-                            1.0m³ 대형 백호 선회 및 25T 덤프트럭 직상차 구역 (공기 -59일 단축)
+                          <text x="380" y="180" fill="#e9d5ff" fontSize="12" fontWeight="bold" textAnchor="middle">
+                            1.0m³ 대형 백호 선회(R=6.5m) 및 25T 덤프트럭 직상차 100% 가능
                           </text>
-                          <text x="380" y="218" fill="#38bdf8" fontSize="10" fontWeight="semibold" textAnchor="middle">
-                            ▲ 사이 4공 앵커 프리스트레스 긴장으로 띠장 휨모멘트 65% 완벽 상쇄
+                          <text x="380" y="205" fill="#38bdf8" fontSize="11" fontWeight="bold" textAnchor="middle">
+                            ▲ 사이 4공 앵커 프리스트레스 긴장 ➔ 띠장 중앙 휨모멘트 65% 완벽 상쇄
+                          </text>
+                          <text x="380" y="228" fill="#34d399" fontSize="11" fontWeight="extrabold" textAnchor="middle">
+                            ⏱️ 공기 -59일 단축(45일 쾌속완료) ｜ 💰 LCC 총공사비 2.43억원 절감 달성
                           </text>
 
-                          {/* 6. Dimension Lines */}
+                          {/* 6. Precision Dimension Lines */}
                           {/* Horizontal Spacing Dimension (Top) */}
-                          <line x1="155" y1="38" x2="605" y2="38" stroke="#e2e8f0" strokeWidth="1.2" />
-                          <line x1="155" y1="32" x2="155" y2="44" stroke="#e2e8f0" strokeWidth="1.2" />
-                          <line x1="605" y1="32" x2="605" y2="44" stroke="#e2e8f0" strokeWidth="1.2" />
-                          <text x="380" y="32" fill="#fbbf24" fontSize="11" fontWeight="black" textAnchor="middle">
-                            버팀보 간격 S_strut = {hybrid3StrutSpacing}.0 m (광폭 배치)
+                          <line x1="152" y1="36" x2="608" y2="36" stroke="#fbbf24" strokeWidth="1.5" />
+                          <line x1="152" y1="28" x2="152" y2="44" stroke="#fbbf24" strokeWidth="1.5" />
+                          <line x1="608" y1="28" x2="608" y2="44" stroke="#fbbf24" strokeWidth="1.5" />
+                          <rect x="300" y="26" width="160" height="18" fill="#1e293b" rx="4" stroke="#fbbf24" strokeWidth="1" />
+                          <text x="380" y="39" fill="#fbbf24" fontSize="11" fontWeight="black" textAnchor="middle">
+                            버팀보 간격 S = {hybrid3StrutSpacing}.0 m (광폭)
                           </text>
 
                           {/* Width Dimension (Left) */}
-                          <line x1="40" y1="87" x2="40" y2="291" stroke="#e2e8f0" strokeWidth="1.2" />
-                          <line x1="34" y1="87" x2="46" y2="87" stroke="#e2e8f0" strokeWidth="1.2" />
-                          <line x1="34" y1="291" x2="46" y2="291" stroke="#e2e8f0" strokeWidth="1.2" />
-                          <text x="30" y="195" fill="#e2e8f0" fontSize="10" fontWeight="bold" textAnchor="middle" transform="rotate(-90 30 195)">
-                            굴착폭 B = {settings.stationWidth}m
+                          <line x1="32" y1="84" x2="32" y2="306" stroke="#94a3b8" strokeWidth="1.5" />
+                          <line x1="24" y1="84" x2="40" y2="84" stroke="#94a3b8" strokeWidth="1.5" />
+                          <line x1="24" y1="306" x2="40" y2="306" stroke="#94a3b8" strokeWidth="1.5" />
+                          <text x="24" y="195" fill="#cbd5e1" fontSize="11" fontWeight="black" textAnchor="middle" transform="rotate(-90 24 195)">
+                            정거장 굴착폭 B = {settings.stationWidth}m
                           </text>
                         </svg>
                       </div>
 
-                      {/* Plan Legend */}
-                      <div className="flex flex-wrap items-center justify-between gap-1.5 text-[11px] bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-slate-700">
-                        <div className="flex items-center space-x-1.5">
-                          <div className="w-3.5 h-2.5 bg-amber-500 rounded-xs border border-amber-700" />
-                          <span className="font-bold text-amber-900">광간격 버팀보(@{hybrid3StrutSpacing}m)</span>
+                      {/* Plan Legend & Engineering KPI Summary Cards */}
+                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 text-xs">
+                        <div className="bg-amber-950/20 border border-amber-600/40 p-2 rounded-lg flex items-center space-x-2">
+                          <div className="w-3.5 h-3.5 bg-amber-500 rounded-xs border border-amber-700 shrink-0" />
+                          <div>
+                            <span className="font-bold text-amber-300 block">광간격 버팀보 S1,S2</span>
+                            <span className="text-[10px] text-slate-400">간격 @{hybrid3StrutSpacing}m 광폭 가설</span>
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-1.5">
-                          <div className="w-3.5 h-1 bg-sky-500 rounded-xs" />
-                          <span className="font-bold text-sky-800">사이 구간 앵커 긴장재(@2.0m)</span>
+
+                        <div className="bg-sky-950/20 border border-sky-600/40 p-2 rounded-lg flex items-center space-x-2">
+                          <div className="w-3.5 h-3.5 bg-sky-500 rounded-xs border border-sky-700 shrink-0" />
+                          <div>
+                            <span className="font-bold text-sky-300 block">사이 4공 앵커 긴장재</span>
+                            <span className="text-[10px] text-slate-400">@2.0m 간격 휨 65% 상쇄</span>
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-1.5">
-                          <div className="w-2.5 h-2.5 bg-purple-400/50 rounded-xs border border-purple-500" />
-                          <span className="font-bold text-purple-900">무지주 쾌속 굴착 작업구</span>
+
+                        <div className="bg-purple-950/20 border border-purple-600/40 p-2 rounded-lg flex items-center space-x-2">
+                          <div className="w-3.5 h-3.5 bg-purple-500 rounded-xs border border-purple-700 shrink-0" />
+                          <div>
+                            <span className="font-bold text-purple-300 block">{hybrid3StrutSpacing}m 대형 작업구</span>
+                            <span className="text-[10px] text-slate-400">1.0m³ 백호 직상차 가능</span>
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-1.5">
-                          <div className="w-2.5 h-2.5 bg-amber-400 rounded-xs border border-amber-600" />
-                          <span>H-300 엄지말뚝</span>
+
+                        <div className="bg-emerald-950/20 border border-emerald-600/40 p-2 rounded-lg flex items-center space-x-2">
+                          <div className="w-3.5 h-3.5 bg-emerald-500 rounded-xs border border-emerald-700 shrink-0" />
+                          <div>
+                            <span className="font-bold text-emerald-300 block">LCC 2.43억 절감</span>
+                            <span className="text-[10px] text-slate-400">공기 45일(-135일) 쾌속</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2047,7 +2096,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                         );
                       })}
 
-                      {/* 2. Excavated Pit Area */}
+                      {/* 2. Excavated Pit Area & 3안 복합 지보 구역 가이드 */}
                       <rect
                         x={leftWallX}
                         y={marginTop}
@@ -2056,6 +2105,33 @@ ${(anchorResult.angleSensitivityMatrix || [])
                         fill="#ffffff"
                         opacity={0.95}
                       />
+                      {(activeTab === '3_HYBRID' || activeTab === 'HYBRID') && (
+                        <g>
+                          {/* 상부 무지주 굴착구 영역 (GL 0 ~ -15m) */}
+                          <rect
+                            x={leftWallX + 4}
+                            y={marginTop + 4}
+                            width={plotW - 8}
+                            height={Math.min(getY(currentExcavationDepth) - marginTop - 8, getY(16) - marginTop)}
+                            fill="#7c3aed"
+                            fillOpacity="0.06"
+                            stroke="#8b5cf6"
+                            strokeWidth="1"
+                            strokeDasharray="4 2"
+                            rx="4"
+                          />
+                          <text
+                            x={leftWallX + plotW / 2}
+                            y={marginTop + 24}
+                            fill="#7c3aed"
+                            fontSize="10"
+                            fontWeight="black"
+                            textAnchor="middle"
+                          >
+                            ★ 상부 1·2단 무지주 굴착 개구부 (대형 백호 1.0m³ 선회 구역)
+                          </text>
+                        </g>
+                      )}
                       <line x1={leftWallX} y1={getY(currentExcavationDepth)} x2={rightWallX} y2={getY(currentExcavationDepth)} stroke="#0284c7" strokeWidth="2" strokeDasharray="4 2" />
                       <text x={leftWallX + plotW / 2} y={getY(currentExcavationDepth) - 5} fill="#0284c7" fontSize="9" fontWeight="bold" textAnchor="middle">
                         ▼ 굴착 바닥면 (GL -{currentExcavationDepth}m)
