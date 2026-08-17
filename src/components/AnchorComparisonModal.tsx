@@ -1686,6 +1686,24 @@ ${(anchorResult.angleSensitivityMatrix || [])
                 {(activeTab === '1_STRUT' || activeTab === 'STRUT_ONLY') && (
                   (() => {
                     const currStrutStage = STRUT_STAGES_DATA[strutStepIndex] || STRUT_STAGES_DATA[10];
+                    const spacingRatio = (strutHorizontalSpacing || 4.0) / 4.0;
+
+                    // 수평 간격(@2m~10m) 및 수직 심도 변경에 따른 실시간 동적 역학 해석값 연산
+                    const dynWallStressVal = (parseFloat(currStrutStage.wallStress) * Math.sqrt(spacingRatio)).toFixed(1);
+                    const dynWallRatioVal = (parseFloat(dynWallStressVal) / 140).toFixed(2);
+                    const dynDispVal = (parseFloat(currStrutStage.disp) * Math.sqrt(spacingRatio)).toFixed(1);
+
+                    // 버팀보 축력 및 좌굴 여유 동적 산정
+                    const baseForceMatch = currStrutStage.strutForce.match(/([0-9.]+)\s*(tonf|t)/);
+                    const baseForceNum = baseForceMatch ? parseFloat(baseForceMatch[1]) : (30.0 + currStrutStage.step * 2);
+                    const dynStrutForceVal = (baseForceNum * spacingRatio).toFixed(1);
+                    const dynBucklingFs = (2.4 / Math.max(0.5, spacingRatio)).toFixed(1);
+
+                    // 띠장 휨응력비 (간격 제곱 비례 영향)
+                    const dynWaleRatioVal = (parseFloat(currStrutStage.waleRatio) * Math.pow(spacingRatio, 1.3)).toFixed(2);
+                    const isWaleSafe = parseFloat(dynWaleRatioVal) <= 1.0;
+                    const isWallSafe = parseFloat(dynWallStressVal) <= 140;
+                    const isStrutSafe = parseFloat(dynBucklingFs) >= 1.5;
 
                     return (
                       <div className="space-y-4">
