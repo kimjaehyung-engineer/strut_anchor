@@ -1803,7 +1803,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                       <rect x={leftWallX - 4} y={marginTop} width={8} height={getY(totalLength) - marginTop} fill="#2563eb" stroke="#1d4ed8" strokeWidth="1" />
                       <rect x={rightWallX - 4} y={marginTop} width={8} height={getY(totalLength) - marginTop} fill="#2563eb" stroke="#1d4ed8" strokeWidth="1" />
 
-                      {/* 4. Active Failure Wedge (Rankine 45+phi/2) */}
+                      {/* 4. Active Failure Wedges (Both Sides Symmetrical) */}
                       <polygon
                         points={`${leftWallX},${getY(currentExcavationDepth)} ${leftWallX},${marginTop} ${Math.max(10, leftWallX - failTopScaleX)},${marginTop}`}
                         fill="#ef4444"
@@ -1812,8 +1812,16 @@ ${(anchorResult.angleSensitivityMatrix || [])
                         strokeWidth="1"
                         strokeDasharray="3 3"
                       />
+                      <polygon
+                        points={`${rightWallX},${getY(currentExcavationDepth)} ${rightWallX},${marginTop} ${Math.min(canvasW - 10, rightWallX + failTopScaleX)},${marginTop}`}
+                        fill="#ef4444"
+                        opacity={0.08}
+                        stroke="#ef4444"
+                        strokeWidth="1"
+                        strokeDasharray="3 3"
+                      />
 
-                      {/* 5. Anchors */}
+                      {/* 5. Anchors (Both Left & Right Symmetrical Drawing) */}
                       {displayedTiers.map((tier) => {
                         const anchorHeadY = getY(tier.depth);
                         const thetaRad = (tier.angleDeg * Math.PI) / 180;
@@ -1821,19 +1829,37 @@ ${(anchorResult.angleSensitivityMatrix || [])
                         const freeLenPx = tier.freeLengthLf * scaleFactor;
                         const bondLenPx = tier.bondLengthLe * scaleFactor;
 
+                        // Left Anchor Coordinates
                         const leftFreeEndX = leftWallX - freeLenPx * Math.cos(thetaRad);
                         const leftFreeEndY = anchorHeadY + freeLenPx * Math.sin(thetaRad);
                         const leftBondEndX = leftWallX - (freeLenPx + bondLenPx) * Math.cos(thetaRad);
                         const leftBondEndY = anchorHeadY + (freeLenPx + bondLenPx) * Math.sin(thetaRad);
 
+                        // Right Anchor Coordinates (Symmetric)
+                        const rightFreeEndX = rightWallX + freeLenPx * Math.cos(thetaRad);
+                        const rightFreeEndY = anchorHeadY + freeLenPx * Math.sin(thetaRad);
+                        const rightBondEndX = rightWallX + (freeLenPx + bondLenPx) * Math.cos(thetaRad);
+                        const rightBondEndY = anchorHeadY + (freeLenPx + bondLenPx) * Math.sin(thetaRad);
+
                         return (
                           <g key={`anchor-drawing-${tier.tier}`}>
-                            {/* Free Length (Blue line) */}
+                            {/* ─── Left Side Anchor ─── */}
+                            {/* Free Length (Blue dashed line) */}
                             <line x1={leftWallX} y1={anchorHeadY} x2={leftFreeEndX} y2={leftFreeEndY} stroke="#0284c7" strokeWidth="2.5" strokeDasharray="3 2" />
-                            {/* Bond Length (Green / Rock hatched) */}
+                            {/* Bond Length (Emerald Green / Grout body) */}
                             <line x1={leftFreeEndX} y1={leftFreeEndY} x2={leftBondEndX} y2={leftBondEndY} stroke="#059669" strokeWidth="6" strokeLinecap="round" />
-                            <circle cx={leftWallX} cy={anchorHeadY} r="3" fill="#1e40af" />
+                            <circle cx={leftWallX} cy={anchorHeadY} r="3.5" fill="#1e40af" stroke="#ffffff" strokeWidth="1" />
                             <text x={leftWallX + 6} y={anchorHeadY + 3} fill="#1e40af" fontSize="8" fontWeight="bold">
+                              A{tier.tier} ({tier.designLoad}kN)
+                            </text>
+
+                            {/* ─── Right Side Anchor (Symmetrical) ─── */}
+                            {/* Free Length (Blue dashed line) */}
+                            <line x1={rightWallX} y1={anchorHeadY} x2={rightFreeEndX} y2={rightFreeEndY} stroke="#0284c7" strokeWidth="2.5" strokeDasharray="3 2" />
+                            {/* Bond Length (Emerald Green / Grout body) */}
+                            <line x1={rightFreeEndX} y1={rightFreeEndY} x2={rightBondEndX} y2={rightBondEndY} stroke="#059669" strokeWidth="6" strokeLinecap="round" />
+                            <circle cx={rightWallX} cy={anchorHeadY} r="3.5" fill="#1e40af" stroke="#ffffff" strokeWidth="1" />
+                            <text x={rightWallX - 6} y={anchorHeadY + 3} fill="#1e40af" fontSize="8" fontWeight="bold" textAnchor="end">
                               A{tier.tier} ({tier.designLoad}kN)
                             </text>
                           </g>
