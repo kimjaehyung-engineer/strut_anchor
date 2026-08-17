@@ -684,7 +684,9 @@ ${(anchorResult.angleSensitivityMatrix || [])
           )
         )
       : 20;
-  const maxDepth = Math.max(totalLength + 2, maxAnchorTipDepth + 3, currentExcavationDepth + 4, 28);
+  const finalDepth = settings.finalExcavationDepth || 22.0;
+  const effectiveTotalLength = Math.max(wall.totalLength || 0, finalDepth + 6.0);
+  const maxDepth = Math.max(effectiveTotalLength + 4, finalDepth + 8, maxAnchorTipDepth + 4, 32);
   const getY = (d: number) => marginTop + (d / maxDepth) * plotH;
   const leftWallX = marginLeft;
   const rightWallX = canvasW - marginRight;
@@ -1046,17 +1048,22 @@ ${(anchorResult.angleSensitivityMatrix || [])
                     const isWaleSafe = parseFloat(dynWaleRatioVal) <= 1.0;
                     const isWallSafe = parseFloat(dynWallStressVal) <= 140;
                     const isStrutSafe = parseFloat(dynBucklingFs) >= 1.5;
-                  const strutExcavationDepth = currStrutStage.depth;
+                  // 사용자가 저장한 정거장 제원(finalExcavationDepth)과 실시간 연동된 공정 심도 산정
+                  const dynExcavationDepth = currStrutStage.step === 0 
+                    ? 0.0 
+                    : (currStrutStage.step === 10 ? finalDepth : (currStrutStage.step / 10.0) * finalDepth);
+                  const dynDepthLabel = currStrutStage.step === 0 ? 'GL ±0.00m' : `GL -${dynExcavationDepth.toFixed(2)}m`;
+                  const strutExcavationDepth = dynExcavationDepth;
 
                   return (
                     <div className="space-y-2.5">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-amber-950 flex items-center space-x-1.5 text-xs sm:text-sm">
                           <TrendingDown className="w-4 h-4 text-amber-600" />
-                          <span>2D 수평 버팀보(Strut) & 중간말뚝 횡단면도</span>
+                          <span>2D 수평 버팀보(Strut) & 중간말뚝 횡단면도 (B={settings.stationWidth}m, H={finalDepth}m)</span>
                         </span>
                         <span className="text-[11px] text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded font-mono font-bold">
-                          Step {currStrutStage.step}: {currStrutStage.depthLabel} ({currStrutStage.installedStrutCount}단 설치)
+                          Step {currStrutStage.step}: {dynDepthLabel} ({currStrutStage.installedStrutCount}단 설치)
                         </span>
                       </div>
 
@@ -1123,11 +1130,11 @@ ${(anchorResult.angleSensitivityMatrix || [])
                             x={leftWallX + plotW / 2}
                             y={getY(strutExcavationDepth) - 6}
                             fill="#0369a1"
-                            fontSize="10.5"
+                            fontSize="10"
                             fontWeight="bold"
                             textAnchor="middle"
                           >
-                            ▼ 굴착 바닥면 ({currStrutStage.depthLabel}) {strutExcavationDepth > 0 ? `[${currStrutStage.excavationStageName}]` : '[원지반 준비공]'}
+                            ▼ 굴착 바닥면 ({dynDepthLabel}) {strutExcavationDepth > 0 ? `[${currStrutStage.excavationStageName}]` : '[원지반 준비공]'}
                           </text>
 
                           {/* Ground Level Line */}
@@ -1199,20 +1206,20 @@ ${(anchorResult.angleSensitivityMatrix || [])
                                 <rect x={post2X - 5} y={strutY - 5} width={10} height={10} fill="#78350f" rx={1} />
 
                                 <rect
-                                  x={leftWallX + plotW / 2 - 50}
+                                  x={leftWallX + plotW / 2 - 58}
                                   y={strutY - 15}
-                                  width={100}
+                                  width={116}
                                   height={15}
-                                  rx={2.5}
-                                  fill={isLatest ? '#fef3c7' : '#fffbeb'}
-                                  stroke={isLatest ? '#d97706' : '#f59e0b'}
+                                  rx={3}
+                                  fill="#ffffff"
+                                  stroke={isLatest ? '#d97706' : '#b45309'}
                                   strokeWidth={isLatest ? '1.5' : '1'}
                                 />
                                 <text
                                   x={leftWallX + plotW / 2}
                                   y={strutY - 4}
-                                  fill="#92400e"
-                                  fontSize="9"
+                                  fill="#78350f"
+                                  fontSize="8.5"
                                   fontWeight="bold"
                                   textAnchor="middle"
                                 >
