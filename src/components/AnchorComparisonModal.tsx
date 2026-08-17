@@ -3666,7 +3666,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
 
                 {/* TAB: SENSITIVITY - Dedicated Sensitivity Matrix View */}
 
-{(activeTab === 'SENSITIVITY' || activeTab === '2A_STANDARD') && (
+{(activeTab === 'SENSITIVITY') && (
                   <div className="space-y-4">
                     <div className="bg-indigo-50/70 p-3.5 rounded-lg border border-indigo-200 shadow-xs space-y-2">
                       <div className="flex items-center justify-between">
