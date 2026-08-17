@@ -48,6 +48,7 @@ import {
   Calculator,
   ArrowDownRight,
   CheckCheck,
+  Zap,
 } from 'lucide-react';
 
 interface AnchorComparisonModalProps {
@@ -1888,6 +1889,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                   </span>
                 </button>
                 <button
+                  id="tab-2a-btn"
                   onClick={() => {
                     setActiveTab('2A_STANDARD');
                     setParams((p) => ({ ...p, angleDeg: 20 }));
@@ -1905,6 +1907,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                   </span>
                 </button>
                 <button
+                  id="tab-2b-btn"
                   onClick={() => {
                     setActiveTab('2B_HIGH_ANGLE');
                     setParams((p) => ({ ...p, angleDeg: 45 }));
