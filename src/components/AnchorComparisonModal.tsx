@@ -1182,8 +1182,8 @@ ${(anchorResult.angleSensitivityMatrix || [])
                         </p>
                       </div>
 
-                      {/* 1안 비용 및 공기 정량적 산정 근거 카드 (표준품셈 및 상세 엔지니어링 수식 반영) */}
-                      <div className="bg-white border-2 border-amber-400 rounded-xl p-3.5 sm:p-4 shadow-sm space-y-3">
+                      {/* 1안 비용 및 공기 정량적 산정 근거 카드 (표준품셈 노무품 및 장비손료 일위대가 산출 근거 완벽 수록) */}
+                      <div className="bg-white border-2 border-amber-400 rounded-xl p-3.5 sm:p-4 shadow-sm space-y-3.5">
                         <div className="flex flex-wrap items-center justify-between border-b-2 border-amber-200 pb-2 gap-1.5">
                           <div className="flex items-center space-x-2 text-amber-950 font-black text-xs sm:text-sm">
                             <Coins className="w-4.5 h-4.5 text-amber-700 shrink-0" />
@@ -1194,7 +1194,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                           </span>
                         </div>
 
-                        {/* ① 직접공사비 세부 내역 및 품셈 단가 (테이블 형태) */}
+                        {/* ① 직접공사비 세부 내역 및 품셈 단가 산출표 */}
                         <div className="space-y-1.5 text-xs text-slate-800">
                           <div className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center justify-between bg-amber-50 p-2 rounded-lg border border-amber-200">
                             <span className="flex items-center gap-1.5">
@@ -1249,6 +1249,43 @@ ${(anchorResult.angleSensitivityMatrix || [])
                           </div>
                         </div>
 
+                        {/* [신규] 표준품셈 노무품 및 장비 일위대가 세부 산출 근거 (상세 박스) */}
+                        <div className="bg-amber-50/70 border border-amber-300 p-3 rounded-lg space-y-2 text-xs">
+                          <div className="font-extrabold text-amber-950 flex items-center justify-between text-xs sm:text-sm border-b border-amber-200 pb-1">
+                            <span className="flex items-center gap-1.5">
+                              <ShieldCheck className="w-4 h-4 text-amber-700" />
+                              <span>국토교통부 건설공사 표준품셈 기반 노무품 & 단가 산출 근거</span>
+                            </span>
+                            <span className="font-mono text-[11px] font-bold text-amber-900">2026 국토부 품셈 제3장 가설공사</span>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-slate-700 text-xs">
+                            <div className="bg-white p-2 rounded border border-amber-200 space-y-1">
+                              <div className="font-bold text-slate-900 flex justify-between text-[11px]">
+                                <span>[버팀보 설치·해체 품셈 (38만원/T)]</span>
+                                <span className="text-amber-800 font-mono font-bold">Ton당 산출</span>
+                              </div>
+                              <ul className="text-[11px] space-y-0.5 text-slate-600 list-disc list-inside">
+                                <li><strong>설치품(22.5만원/T)</strong>: 비계공 0.32인 + 용접공 0.18인 + 보통인부 0.45인 + 크레인(25T) 0.15hr</li>
+                                <li><strong>해체품(15.5만원/T)</strong>: 비계공 0.22인 + 절단공 0.14인 + 보통인부 0.35인 + 크레인 0.12hr</li>
+                                <li><strong>가산율</strong>: 지하 심도 15m 이상 할증 15% 및 야간작업 배제 기준</li>
+                              </ul>
+                            </div>
+
+                            <div className="bg-white p-2 rounded border border-amber-200 space-y-1">
+                              <div className="font-bold text-slate-900 flex justify-between text-[11px]">
+                                <span>[중간말뚝 천공·건입 품셈 (265만원/본)]</span>
+                                <span className="text-amber-800 font-mono font-bold">본당(22m) 산출</span>
+                              </div>
+                              <ul className="text-[11px] space-y-0.5 text-slate-600 list-disc list-inside">
+                                <li><strong>오거 천공(6.5만원/m)</strong>: Φ500 크롤라오거 운전사 0.04인 + 비계공 0.03인 + 케이싱손료</li>
+                                <li><strong>H-형강 건입(3.5만원/m)</strong>: 크레인(50T) 0.02hr + 플랜트 배합 모르타르 주입</li>
+                                <li><strong>두부정리 및 고정(2.05만원/m)</strong>: 두부커팅 0.5hr + 앵글용접 고정 일체</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+
                         {/* ② 토공 공기(Schedule) 사이클타임 표준 품셈 산정식 */}
                         <div className="space-y-2 text-xs text-slate-800 border-t border-slate-200 pt-2.5">
                           <div className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center justify-between bg-amber-50 p-2 rounded-lg border border-amber-200">
@@ -1282,7 +1319,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                           </div>
                         </div>
 
-                        {/* ③ LCC 총생애주기비용 (8.85억원) 산출 근거 */}
+                        {/* ③ LCC 총생애주기비용 (8.85억원) 산출 구조 */}
                         <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs text-slate-700 space-y-1.5">
                           <div className="font-extrabold text-slate-900 flex items-center justify-between">
                             <span>③ LCC 총생애주기비용 산출 구조 (총 8억 8,457만원)</span>
