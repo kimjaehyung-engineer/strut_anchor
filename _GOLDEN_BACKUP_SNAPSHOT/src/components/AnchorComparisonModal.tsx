@@ -322,15 +322,41 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
   };
 
     // 1안 버팀보 수평 간격(@m) 및 수직 5단 설치 심도/선하중 사용자 임의 정의 상태
+  // 1안 버팀보 수평 간격(@m) 및 수직 5단 설치 심도/선하중 사용자 임의 정의 상태
   const [strutHorizontalSpacing, setStrutHorizontalSpacing] = useState<number>(4.0);
-  const [customStrutDepths, setCustomStrutDepths] = useState<number[]>([2.0, 6.5, 11.0, 15.5, 19.5]);
+
+  // 굴착깊이(H)에 최적화된 5단 버팀보 심도 계산 함수
+  const getOptimalDepthsForH = (H: number) => {
+    const s1 = H > 25 ? 3.0 : 2.0;
+    const s5 = Math.max(s1 + 4.0, H - 2.5);
+    const interval = (s5 - s1) / 4.0;
+    return [
+      Number(s1.toFixed(1)),
+      Number((s1 + interval).toFixed(1)),
+      Number((s1 + interval * 2).toFixed(1)),
+      Number((s1 + interval * 3).toFixed(1)),
+      Number(s5.toFixed(1)),
+    ];
+  };
+
+  const [customStrutDepths, setCustomStrutDepths] = useState<number[]>(() =>
+    getOptimalDepthsForH(settings.finalExcavationDepth || 22.0)
+  );
   const [customStrutPreloads, setCustomStrutPreloads] = useState<number[]>([30, 35, 40, 45, 50]);
   const [selectedWaleSpec, setSelectedWaleSpec] = useState<string>('1H-300×300×10×15');
   const [selectedKingPostSpec, setSelectedKingPostSpec] = useState<string>('H-300×300×10×15');
 
+  // 저장된 정거장 굴착심도(settings.finalExcavationDepth)가 변경되면 5단 심도 자동 최적 재배치
+  useEffect(() => {
+    const H = settings.finalExcavationDepth || 22.0;
+    const autoDepths = getOptimalDepthsForH(H);
+    setCustomStrutDepths(autoDepths);
+  }, [settings.finalExcavationDepth]);
+
   const handleUpdateTierDepth = (tierIdx: number, newDepth: number) => {
+    const H = settings.finalExcavationDepth || 22.0;
     const updatedDepths = [...customStrutDepths];
-    updatedDepths[tierIdx] = Math.max(0.5, Math.min(22.0, newDepth));
+    updatedDepths[tierIdx] = Math.max(0.5, Math.min(H, newDepth));
     setCustomStrutDepths(updatedDepths);
 
     const updatedStruts = localStruts.map((s, idx) =>
@@ -352,7 +378,8 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
 
   const handleResetStrutLayout = () => {
     setStrutHorizontalSpacing(4.0);
-    const defDepths = [2.0, 6.5, 11.0, 15.5, 19.5];
+    const H = settings.finalExcavationDepth || 22.0;
+    const defDepths = getOptimalDepthsForH(H);
     const defPreloads = [30, 35, 40, 45, 50];
     setCustomStrutDepths(defDepths);
     setCustomStrutPreloads(defPreloads);
@@ -2035,7 +2062,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                               <div className="lg:col-span-8 bg-white p-3.5 rounded-xl border-2 border-amber-200 shadow-2xs space-y-2.5">
                                 <div className="font-extrabold text-slate-900 flex items-center justify-between text-xs sm:text-sm">
                                   <span>↕ 수직 단별(S1~S5) 설치 심도(m) & 유압잭 선하중(tf) 직접 입력</span>
-                                  <span className="text-emerald-800 font-mono font-bold text-xs">최종 바닥: GL -22.0m</span>
+                                  <span className="text-emerald-800 font-mono font-bold text-xs">최종 굴착 바닥: GL -{(settings.finalExcavationDepth || 22.0).toFixed(1)}m (설정연동)</span>
                                 </div>
 
                                 <div className="grid grid-cols-5 gap-2 text-center">
