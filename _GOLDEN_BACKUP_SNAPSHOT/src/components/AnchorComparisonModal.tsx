@@ -436,6 +436,19 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
   const [isAnalyzingStrut, setIsAnalyzingStrut] = useState<boolean>(false);
   const [analysisStatus, setAnalysisStatus] = useState<'IDLE' | 'ANALYZING' | 'DONE'>('IDLE');
 
+  const handleRunStrutAnalysis = () => {
+    setIsAnalyzingStrut(true);
+    setAnalysisStatus('ANALYZING');
+    setIsStrutPlaying(false);
+
+    // 탄소성 보-탄성지반 구조해석 연산 시뮬레이션 (안전한 상태 갱신)
+    setTimeout(() => {
+      setIsAnalyzingStrut(false);
+      setAnalysisStatus('DONE');
+      setStrutStepIndex(10); // 최종 굴착 단계(Step 10)로 이동하여 최대응력 검증
+    }, 600);
+  };
+
 // 단계 제어 모드: 'FULL_FINAL' (전체 완성단면) vs 'STAGE_STEP' (공정단계별)
   const [stageViewMode, setStageViewMode] = useState<'FULL_FINAL' | 'STAGE_STEP'>('FULL_FINAL');
   const [modalStepIndex, setModalStepIndex] = useState<number>(
