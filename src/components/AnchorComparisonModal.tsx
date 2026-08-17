@@ -1015,6 +1015,24 @@ ${(anchorResult.angleSensitivityMatrix || [])
                 /* 1안: 전구간 버팀보 & 중간말뚝 횡단면도 (2단계 Step 0 ~ Step 10 시뮬레이션 실시간 연동) */
                 (() => {
                   const currStrutStage = STRUT_STAGES_DATA[strutStepIndex] || STRUT_STAGES_DATA[10];
+                    const spacingRatio = (strutHorizontalSpacing || 4.0) / 4.0;
+
+                    // 수평 간격(@2m~10m) 및 수직 심도 변경에 따른 실시간 동적 역학 해석값 연산
+                    const dynWallStressVal = (parseFloat(currStrutStage.wallStress) * Math.sqrt(spacingRatio)).toFixed(1);
+                    const dynWallRatioVal = (parseFloat(dynWallStressVal) / 140).toFixed(2);
+                    const dynDispVal = (parseFloat(currStrutStage.disp) * Math.sqrt(spacingRatio)).toFixed(1);
+
+                    // 버팀보 축력 및 좌굴 여유 동적 산정
+                    const baseForceMatch = currStrutStage.strutForce.match(/([0-9.]+)\s*(tonf|t)/);
+                    const baseForceNum = baseForceMatch ? parseFloat(baseForceMatch[1]) : (30.0 + currStrutStage.step * 2);
+                    const dynStrutForceVal = (baseForceNum * spacingRatio).toFixed(1);
+                    const dynBucklingFs = (2.4 / Math.max(0.5, spacingRatio)).toFixed(1);
+
+                    // 띠장 휨응력비 (간격 제곱 비례 영향)
+                    const dynWaleRatioVal = (parseFloat(currStrutStage.waleRatio) * Math.pow(spacingRatio, 1.3)).toFixed(2);
+                    const isWaleSafe = parseFloat(dynWaleRatioVal) <= 1.0;
+                    const isWallSafe = parseFloat(dynWallStressVal) <= 140;
+                    const isStrutSafe = parseFloat(dynBucklingFs) >= 1.5;
                   const strutExcavationDepth = currStrutStage.depth;
 
                   return (
@@ -1919,31 +1937,32 @@ ${(anchorResult.angleSensitivityMatrix || [])
                                   <div className="flex items-center flex-1 space-x-1">
                                     <input
                                       type="number"
-                                      step="0.1"
+                                      step="0.5"
                                       min="2.0"
-                                      max="8.0"
+                                      max="10.0"
                                       value={strutHorizontalSpacing}
-                                      onChange={(e) => setStrutHorizontalSpacing(parseFloat(e.target.value) || 4.0)}
+                                      onChange={(e) => setStrutHorizontalSpacing(Math.max(2.0, Math.min(10.0, parseFloat(e.target.value) || 4.0)))}
                                       className="w-full bg-white px-2.5 py-1.5 rounded border border-amber-400 font-mono font-black text-amber-950 text-sm text-center focus:ring-2 focus:ring-amber-500 focus:outline-none shadow-2xs"
                                     />
                                     <span className="font-bold text-xs text-slate-700">m</span>
                                   </div>
                                 </div>
 
-                                {/* 퀵 프리셋 버튼 */}
-                                <div className="grid grid-cols-4 gap-1 pt-1">
-                                  {[3.0, 3.5, 4.0, 5.0].map((val) => (
+                                {/* 2m 간격으로 10m까지 퀵 버튼 (2m, 4m, 6m, 8m, 10m) */}
+                                <div className="grid grid-cols-5 gap-1 pt-1">
+                                  {[2.0, 4.0, 6.0, 8.0, 10.0].map((val) => (
                                     <button
                                       key={val}
                                       type="button"
                                       onClick={() => setStrutHorizontalSpacing(val)}
-                                      className={`px-1.5 py-1 rounded text-center text-xs font-bold transition cursor-pointer border ${
+                                      className={`px-1 py-1 rounded text-center text-xs font-bold transition cursor-pointer border ${
                                         strutHorizontalSpacing === val
                                           ? 'bg-amber-600 text-white border-amber-600 font-black shadow-2xs'
                                           : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-amber-100'
                                       }`}
+                                      title={`수평간격 @${val}m 설정 (90m 구간 총 ${Math.ceil(90 / val)}열)`}
                                     >
-                                      {val === 4.0 ? '4.0m★' : `${val.toFixed(1)}m`}
+                                      {val === 4.0 ? '4m(표준★)' : `${val}m`}
                                     </button>
                                   ))}
                                 </div>
@@ -2166,7 +2185,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                             })}
                           </div>
 
-                          {/* Current Active Step Engineering KPI Cards (실시간 해석 지표 6종 대형 폰트) */}
+                          {/* Current Active Step Engineering KPI Cards (수평 간격 @{strutHorizontalSpacing}m 실시간 연동) */}
                           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-1 text-xs">
                             <div className="bg-white p-3 rounded-xl border border-amber-200 shadow-2xs space-y-1">
                               <span className="text-slate-500 font-bold text-xs block">① 굴착 심도</span>
@@ -2178,32 +2197,38 @@ ${(anchorResult.angleSensitivityMatrix || [])
 
                             <div className="bg-white p-3 rounded-xl border border-amber-200 shadow-2xs space-y-1">
                               <span className="text-slate-500 font-bold text-xs block">② 벽체 최대휨응력</span>
-                              <span className="text-blue-700 font-mono font-black text-base sm:text-lg block">
-                                {currStrutStage.wallStress.split(' ')[0]} <span className="text-xs font-normal text-slate-500">MPa</span>
+                              <span className={`font-mono font-black text-base sm:text-lg block ${isWallSafe ? 'text-blue-700' : 'text-rose-600'}`}>
+                                {dynWallStressVal} <span className="text-xs font-normal text-slate-500">MPa</span>
                               </span>
-                              <span className="text-[11px] text-emerald-700 font-bold block">허용 140 MPa 이하 OK</span>
+                              <span className={`text-[11px] font-bold block ${isWallSafe ? 'text-emerald-700' : 'text-rose-600'}`}>
+                                {isWallSafe ? `안전율 만족 (${dynWallRatioVal} ≤ 1.0)` : `⚠️ 응력초과 (${dynWallRatioVal} > 1.0)`}
+                              </span>
                             </div>
 
                             <div className="bg-white p-3 rounded-xl border border-amber-200 shadow-2xs space-y-1">
                               <span className="text-slate-500 font-bold text-xs block">③ 버팀보 축력/좌굴</span>
-                              <span className="text-amber-800 font-mono font-black text-xs sm:text-sm truncate block">
-                                {currStrutStage.strutForce}
+                              <span className={`font-mono font-black text-xs sm:text-sm truncate block ${isStrutSafe ? 'text-amber-800' : 'text-rose-700'}`}>
+                                S{currStrutStage.installedStrutCount || 1}: {dynStrutForceVal} tonf
                               </span>
-                              <span className="text-[11px] text-slate-600 font-semibold block">설치 단수: {currStrutStage.installedStrutCount}단</span>
+                              <span className={`text-[11px] font-semibold block ${isStrutSafe ? 'text-emerald-700' : 'text-rose-600'}`}>
+                                좌굴여유 Fs={dynBucklingFs} {isStrutSafe ? 'OK' : '보강필요'}
+                              </span>
                             </div>
 
                             <div className="bg-white p-3 rounded-xl border border-amber-200 shadow-2xs space-y-1">
                               <span className="text-slate-500 font-bold text-xs block">④ 띠장 휨응력비</span>
-                              <span className="text-slate-900 font-mono font-black text-base sm:text-lg block">
-                                {currStrutStage.waleRatio}
+                              <span className={`font-mono font-black text-base sm:text-lg block ${isWaleSafe ? 'text-slate-900' : 'text-rose-600'}`}>
+                                {dynWaleRatioVal}
                               </span>
-                              <span className="text-[11px] text-emerald-700 font-bold block">1H-300 단면 안전</span>
+                              <span className={`text-[11px] font-bold block ${isWaleSafe ? 'text-emerald-700' : 'text-rose-600'}`}>
+                                {isWaleSafe ? '단면 안전 (SAFE)' : '⚠️ 띠장단면 보강(2H)'}
+                              </span>
                             </div>
 
                             <div className="bg-white p-3 rounded-xl border border-amber-200 shadow-2xs space-y-1">
                               <span className="text-slate-500 font-bold text-xs block">⑤ 지반 최대변위</span>
                               <span className="text-rose-700 font-mono font-black text-base sm:text-lg block">
-                                {currStrutStage.disp}
+                                {dynDispVal} mm
                               </span>
                               <span className="text-[11px] text-slate-600 font-semibold block">허용기준 44mm 이내</span>
                             </div>
