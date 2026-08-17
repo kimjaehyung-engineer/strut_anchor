@@ -321,6 +321,7 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
     if (onUpdateWall) onUpdateWall(newWall);
   };
 
+    const [strutHorizontalSpacing, setStrutHorizontalSpacing] = useState<number>(4.0);
   const [isAnalyzingStrut, setIsAnalyzingStrut] = useState<boolean>(false);
   const [analysisStatus, setAnalysisStatus] = useState<'IDLE' | 'ANALYZING' | 'DONE'>('IDLE');
 
@@ -1838,6 +1839,83 @@ ${(anchorResult.angleSensitivityMatrix || [])
                                     {item.label}
                                   </button>
                                 ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* [신규] 버팀보 수평 간격 & 수직 단별(5단) 설치 간격/심도 설정 패널 */}
+                          <div className="bg-gradient-to-r from-amber-50 via-orange-50/50 to-white p-3.5 sm:p-4 rounded-xl border-2 border-amber-300 shadow-2xs space-y-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 pb-2">
+                              <div className="flex items-center space-x-2 text-amber-950 font-black text-xs sm:text-sm">
+                                <Sliders className="w-4 h-4 text-amber-700 shrink-0" />
+                                <span>⑤ 버팀보 수평 배치 간격(↔) & 수직 5단 설치 심도/간격(↕) 세부 설정</span>
+                              </div>
+                              <span className="text-[11px] font-bold text-amber-900 bg-amber-200/70 px-2.5 py-0.5 rounded border border-amber-300 font-mono">
+                                수평: @{strutHorizontalSpacing.toFixed(1)}m | 수직: 5개단 (GL -2.0m ~ -19.5m)
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 text-xs">
+                              {/* 1. 수평 간격 선택 (5 Cols) */}
+                              <div className="lg:col-span-5 bg-white p-3 rounded-lg border border-amber-200 space-y-2">
+                                <div className="font-extrabold text-slate-900 flex items-center justify-between text-xs">
+                                  <span>↔ 수평 배치 간격 (Horizontal Spacing)</span>
+                                  <span className="text-amber-800 font-mono font-black text-xs">@{strutHorizontalSpacing.toFixed(1)} m</span>
+                                </div>
+                                <div className="grid grid-cols-4 gap-1.5">
+                                  {[
+                                    { label: '3.0m', val: 3.0, desc: '밀집배치 (강재↑)' },
+                                    { label: '3.5m', val: 3.5, desc: '중간간격' },
+                                    { label: '4.0m (표준★)', val: 4.0, desc: '표준 설계기준' },
+                                    { label: '5.0m', val: 5.0, desc: '광간격 (보강필요)' },
+                                  ].map((item) => {
+                                    const isSelected = strutHorizontalSpacing === item.val;
+                                    return (
+                                      <button
+                                        key={item.val}
+                                        type="button"
+                                        onClick={() => setStrutHorizontalSpacing(item.val)}
+                                        className={`px-2 py-1.5 rounded text-center transition cursor-pointer border ${
+                                          isSelected
+                                            ? 'bg-amber-600 text-white border-amber-600 shadow-xs font-black'
+                                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-amber-100/70'
+                                        }`}
+                                      >
+                                        <div className="font-bold text-xs">{item.label}</div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                                <p className="text-[10.5px] text-slate-500 leading-tight">
+                                  ※ 표준 수평간격 @4.0m 적용 시 90m 구간에 총 23열(단별 23개소, 총 115본) 배치됩니다.
+                                </p>
+                              </div>
+
+                              {/* 2. 수직 단별 설치 심도 및 층간 간격 (7 Cols) */}
+                              <div className="lg:col-span-7 bg-white p-3 rounded-lg border border-amber-200 space-y-2">
+                                <div className="font-extrabold text-slate-900 flex items-center justify-between text-xs">
+                                  <span>↕ 수직 단별(5단) 설치 심도 & 층간 간격 (Vertical Layout)</span>
+                                  <span className="text-emerald-800 font-mono font-bold text-[11px]">최종굴착: GL -22.0m</span>
+                                </div>
+
+                                <div className="grid grid-cols-5 gap-1.5 text-center">
+                                  {[
+                                    { tier: '1단(S1)', depth: 'GL -2.0m', space: '여유 2.0m', preload: '30 tf' },
+                                    { tier: '2단(S2)', depth: 'GL -6.5m', space: '간격 4.5m', preload: '35 tf' },
+                                    { tier: '3단(S3)', depth: 'GL -11.0m', space: '간격 4.5m', preload: '40 tf' },
+                                    { tier: '4단(S4)', depth: 'GL -15.5m', space: '간격 4.5m', preload: '45 tf' },
+                                    { tier: '5단(S5)', depth: 'GL -19.5m', space: '간격 4.0m', preload: '50 tf' },
+                                  ].map((st, sIdx) => (
+                                    <div key={st.tier} className="bg-amber-50/70 p-1.5 rounded-lg border border-amber-200 text-[11px] space-y-0.5">
+                                      <div className="font-black text-amber-950 text-xs">{st.tier}</div>
+                                      <div className="font-mono font-extrabold text-blue-700 text-[11px]">{st.depth}</div>
+                                      <div className="text-[10px] text-slate-500 font-medium">↕ {st.space}</div>
+                                      <div className="text-[9.5px] bg-white text-rose-800 font-mono font-bold px-1 py-0.2 rounded border border-rose-200">
+                                        선하중 {st.preload}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             </div>
                           </div>
