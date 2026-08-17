@@ -321,7 +321,47 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
     if (onUpdateWall) onUpdateWall(newWall);
   };
 
-    const [strutHorizontalSpacing, setStrutHorizontalSpacing] = useState<number>(4.0);
+    // 1안 버팀보 수평 간격(@m) 및 수직 5단 설치 심도/선하중 사용자 임의 정의 상태
+  const [strutHorizontalSpacing, setStrutHorizontalSpacing] = useState<number>(4.0);
+  const [customStrutDepths, setCustomStrutDepths] = useState<number[]>([2.0, 6.5, 11.0, 15.5, 19.5]);
+  const [customStrutPreloads, setCustomStrutPreloads] = useState<number[]>([30, 35, 40, 45, 50]);
+
+  const handleUpdateTierDepth = (tierIdx: number, newDepth: number) => {
+    const updatedDepths = [...customStrutDepths];
+    updatedDepths[tierIdx] = Math.max(0.5, Math.min(22.0, newDepth));
+    setCustomStrutDepths(updatedDepths);
+
+    const updatedStruts = localStruts.map((s, idx) =>
+      idx === tierIdx ? { ...s, depth: updatedDepths[tierIdx] } : s
+    );
+    handleUpdateStruts(updatedStruts);
+  };
+
+  const handleUpdateTierPreload = (tierIdx: number, newPreload: number) => {
+    const updatedPreloads = [...customStrutPreloads];
+    updatedPreloads[tierIdx] = Math.max(0, newPreload);
+    setCustomStrutPreloads(updatedPreloads);
+
+    const updatedStruts = localStruts.map((s, idx) =>
+      idx === tierIdx ? { ...s, preload: updatedPreloads[tierIdx] } : s
+    );
+    handleUpdateStruts(updatedStruts);
+  };
+
+  const handleResetStrutLayout = () => {
+    setStrutHorizontalSpacing(4.0);
+    const defDepths = [2.0, 6.5, 11.0, 15.5, 19.5];
+    const defPreloads = [30, 35, 40, 45, 50];
+    setCustomStrutDepths(defDepths);
+    setCustomStrutPreloads(defPreloads);
+    const defaultStruts = localStruts.map((s, idx) => ({
+      ...s,
+      depth: defDepths[idx] || s.depth,
+      preload: defPreloads[idx] || s.preload,
+    }));
+    handleUpdateStruts(defaultStruts);
+  };
+
   const [isAnalyzingStrut, setIsAnalyzingStrut] = useState<boolean>(false);
   const [analysisStatus, setAnalysisStatus] = useState<'IDLE' | 'ANALYZING' | 'DONE'>('IDLE');
 
@@ -1843,78 +1883,139 @@ ${(anchorResult.angleSensitivityMatrix || [])
                             </div>
                           </div>
 
-                          {/* [신규] 버팀보 수평 간격 & 수직 단별(5단) 설치 간격/심도 설정 패널 */}
-                          <div className="bg-gradient-to-r from-amber-50 via-orange-50/50 to-white p-3.5 sm:p-4 rounded-xl border-2 border-amber-300 shadow-2xs space-y-3">
-                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 pb-2">
-                              <div className="flex items-center space-x-2 text-amber-950 font-black text-xs sm:text-sm">
-                                <Sliders className="w-4 h-4 text-amber-700 shrink-0" />
-                                <span>⑤ 버팀보 수평 배치 간격(↔) & 수직 5단 설치 심도/간격(↕) 세부 설정</span>
+                          {/* [신규] 버팀보 수평 간격(↔) & 수직 5단 설치 심도/선하중(↕) 사용자 임의 입력 컨트롤러 */}
+                          <div className="bg-gradient-to-r from-amber-50 via-orange-50/60 to-white p-4 sm:p-4.5 rounded-xl border-2 border-amber-400 shadow-xs space-y-3.5">
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-amber-200 pb-2.5">
+                              <div className="flex items-center space-x-2 text-amber-950 font-black text-xs sm:text-base">
+                                <Sliders className="w-5 h-5 text-amber-700 shrink-0" />
+                                <span>⑤ 버팀보 수평 배치 간격(↔) & 수직 5단 설치 심도/선하중(↕) 직접 입력 설정</span>
                               </div>
-                              <span className="text-[11px] font-bold text-amber-900 bg-amber-200/70 px-2.5 py-0.5 rounded border border-amber-300 font-mono">
-                                수평: @{strutHorizontalSpacing.toFixed(1)}m | 수직: 5개단 (GL -2.0m ~ -19.5m)
-                              </span>
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  type="button"
+                                  onClick={handleResetStrutLayout}
+                                  className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 rounded-md border border-slate-300 text-xs font-bold flex items-center space-x-1 cursor-pointer shadow-2xs transition"
+                                  title="표준 기본 배치(수평 4.0m, 5단)로 초기화합니다."
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                  <span>표준 기본값 복원</span>
+                                </button>
+                                <span className="text-xs font-black text-amber-900 bg-amber-200/90 px-3 py-1 rounded-md border border-amber-400 font-mono shadow-2xs">
+                                  수평: @{strutHorizontalSpacing.toFixed(1)}m | 수직: 5개단 (GL -{customStrutDepths[0]}m ~ -{customStrutDepths[4]}m)
+                                </span>
+                              </div>
                             </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 text-xs">
-                              {/* 1. 수평 간격 선택 (5 Cols) */}
-                              <div className="lg:col-span-5 bg-white p-3 rounded-lg border border-amber-200 space-y-2">
-                                <div className="font-extrabold text-slate-900 flex items-center justify-between text-xs">
-                                  <span>↔ 수평 배치 간격 (Horizontal Spacing)</span>
-                                  <span className="text-amber-800 font-mono font-black text-xs">@{strutHorizontalSpacing.toFixed(1)} m</span>
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 text-xs sm:text-sm">
+                              {/* 1. 수평 간격 직접 입력 + 퀵 프리셋 (4 Cols) */}
+                              <div className="lg:col-span-4 bg-white p-3.5 rounded-xl border-2 border-amber-200 shadow-2xs space-y-2.5">
+                                <div className="font-extrabold text-slate-900 flex items-center justify-between text-xs sm:text-sm">
+                                  <span>↔ 수평 배치 간격 직접 입력</span>
+                                  <span className="text-amber-800 font-mono font-black">@{strutHorizontalSpacing.toFixed(1)} m</span>
                                 </div>
-                                <div className="grid grid-cols-4 gap-1.5">
-                                  {[
-                                    { label: '3.0m', val: 3.0, desc: '밀집배치 (강재↑)' },
-                                    { label: '3.5m', val: 3.5, desc: '중간간격' },
-                                    { label: '4.0m (표준★)', val: 4.0, desc: '표준 설계기준' },
-                                    { label: '5.0m', val: 5.0, desc: '광간격 (보강필요)' },
-                                  ].map((item) => {
-                                    const isSelected = strutHorizontalSpacing === item.val;
-                                    return (
-                                      <button
-                                        key={item.val}
-                                        type="button"
-                                        onClick={() => setStrutHorizontalSpacing(item.val)}
-                                        className={`px-2 py-1.5 rounded text-center transition cursor-pointer border ${
-                                          isSelected
-                                            ? 'bg-amber-600 text-white border-amber-600 shadow-xs font-black'
-                                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-amber-100/70'
-                                        }`}
-                                      >
-                                        <div className="font-bold text-xs">{item.label}</div>
-                                      </button>
-                                    );
-                                  })}
+
+                                <div className="flex items-center space-x-2 bg-amber-50/70 p-2 rounded-lg border border-amber-300">
+                                  <label className="text-xs font-bold text-amber-950 shrink-0">수평 간격(L):</label>
+                                  <div className="flex items-center flex-1 space-x-1">
+                                    <input
+                                      type="number"
+                                      step="0.1"
+                                      min="2.0"
+                                      max="8.0"
+                                      value={strutHorizontalSpacing}
+                                      onChange={(e) => setStrutHorizontalSpacing(parseFloat(e.target.value) || 4.0)}
+                                      className="w-full bg-white px-2.5 py-1.5 rounded border border-amber-400 font-mono font-black text-amber-950 text-sm text-center focus:ring-2 focus:ring-amber-500 focus:outline-none shadow-2xs"
+                                    />
+                                    <span className="font-bold text-xs text-slate-700">m</span>
+                                  </div>
                                 </div>
-                                <p className="text-[10.5px] text-slate-500 leading-tight">
-                                  ※ 표준 수평간격 @4.0m 적용 시 90m 구간에 총 23열(단별 23개소, 총 115본) 배치됩니다.
+
+                                {/* 퀵 프리셋 버튼 */}
+                                <div className="grid grid-cols-4 gap-1 pt-1">
+                                  {[3.0, 3.5, 4.0, 5.0].map((val) => (
+                                    <button
+                                      key={val}
+                                      type="button"
+                                      onClick={() => setStrutHorizontalSpacing(val)}
+                                      className={`px-1.5 py-1 rounded text-center text-xs font-bold transition cursor-pointer border ${
+                                        strutHorizontalSpacing === val
+                                          ? 'bg-amber-600 text-white border-amber-600 font-black shadow-2xs'
+                                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-amber-100'
+                                      }`}
+                                    >
+                                      {val === 4.0 ? '4.0m★' : `${val.toFixed(1)}m`}
+                                    </button>
+                                  ))}
+                                </div>
+                                <p className="text-[11px] text-slate-500 font-medium leading-snug">
+                                  ※ 90m 굴착 구간 기준 총 <strong>{Math.ceil(90 / (strutHorizontalSpacing || 4.0))} 열</strong> (단별 {Math.ceil(90 / (strutHorizontalSpacing || 4.0))}개소, 총 {Math.ceil(90 / (strutHorizontalSpacing || 4.0)) * 5}본) 가설
                                 </p>
                               </div>
 
-                              {/* 2. 수직 단별 설치 심도 및 층간 간격 (7 Cols) */}
-                              <div className="lg:col-span-7 bg-white p-3 rounded-lg border border-amber-200 space-y-2">
-                                <div className="font-extrabold text-slate-900 flex items-center justify-between text-xs">
-                                  <span>↕ 수직 단별(5단) 설치 심도 & 층간 간격 (Vertical Layout)</span>
-                                  <span className="text-emerald-800 font-mono font-bold text-[11px]">최종굴착: GL -22.0m</span>
+                              {/* 2. 수직 5개단 설치 심도 및 선하중 직접 입력 (8 Cols) */}
+                              <div className="lg:col-span-8 bg-white p-3.5 rounded-xl border-2 border-amber-200 shadow-2xs space-y-2.5">
+                                <div className="font-extrabold text-slate-900 flex items-center justify-between text-xs sm:text-sm">
+                                  <span>↕ 수직 단별(S1~S5) 설치 심도(m) & 유압잭 선하중(tf) 직접 입력</span>
+                                  <span className="text-emerald-800 font-mono font-bold text-xs">최종 바닥: GL -22.0m</span>
                                 </div>
 
-                                <div className="grid grid-cols-5 gap-1.5 text-center">
-                                  {[
-                                    { tier: '1단(S1)', depth: 'GL -2.0m', space: '여유 2.0m', preload: '30 tf' },
-                                    { tier: '2단(S2)', depth: 'GL -6.5m', space: '간격 4.5m', preload: '35 tf' },
-                                    { tier: '3단(S3)', depth: 'GL -11.0m', space: '간격 4.5m', preload: '40 tf' },
-                                    { tier: '4단(S4)', depth: 'GL -15.5m', space: '간격 4.5m', preload: '45 tf' },
-                                    { tier: '5단(S5)', depth: 'GL -19.5m', space: '간격 4.0m', preload: '50 tf' },
-                                  ].map((st, sIdx) => (
-                                    <div key={st.tier} className="bg-amber-50/70 p-1.5 rounded-lg border border-amber-200 text-[11px] space-y-0.5">
-                                      <div className="font-black text-amber-950 text-xs">{st.tier}</div>
-                                      <div className="font-mono font-extrabold text-blue-700 text-[11px]">{st.depth}</div>
-                                      <div className="text-[10px] text-slate-500 font-medium">↕ {st.space}</div>
-                                      <div className="text-[9.5px] bg-white text-rose-800 font-mono font-bold px-1 py-0.2 rounded border border-rose-200">
-                                        선하중 {st.preload}
+                                <div className="grid grid-cols-5 gap-2 text-center">
+                                  {[0, 1, 2, 3, 4].map((idx) => {
+                                    const depth = customStrutDepths[idx] ?? (2.0 + idx * 4.5);
+                                    const prevDepth = idx > 0 ? (customStrutDepths[idx - 1] ?? 0) : 0;
+                                    const spacingFromPrev = (depth - prevDepth).toFixed(1);
+                                    const preload = customStrutPreloads[idx] ?? (30 + idx * 5);
+
+                                    return (
+                                      <div
+                                        key={`tier-config-${idx}`}
+                                        className="bg-amber-50/80 p-2 sm:p-2.5 rounded-xl border-2 border-amber-300 text-xs space-y-2 shadow-2xs"
+                                      >
+                                        <div className="font-black text-amber-950 text-xs sm:text-sm border-b border-amber-200 pb-1">
+                                          제{idx + 1}단 (S{idx + 1})
+                                        </div>
+
+                                        {/* 심도 Input */}
+                                        <div className="space-y-0.5 text-left">
+                                          <span className="text-[10px] font-bold text-slate-600 block">설치 심도(GL -)</span>
+                                          <div className="flex items-center space-x-1">
+                                            <input
+                                              type="number"
+                                              step="0.1"
+                                              min="0.5"
+                                              max="22.0"
+                                              value={depth}
+                                              onChange={(e) => handleUpdateTierDepth(idx, parseFloat(e.target.value) || 0)}
+                                              className="w-full bg-white px-1.5 py-1 rounded border border-blue-400 font-mono font-black text-blue-800 text-xs text-center focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                                            />
+                                            <span className="text-[11px] font-bold text-slate-700">m</span>
+                                          </div>
+                                        </div>
+
+                                        {/* 층간 간격 자동 계산 라벨 */}
+                                        <div className="text-[10.5px] font-bold text-slate-600 bg-white/90 py-0.5 rounded border border-slate-200">
+                                          {idx === 0 ? `여유: ${depth.toFixed(1)}m` : `↕ 간격: ${spacingFromPrev}m`}
+                                        </div>
+
+                                        {/* 선하중 Preload Input */}
+                                        <div className="space-y-0.5 text-left">
+                                          <span className="text-[10px] font-bold text-slate-600 block">선하중(tf)</span>
+                                          <div className="flex items-center space-x-1">
+                                            <input
+                                              type="number"
+                                              step="1"
+                                              min="0"
+                                              max="150"
+                                              value={preload}
+                                              onChange={(e) => handleUpdateTierPreload(idx, parseInt(e.target.value, 10) || 0)}
+                                              className="w-full bg-white px-1.5 py-1 rounded border border-rose-300 font-mono font-black text-rose-800 text-xs text-center focus:ring-1 focus:ring-rose-500 focus:outline-none"
+                                            />
+                                            <span className="text-[10.5px] font-bold text-slate-700">tf</span>
+                                          </div>
+                                        </div>
                                       </div>
-                                    </div>
-                                  ))}
+                                    );
+                                  })}
                                 </div>
                               </div>
                             </div>
