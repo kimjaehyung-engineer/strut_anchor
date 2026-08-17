@@ -1829,8 +1829,200 @@ ${(anchorResult.angleSensitivityMatrix || [])
                     </div>
                   </div>
 
-                  {/* SVG 2D Canvas for Anchor */}
-                  <div className="w-full bg-slate-50/80 rounded-lg border border-slate-200 overflow-hidden flex items-center justify-center p-1">
+                  {/* SVG 2D Canvas: Section View or Plan View */}
+                  {drawingViewMode === 'PLAN' ? (
+                    /* ══════════════════════════════════════════════════════════════
+                        [수평 평면도] 광간격 버팀보(@10m~15m) + 사이 구간 앵커(@2m) 배치도
+                       ══════════════════════════════════════════════════════════════ */
+                    <div className="space-y-2">
+                      <div className="w-full bg-slate-900 rounded-xl border border-slate-800 overflow-hidden flex flex-col p-2 text-slate-100 shadow-md">
+                        <div className="flex items-center justify-between px-2 py-1 border-b border-slate-800 text-xs">
+                          <span className="font-extrabold text-purple-300 flex items-center space-x-1.5">
+                            <SplitSquareVertical className="w-4 h-4 text-purple-400" />
+                            <span>수평 평면 배치도: 광간격 버팀보(@{hybrid3StrutSpacing}m) + 사이 4공 앵커 긴장</span>
+                          </span>
+                          <span className="text-[10px] font-mono bg-purple-950 text-purple-200 px-2 py-0.5 rounded border border-purple-800">
+                            띠장 휨모멘트 65% 상쇄 (무지주 쾌속굴착)
+                          </span>
+                        </div>
+
+                        <svg viewBox="0 0 760 380" className="w-full h-auto max-h-[420px] select-none font-sans mt-1">
+                          {/* 1. Background Ground */}
+                          <rect x="0" y="0" width="760" height="380" fill="#0f172a" />
+
+                          {/* 2. Top & Bottom Retaining Walls (Soil Retaining System) */}
+                          {/* Top Wall (GL 북측 벽체) */}
+                          <rect x="60" y="60" width="640" height="14" fill="#334155" stroke="#64748b" strokeWidth="1" />
+                          <rect x="60" y="74" width="640" height="8" fill="#1e293b" stroke="#475569" strokeWidth="1" />
+                          {/* 2H-350 Top Wale */}
+                          <rect x="60" y="82" width="640" height="10" fill="#2563eb" stroke="#1d4ed8" strokeWidth="1" />
+
+                          {/* Bottom Wall (GL 남측 벽체) */}
+                          <rect x="60" y="286" width="640" height="10" fill="#2563eb" stroke="#1d4ed8" strokeWidth="1" />
+                          <rect x="60" y="296" width="640" height="8" fill="#1e293b" stroke="#475569" strokeWidth="1" />
+                          <rect x="60" y="304" width="640" height="14" fill="#334155" stroke="#64748b" strokeWidth="1" />
+
+                          {/* Soldier Piles along the walls (@1.8m) */}
+                          {Array.from({ length: 17 }).map((_, i) => {
+                            const px = 80 + i * 36;
+                            return (
+                              <g key={`pile-${i}`}>
+                                <rect x={px - 4} y="56" width="8" height="8" fill="#f59e0b" stroke="#78350f" strokeWidth="1" />
+                                <rect x={px - 4} y="314" width="8" height="8" fill="#f59e0b" stroke="#78350f" strokeWidth="1" />
+                              </g>
+                            );
+                          })}
+
+                          {/* 3. Wide-Span Struts (Left & Right @ 10m~15m Spacing) */}
+                          {/* Strut 1 (Left) */}
+                          <g>
+                            <rect x="145" y="92" width="20" height="194" fill="#d97706" stroke="#92400e" strokeWidth="1.5" />
+                            <line x1="155" y1="92" x2="155" y2="286" stroke="#fbbf24" strokeWidth="2" strokeDasharray="4 2" />
+                            {/* Jack & Stiffener Bracket */}
+                            <polygon points="135,92 175,92 165,110 145,110" fill="#b45309" />
+                            <polygon points="135,286 175,286 165,268 145,268" fill="#b45309" />
+                            <text x="155" y="195" fill="#fef3c7" fontSize="10" fontWeight="black" textAnchor="middle" transform="rotate(-90 155 195)">
+                              버팀보 S1 (H-300)
+                            </text>
+                          </g>
+
+                          {/* Strut 2 (Right) */}
+                          <g>
+                            <rect x="595" y="92" width="20" height="194" fill="#d97706" stroke="#92400e" strokeWidth="1.5" />
+                            <line x1="605" y1="92" x2="605" y2="286" stroke="#fbbf24" strokeWidth="2" strokeDasharray="4 2" />
+                            {/* Jack & Stiffener Bracket */}
+                            <polygon points="585,92 625,92 615,110 595,110" fill="#b45309" />
+                            <polygon points="585,286 625,286 615,268 595,268" fill="#b45309" />
+                            <text x="605" y="195" fill="#fef3c7" fontSize="10" fontWeight="black" textAnchor="middle" transform="rotate(-90 605 195)">
+                              버팀보 S2 (H-300)
+                            </text>
+                          </g>
+
+                          {/* 4. Intermediate Earth Anchors between Struts (4 Anchors @ 2m) */}
+                          {/* Top Wall Anchors (Drilled outward to top) */}
+                          {[235, 325, 415, 505].map((ax, idx) => (
+                            <g key={`top-anc-${idx}`}>
+                              {/* Anchor Body & Tendons */}
+                              <line x1={ax} y1="82" x2={ax} y2="15" stroke="#0284c7" strokeWidth="2.5" strokeDasharray="4 2" />
+                              <line x1={ax} y1="15" x2={ax} y2="0" stroke="#10b981" strokeWidth="5" strokeLinecap="round" />
+                              <circle cx={ax} cy="82" r="4.5" fill="#38bdf8" stroke="#0284c7" strokeWidth="1" />
+                              {/* Tension Force Arrow (Upward Pull) */}
+                              <polygon points={`${ax-3},70 ${ax+3},70 ${ax},60`} fill="#38bdf8" />
+                              <text x={ax} y="76" fill="#38bdf8" fontSize="8" fontWeight="bold" textAnchor="middle">
+                                A{idx+1}
+                              </text>
+                            </g>
+                          ))}
+
+                          {/* Bottom Wall Anchors (Drilled outward to bottom) */}
+                          {[235, 325, 415, 505].map((ax, idx) => (
+                            <g key={`bot-anc-${idx}`}>
+                              {/* Anchor Body & Tendons */}
+                              <line x1={ax} y1="296" x2={ax} y2="365" stroke="#0284c7" strokeWidth="2.5" strokeDasharray="4 2" />
+                              <line x1={ax} y1="365" x2={ax} y2="380" stroke="#10b981" strokeWidth="5" strokeLinecap="round" />
+                              <circle cx={ax} cy="296" r="4.5" fill="#38bdf8" stroke="#0284c7" strokeWidth="1" />
+                              {/* Tension Force Arrow (Downward Pull) */}
+                              <polygon points={`${ax-3},308 ${ax+3},308 ${ax},318`} fill="#38bdf8" />
+                              <text x={ax} y="304" fill="#38bdf8" fontSize="8" fontWeight="bold" textAnchor="middle">
+                                A{idx+1}
+                              </text>
+                            </g>
+                          ))}
+
+                          {/* 5. Center Wide Excavation Opening Zone */}
+                          <rect
+                            x="175"
+                            y="102"
+                            width="410"
+                            height="174"
+                            fill="#8b5cf6"
+                            fillOpacity="0.08"
+                            stroke="#a855f7"
+                            strokeWidth="1.5"
+                            strokeDasharray="6 4"
+                            rx="8"
+                          />
+                          <text x="380" y="170" fill="#e9d5ff" fontSize="14" fontWeight="black" textAnchor="middle">
+                            ★ {hybrid3StrutSpacing}m 초대형 무지주 굴착 작업구 (Wide Opening)
+                          </text>
+                          <text x="380" y="195" fill="#c084fc" fontSize="11" fontWeight="bold" textAnchor="middle">
+                            1.0m³ 대형 백호 선회 및 25T 덤프트럭 직상차 구역 (공기 -59일 단축)
+                          </text>
+                          <text x="380" y="218" fill="#38bdf8" fontSize="10" fontWeight="semibold" textAnchor="middle">
+                            ▲ 사이 4공 앵커 프리스트레스 긴장으로 띠장 휨모멘트 65% 완벽 상쇄
+                          </text>
+
+                          {/* 6. Dimension Lines */}
+                          {/* Horizontal Spacing Dimension (Top) */}
+                          <line x1="155" y1="38" x2="605" y2="38" stroke="#e2e8f0" strokeWidth="1.2" />
+                          <line x1="155" y1="32" x2="155" y2="44" stroke="#e2e8f0" strokeWidth="1.2" />
+                          <line x1="605" y1="32" x2="605" y2="44" stroke="#e2e8f0" strokeWidth="1.2" />
+                          <text x="380" y="32" fill="#fbbf24" fontSize="11" fontWeight="black" textAnchor="middle">
+                            버팀보 간격 S_strut = {hybrid3StrutSpacing}.0 m (광폭 배치)
+                          </text>
+
+                          {/* Width Dimension (Left) */}
+                          <line x1="40" y1="87" x2="40" y2="291" stroke="#e2e8f0" strokeWidth="1.2" />
+                          <line x1="34" y1="87" x2="46" y2="87" stroke="#e2e8f0" strokeWidth="1.2" />
+                          <line x1="34" y1="291" x2="46" y2="291" stroke="#e2e8f0" strokeWidth="1.2" />
+                          <text x="30" y="195" fill="#e2e8f0" fontSize="10" fontWeight="bold" textAnchor="middle" transform="rotate(-90 30 195)">
+                            굴착폭 B = {settings.stationWidth}m
+                          </text>
+                        </svg>
+                      </div>
+
+                      {/* Plan Legend */}
+                      <div className="flex flex-wrap items-center justify-between gap-1.5 text-[11px] bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-slate-700">
+                        <div className="flex items-center space-x-1.5">
+                          <div className="w-3.5 h-2.5 bg-amber-500 rounded-xs border border-amber-700" />
+                          <span className="font-bold text-amber-900">광간격 버팀보(@{hybrid3StrutSpacing}m)</span>
+                        </div>
+                        <div className="flex items-center space-x-1.5">
+                          <div className="w-3.5 h-1 bg-sky-500 rounded-xs" />
+                          <span className="font-bold text-sky-800">사이 구간 앵커 긴장재(@2.0m)</span>
+                        </div>
+                        <div className="flex items-center space-x-1.5">
+                          <div className="w-2.5 h-2.5 bg-purple-400/50 rounded-xs border border-purple-500" />
+                          <span className="font-bold text-purple-900">무지주 쾌속 굴착 작업구</span>
+                        </div>
+                        <div className="flex items-center space-x-1.5">
+                          <div className="w-2.5 h-2.5 bg-amber-400 rounded-xs border border-amber-600" />
+                          <span>H-300 엄지말뚝</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* ══════════════════════════════════════════════════════════════
+                        [수직 단면도] 2D 그라운드 앵커 / 복합 지보 단면도 (기존 유지)
+                       ══════════════════════════════════════════════════════════════ */
+                    <div className="space-y-2.5">
+                      {/* Quick Angle Preset Selector Bar */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs">
+                          <span className="text-[11px] text-slate-600 font-bold flex items-center space-x-1 shrink-0">
+                            <span>일괄 경사각(θ):</span>
+                          </span>
+                          <div className="flex items-center space-x-1 overflow-x-auto">
+                            {[15, 20, 30, 40, 50, 60, 70].map((deg) => (
+                              <button
+                                key={deg}
+                                type="button"
+                                onClick={() => setParams({ ...params, angleDeg: deg, tierOverrides: {} })}
+                                className={`px-2 py-0.5 rounded text-[11px] font-bold font-mono transition cursor-pointer ${
+                                  params.angleDeg === deg && Object.keys(params.tierOverrides || {}).length === 0
+                                    ? 'bg-blue-600 text-white shadow-xs scale-105'
+                                    : 'bg-white text-slate-700 hover:bg-slate-200 border border-slate-200'
+                                }`}
+                              >
+                                {deg}°{deg === 20 ? '★' : ''}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* SVG 2D Canvas for Anchor */}
+                      <div className="w-full bg-slate-50/80 rounded-lg border border-slate-200 overflow-hidden flex items-center justify-center p-1">
                     <svg viewBox={`0 0 ${canvasW} ${canvasH}`} className="w-full h-auto max-h-[460px] select-none font-sans">
                       <defs>
                         <pattern id="anchorGroutHatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
@@ -1957,7 +2149,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
 
                         const anchorLabel = isHybrid && tier.tier <= 2
                           ? `A${tier.tier} (고각${effAngle}° 무지주)`
-                          : `A${tier.tier} (${tier.designLoad}kN)`;
+                          : `A${tier.tier} (${Math.round(tier.designTensionTd || tier.designLoad || 320)}kN)`;
 
                         return (
                           <g key={`anchor-drawing-${tier.tier}`}>
@@ -2007,6 +2199,8 @@ ${(anchorResult.angleSensitivityMatrix || [])
                       </div>
                     )}
                   </div>
+                </div>
+              )}
 
                   <div className="bg-blue-50/90 border border-blue-200 p-2.5 rounded-lg text-[11px] text-blue-950">
                     <div className="font-bold flex items-center space-x-1 text-blue-800 mb-1">
