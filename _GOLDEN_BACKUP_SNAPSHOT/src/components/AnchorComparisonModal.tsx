@@ -2486,6 +2486,85 @@ ${(anchorResult.angleSensitivityMatrix || [])
                             </table>
                           </div>
 
+                          {/* 🛠️ [신규] 구조검토 NG 발생 시 부재 제원 상향 및 엔지니어링 솔루션 가이드 패널 */}
+                          <div className="bg-gradient-to-r from-rose-50 via-amber-50 to-orange-50 p-4 sm:p-4.5 rounded-xl border-2 border-rose-300 shadow-xs space-y-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-rose-200/80 pb-2">
+                              <div className="flex items-center space-x-2 text-rose-950 font-black text-xs sm:text-base">
+                                <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 animate-bounce" />
+                                <span>🚨 구조 검토 결과 NG(단면보강) 발생 시 부재별 제원 상향 및 설계 대처 솔루션</span>
+                              </div>
+                              <span className="px-2.5 py-0.5 bg-rose-600 text-white font-black text-[11px] rounded-md shadow-2xs">
+                                KDS 21 30 00 설계기준 조치지침
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                              {/* 1. 엄지말뚝 휨응력 초과 (NG) */}
+                              <div className="bg-white p-3 rounded-lg border-2 border-rose-200 shadow-2xs space-y-1.5">
+                                <div className="font-extrabold text-rose-900 flex items-center justify-between text-xs sm:text-sm border-b border-rose-100 pb-1">
+                                  <span>① 엄지말뚝 응력 초과 (σ {'>'} 140MPa)</span>
+                                  <span className="text-rose-600 font-bold">NG 대처법</span>
+                                </div>
+                                <ul className="text-slate-700 space-y-1 font-medium leading-relaxed list-disc list-inside">
+                                  <li><strong>단면 상향:</strong> <span className="font-bold text-blue-700">H-300×300</span> (Z=1,360) ➔ <span className="font-bold text-amber-700">H-300×305★</span> (Z=1,670) ➔ <span className="font-bold text-purple-700">H-350×350</span> (Z=2,300cm³)으로 규격 상향.</li>
+                                  <li><strong>말뚝 간격 축소:</strong> 설치간격을 <strong>@1.8m ➔ @1.5m</strong>로 좁혀 단위폭당 토압 분담량 감축.</li>
+                                  <li><strong>강성벽체 전환:</strong> 대심도/토압 과대 시 <strong>CIP D500 연속벽</strong>으로 공법 전환 검토.</li>
+                                </ul>
+                              </div>
+
+                              {/* 2. 버팀보 축력 및 좌굴 불안정 (NG) */}
+                              <div className="bg-white p-3 rounded-lg border-2 border-amber-200 shadow-2xs space-y-1.5">
+                                <div className="font-extrabold text-amber-950 flex items-center justify-between text-xs sm:text-sm border-b border-amber-100 pb-1">
+                                  <span>② 버팀보 축력/좌굴 (Fs {'<'} 1.5)</span>
+                                  <span className="text-amber-700 font-bold">NG 대처법</span>
+                                </div>
+                                <ul className="text-slate-700 space-y-1 font-medium leading-relaxed list-disc list-inside">
+                                  <li><strong>수평 간격 축소:</strong> 1단계에서 수평간격을 <strong>@8m~10m ➔ @4m(표준★)</strong>로 좁혀 버팀보 축력을 50% 이상 경감.</li>
+                                  <li><strong>버팀보 규격 상향:</strong> <strong>H-300 ➔ H-350</strong> 또는 좌굴에 강한 <strong>원형 강관(Φ600 t=12mm)</strong>으로 변경.</li>
+                                  <li><strong>중간말뚝 추가:</strong> 중간말뚝 열수를 <strong>1열 ➔ 2열 배치</strong>로 늘려 버팀보 유효좌굴길이(KL)를 1/2로 단축.</li>
+                                </ul>
+                              </div>
+
+                              {/* 3. 띠장 휨응력 초과 (NG) */}
+                              <div className="bg-white p-3 rounded-lg border-2 border-orange-200 shadow-2xs space-y-1.5">
+                                <div className="font-extrabold text-orange-950 flex items-center justify-between text-xs sm:text-sm border-b border-orange-100 pb-1">
+                                  <span>③ 띠장 휨응력 초과 (응력비 {'>'} 1.0)</span>
+                                  <span className="text-orange-700 font-bold">NG 대처법</span>
+                                </div>
+                                <ul className="text-slate-700 space-y-1 font-medium leading-relaxed list-disc list-inside">
+                                  <li><strong>이중 띠장(2H) 적용:</strong> 1단계에서 띠장을 <span className="font-bold text-amber-800">1H-300 ➔ 2H-300 또는 2H-350</span>으로 상향 (휨강성 2.2배 증대).</li>
+                                  <li><strong>버팀보 수평배치 축소:</strong> 띠장 지간 휨모멘트(M=wL²/8)는 간격의 제곱에 비례하므로 수평간격을 4m 이하로 축소.</li>
+                                  <li><strong>스티프너(보강판) 취부:</strong> 집중하중 작용부 지압 및 국부좌굴 방지 보강 플레이트 용접.</li>
+                                </ul>
+                              </div>
+
+                              {/* 4. 지반 수평변위 초과 (NG) */}
+                              <div className="bg-white p-3 rounded-lg border-2 border-indigo-200 shadow-2xs space-y-1.5">
+                                <div className="font-extrabold text-indigo-950 flex items-center justify-between text-xs sm:text-sm border-b border-indigo-100 pb-1">
+                                  <span>④ 지반 수평변위 초과 (δ {'>'} 44mm)</span>
+                                  <span className="text-indigo-700 font-bold">NG 대처법</span>
+                                </div>
+                                <ul className="text-slate-700 space-y-1 font-medium leading-relaxed list-disc list-inside">
+                                  <li><strong>유압잭 선하중(Preload) 증대:</strong> 1단계에서 각 단 선하중을 <strong>30~50tf ➔ 50~80tf</strong>로 상향 가압하여 초기 변위 억제.</li>
+                                  <li><strong>조기 지보 가설:</strong> 굴착 후 버팀보 설치 지연을 없애고 24시간 내 즉시 선행하중 재하.</li>
+                                  <li><strong>단수 추가/단간격 축소:</strong> 굴착 층고 간격을 4.5m ➔ 3.5m로 축소(단수 5단 ➔ 6단 가설).</li>
+                                </ul>
+                              </div>
+
+                              {/* 5. 굴착저면 안정성 저하 (히빙/보일링 NG) */}
+                              <div className="bg-white p-3 rounded-lg border-2 border-emerald-200 shadow-2xs space-y-1.5 col-span-1 md:col-span-2 lg:col-span-2">
+                                <div className="font-extrabold text-emerald-950 flex items-center justify-between text-xs sm:text-sm border-b border-emerald-100 pb-1">
+                                  <span>⑤ 굴착저면 안정성 (히빙/보일링/파이핑 Fs {'<'} 1.5)</span>
+                                  <span className="text-emerald-700 font-bold">NG 대처법</span>
+                                </div>
+                                <ul className="text-slate-700 space-y-1 font-medium leading-relaxed list-disc list-inside grid grid-cols-1 sm:grid-cols-2 gap-x-3">
+                                  <li><strong>근입장 심도 연장:</strong> 벽체 하단을 굴착 저면 아래 <strong>풍화암/연암 불투수 지지층까지 4.5m 이상 충분히 근입(소켓팅)</strong>.</li>
+                                  <li><strong>배면/저면 차수 그라우팅:</strong> 굴착 저면 및 배면에 <strong>JSP, SGR, SCW 차수 주입공</strong>을 시공하여 침투수 유입 및 수압을 원천 차단.</li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+
                           <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs sm:text-sm space-y-2">
                             <div className="font-extrabold text-slate-900 flex items-center space-x-2 text-xs sm:text-sm">
                               <ShieldCheck className="w-4 h-4 text-emerald-600" />
