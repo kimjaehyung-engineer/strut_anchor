@@ -2189,6 +2189,301 @@ ${(anchorResult.angleSensitivityMatrix || [])
                     </div>
                     <p className="leading-relaxed text-slate-700">{currentStageAnalysis.stepDescription}</p>
                   </div>
+                  {/* [2안-A 전용] 1안 형식의 상세 단가, 품셈, 토공 사이클타임 및 LCC 산출 근거 */}
+                  {(activeTab === '2A_STANDARD' || activeTab === '2A_STD') && (
+                    <div className="space-y-3 pt-2 border-t border-slate-200">
+                      {/* ① 직접공사비 세부 산출 내역 */}
+                      <div className="space-y-1.5 text-xs text-slate-800">
+                        <div className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center justify-between bg-sky-50 p-2 rounded-lg border border-sky-200">
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-2 h-3.5 bg-sky-600 rounded-2xs" />
+                            <span>① 직접공사비 세부 산출 내역 (표준 어스앵커 20°)</span>
+                          </span>
+                          <span className="font-mono text-sky-800 font-bold text-xs">총 7억 5,036만원</span>
+                        </div>
+                        <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                          <table className="w-full text-center text-[11px] border-collapse bg-white">
+                            <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                              <tr>
+                                <th className="py-1.5 px-2 text-left">비목 (내역항목)</th>
+                                <th className="py-1.5 px-1">규격 / 수량</th>
+                                <th className="py-1.5 px-1">단가(원)</th>
+                                <th className="py-1.5 px-1 text-right pr-2">금액(만원)</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 text-slate-600">
+                              <tr>
+                                <td className="py-1 px-2 text-left font-bold text-slate-800">1. 앵커 천공 및 그라우팅</td>
+                                <td className="py-1 px-1 font-mono">Φ150mm / 9,500m</td>
+                                <td className="py-1 px-1 font-mono">48,000</td>
+                                <td className="py-1 px-1 text-right font-mono font-bold text-slate-900 pr-2">45,600</td>
+                              </tr>
+                              <tr>
+                                <td className="py-1 px-2 text-left font-bold text-slate-800">2. PC강선 자재 및 조립</td>
+                                <td className="py-1 px-1 font-mono">12.7mm (6~10본) / 500공</td>
+                                <td className="py-1 px-1 font-mono">185,000</td>
+                                <td className="py-1 px-1 text-right font-mono font-bold text-slate-900 pr-2">9,250</td>
+                              </tr>
+                              <tr>
+                                <td className="py-1 px-2 text-left font-bold text-slate-800">3. 앵커 긴장 및 정착두부</td>
+                                <td className="py-1 px-1 font-mono">지압판 및 인장시험 / 500공</td>
+                                <td className="py-1 px-1 font-mono">82,000</td>
+                                <td className="py-1 px-1 text-right font-mono font-bold text-slate-900 pr-2">4,100</td>
+                              </tr>
+                              <tr>
+                                <td className="py-1 px-2 text-left font-bold text-slate-800">4. 2H-띠장(Wale) 제작가설</td>
+                                <td className="py-1 px-1 font-mono">2H-300×300 (강재 120T)</td>
+                                <td className="py-1 px-1 font-mono">280,000</td>
+                                <td className="py-1 px-1 text-right font-mono font-bold text-slate-900 pr-2">3,360</td>
+                              </tr>
+                              <tr>
+                                <td className="py-1 px-2 text-left font-bold text-slate-800">5. 앵커 두부인장 해체/제거</td>
+                                <td className="py-1 px-1 font-mono">제거형 강선 인발 / 500공</td>
+                                <td className="py-1 px-1 font-mono">35,000</td>
+                                <td className="py-1 px-1 text-right font-mono font-bold text-slate-900 pr-2">1,750</td>
+                              </tr>
+                              <tr className="bg-sky-50/70 font-extrabold text-sky-950">
+                                <td colSpan={3} className="py-1.5 px-2 text-left">직접공사비 소계 (순공사비)</td>
+                                <td className="py-1.5 px-1 text-right font-mono pr-2 text-sky-900">75,036 만원</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* 국토교통부 표준품셈 기반 노무품 & 단가 산출 근거 */}
+                      <div className="bg-sky-50/70 border border-sky-300 p-3 rounded-lg space-y-2 text-xs">
+                        <div className="font-extrabold text-sky-950 flex items-center justify-between text-xs sm:text-sm border-b border-sky-200 pb-1">
+                          <span className="flex items-center gap-1.5">
+                            <ShieldCheck className="w-4 h-4 text-sky-700" />
+                            <span>국토교통부 건설공사 표준품셈 기반 노무품 & 단가 산출 근거</span>
+                          </span>
+                          <span className="font-mono text-[11px] font-bold text-sky-900">2026 국토부 품셈 제3장 앵커공사</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-slate-700 text-xs">
+                          <div className="bg-white p-2 rounded border border-sky-200 space-y-1">
+                            <div className="font-bold text-slate-900 flex justify-between text-[11px]">
+                              <span>[어스앵커 천공·그라우팅 품셈 (4.8만원/m)]</span>
+                              <span className="text-sky-800 font-mono font-bold">m당 산출</span>
+                            </div>
+                            <ul className="text-[11px] space-y-0.5 text-slate-600 list-disc list-inside">
+                              <li><strong>천공품(3.2만원/m)</strong>: 크롤러드릴 운전사 0.04인 + 비계공 0.03인 + 보통인부 0.05인</li>
+                              <li><strong>그라우팅(1.6만원/m)</strong>: 믹서/주입펌프 0.02hr + 시멘트 배합공 + 보통인부 0.03인</li>
+                            </ul>
+                          </div>
+                          <div className="bg-white p-2 rounded border border-sky-200 space-y-1">
+                            <div className="font-bold text-slate-900 flex justify-between text-[11px]">
+                              <span>[강선 긴장 및 인장시험 품셈 (8.2만원/공)]</span>
+                              <span className="text-sky-800 font-mono font-bold">공당 산출</span>
+                            </div>
+                            <ul className="text-[11px] space-y-0.5 text-slate-600 list-disc list-inside">
+                              <li><strong>인장/락킹(5.2만원/공)</strong>: 센터홀 유압잭 운전 0.04인 + 인장시험원 0.03인</li>
+                              <li><strong>지압판 거치(3.0만원/공)</strong>: 지압판 세팅 0.5hr + 쐐기 고정 및 방청캡 마감</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ② 토공 굴착 사이클타임 및 총공기 정밀 산정식 */}
+                      <div className="space-y-2 text-xs text-slate-800 border-t border-slate-200 pt-2.5">
+                        <div className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center justify-between bg-sky-50 p-2 rounded-lg border border-sky-200">
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-2 h-3.5 bg-sky-600 rounded-2xs" />
+                            <span>② 토공 굴착 사이클타임 및 총공기 정밀 산정식</span>
+                          </span>
+                          <span className="font-mono text-emerald-700 font-bold text-xs">총 120일 (토공 49일 + 앵커 20일 + 기타 51일)</span>
+                        </div>
+                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 space-y-1.5 text-xs">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-slate-700">
+                            <div>· <strong>총 토공 굴착 체적(V)</strong>: <span className="font-mono font-bold text-slate-900">40,000 m³</span></div>
+                            <div>· <strong>투입 장비 규격</strong>: <span className="font-bold text-emerald-700">0.8m³ 중형 백호 (무지주 공간 확보)</span></div>
+                            <div>· <strong>1회 사이클타임(Cm)</strong>: <span className="font-mono font-bold text-emerald-700">32 초</span> (굴착 14s + 선회 10s + 적재 8s)</div>
+                            <div>· <strong>작업 효율 계수(E)</strong>: <span className="font-mono font-bold text-slate-900">0.75</span> (버팀보 장애물 완전 배제)</div>
+                          </div>
+                          <div className="bg-white p-2 rounded border border-sky-300 font-mono text-[11px] text-sky-950 space-y-1">
+                            <div><strong>[시간당 굴착량 Qh]</strong> = (3,600 × 0.8 × 0.9 × 0.75) ÷ 32 = <strong>60.75 m³/hr</strong></div>
+                            <div><strong>[일일 토사 반출량 Qd]</strong> = 60.75 m³/hr × 8hr/일 × 0.85 × 2대 = <strong>826 m³/일</strong></div>
+                            <div><strong>[토공 굴착 소요 공기 Te]</strong> = 40,000 m³ ÷ 826 m³/일 = <strong className="text-emerald-700 text-xs">49 일</strong></div>
+                            <div><strong>[앵커 천공/긴장 공기 Ta]</strong> = 단계별 앵커 천공 및 양생 = <strong className="text-emerald-700 text-xs">+20 일</strong></div>
+                          </div>
+                          <div className="flex justify-between items-center bg-sky-100/90 p-2 rounded font-extrabold text-sky-950 text-xs">
+                            <span>∴ 2안-A 표준 어스앵커 총 공기 (버팀보 대비 60일 단축):</span>
+                            <span className="font-mono text-emerald-800 text-sm">총 120 일 (-60일 단축)</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ③ LCC 총생애주기비용 (7.50억원) 산출 구조 & 사유지 리스크 */}
+                      <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs text-slate-700 space-y-1.5">
+                        <div className="font-extrabold text-slate-900 flex items-center justify-between">
+                          <span>③ LCC 총생애주기비용 산출 구조 및 사유지 리스크</span>
+                          <span className="font-mono font-bold text-emerald-700">7.50 억원</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-1.5 text-[11px]">
+                          <div className="bg-white p-1.5 rounded border border-slate-200">
+                            <span className="text-slate-500 font-bold block">1. 직접공사비</span>
+                            <span className="font-mono font-bold text-slate-900">7억 5,036만원</span>
+                          </div>
+                          <div className="bg-white p-1.5 rounded border border-slate-200">
+                            <span className="text-slate-500 font-bold block">2. 120일 현장간접비</span>
+                            <span className="font-mono font-bold text-emerald-700">1억 5,900만원</span> (-7,950만 절감)
+                          </div>
+                          <div className="bg-white p-1.5 rounded border border-rose-200 bg-rose-50/50">
+                            <span className="text-rose-600 font-bold block">3. 사유지 민원 리스크</span>
+                            <span className="font-mono font-bold text-rose-700">배면 20m 침범</span> (동의서 필수)
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* [2안-B 전용] 1안 형식의 상세 단가, 품셈, 토공 사이클타임 및 LCC 산출 근거 */}
+                  {(activeTab === '2B_HIGH_ANGLE' || activeTab === '2B_STEEP') && (
+                    <div className="space-y-3 pt-2 border-t border-slate-200">
+                      {/* ① 직접공사비 세부 산출 내역 */}
+                      <div className="space-y-1.5 text-xs text-slate-800">
+                        <div className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center justify-between bg-indigo-50 p-2 rounded-lg border border-indigo-200">
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-2 h-3.5 bg-indigo-600 rounded-2xs" />
+                            <span>① 직접공사비 세부 산출 내역 (고각 앵커 45°~60°)</span>
+                          </span>
+                          <span className="font-mono text-indigo-800 font-bold text-xs">총 8억 0,500만원</span>
+                        </div>
+                        <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                          <table className="w-full text-center text-[11px] border-collapse bg-white">
+                            <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                              <tr>
+                                <th className="py-1.5 px-2 text-left">비목 (내역항목)</th>
+                                <th className="py-1.5 px-1">규격 / 수량</th>
+                                <th className="py-1.5 px-1">단가(원)</th>
+                                <th className="py-1.5 px-1 text-right pr-2">금액(만원)</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 text-slate-600">
+                              <tr>
+                                <td className="py-1 px-2 text-left font-bold text-slate-800">1. 고각 특수 천공 및 그라우팅</td>
+                                <td className="py-1 px-1 font-mono">암반 수직관입 / 11,800m</td>
+                                <td className="py-1 px-1 font-mono">54,000</td>
+                                <td className="py-1 px-1 text-right font-mono font-bold text-slate-900 pr-2">63,720</td>
+                              </tr>
+                              <tr>
+                                <td className="py-1 px-2 text-left font-bold text-slate-800">2. 대하중 PC강선 조립(8~12본)</td>
+                                <td className="py-1 px-1 font-mono">12.7mm 고강도 / 500공</td>
+                                <td className="py-1 px-1 font-mono">210,000</td>
+                                <td className="py-1 px-1 text-right font-mono font-bold text-slate-900 pr-2">10,500</td>
+                              </tr>
+                              <tr>
+                                <td className="py-1 px-2 text-left font-bold text-slate-800">3. 고각 앵커 긴장 및 경사 브래킷</td>
+                                <td className="py-1 px-1 font-mono">특수 지압 브래킷 / 500공</td>
+                                <td className="py-1 px-1 font-mono">96,000</td>
+                                <td className="py-1 px-1 text-right font-mono font-bold text-slate-900 pr-2">4,800</td>
+                              </tr>
+                              <tr>
+                                <td className="py-1 px-2 text-left font-bold text-slate-800">4. 2H-350 띠장 및 파일 보강</td>
+                                <td className="py-1 px-1 font-mono">Tv 연직하중 지지 보강</td>
+                                <td className="py-1 px-1 font-mono">320,000</td>
+                                <td className="py-1 px-1 text-right font-mono font-bold text-slate-900 pr-2">4,480</td>
+                              </tr>
+                              <tr>
+                                <td className="py-1 px-2 text-left font-bold text-slate-800">5. 앵커 두부인장 해체/제거</td>
+                                <td className="py-1 px-1 font-mono">제거형 강선 인발 / 500공</td>
+                                <td className="py-1 px-1 font-mono">35,000</td>
+                                <td className="py-1 px-1 text-right font-mono font-bold text-slate-900 pr-2">1,750</td>
+                              </tr>
+                              <tr className="bg-indigo-50/70 font-extrabold text-indigo-950">
+                                <td colSpan={3} className="py-1.5 px-2 text-left">직접공사비 소계 (순공사비)</td>
+                                <td className="py-1.5 px-1 text-right font-mono pr-2 text-indigo-900">80,500 만원</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* 국토교통부 표준품셈 기반 노무품 & 단가 산출 근거 */}
+                      <div className="bg-indigo-50/70 border border-indigo-300 p-3 rounded-lg space-y-2 text-xs">
+                        <div className="font-extrabold text-indigo-950 flex items-center justify-between text-xs sm:text-sm border-b border-indigo-200 pb-1">
+                          <span className="flex items-center gap-1.5">
+                            <ShieldCheck className="w-4 h-4 text-indigo-700" />
+                            <span>국토교통부 건설공사 표준품셈 기반 노무품 & 단가 산출 근거</span>
+                          </span>
+                          <span className="font-mono text-[11px] font-bold text-indigo-900">2026 국토부 품셈 제3장 앵커공사</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-slate-700 text-xs">
+                          <div className="bg-white p-2 rounded border border-indigo-200 space-y-1">
+                            <div className="font-bold text-slate-900 flex justify-between text-[11px]">
+                              <span>[고각(45°~60°) 특수 천공 품셈 (5.4만원/m)]</span>
+                              <span className="text-indigo-800 font-mono font-bold">m당 산출</span>
+                            </div>
+                            <ul className="text-[11px] space-y-0.5 text-slate-600 list-disc list-inside">
+                              <li><strong>고각 천공품(3.8만원/m)</strong>: 특수 가이드 세팅공 0.05인 + 천공기사 0.04인 + 보통인부 0.06인</li>
+                              <li><strong>고압 그라우팅(1.6만원/m)</strong>: 고압 주입펌프 0.03hr + 배합공 + 보통인부 0.03인</li>
+                            </ul>
+                          </div>
+                          <div className="bg-white p-2 rounded border border-indigo-200 space-y-1">
+                            <div className="font-bold text-slate-900 flex justify-between text-[11px]">
+                              <span>[대하중 강선 긴장 품셈 (9.6만원/공)]</span>
+                              <span className="text-indigo-800 font-mono font-bold">공당 산출</span>
+                            </div>
+                            <ul className="text-[11px] space-y-0.5 text-slate-600 list-disc list-inside">
+                              <li><strong>300T급 인장(6.2만원/공)</strong>: 대용량 잭 운전 0.05인 + 인장 안전감독원 0.03인</li>
+                              <li><strong>경사 브래킷(3.4만원/공)</strong>: 경사형 지압 브래킷 설치 및 용접 보강 일체</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ② 토공 굴착 사이클타임 및 총공기 정밀 산정식 */}
+                      <div className="space-y-2 text-xs text-slate-800 border-t border-slate-200 pt-2.5">
+                        <div className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center justify-between bg-indigo-50 p-2 rounded-lg border border-indigo-200">
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-2 h-3.5 bg-indigo-600 rounded-2xs" />
+                            <span>② 토공 굴착 사이클타임 및 총공기 정밀 산정식</span>
+                          </span>
+                          <span className="font-mono text-indigo-700 font-bold text-xs">총 125일 (토공 49일 + 고각천공 27일 + 기타 49일)</span>
+                        </div>
+                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 space-y-1.5 text-xs">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-slate-700">
+                            <div>· <strong>총 토공 굴착 체적(V)</strong>: <span className="font-mono font-bold text-slate-900">40,000 m³</span></div>
+                            <div>· <strong>투입 장비 규격</strong>: <span className="font-bold text-indigo-700">0.8m³ 중형 백호 (100% 무지주 개방)</span></div>
+                            <div>· <strong>1회 사이클타임(Cm)</strong>: <span className="font-mono font-bold text-indigo-700">32 초</span> (굴착 14s + 선회 10s + 적재 8s)</div>
+                            <div>· <strong>작업 효율 계수(E)</strong>: <span className="font-mono font-bold text-slate-900">0.75</span> (버팀보 장애물 완전 배제)</div>
+                          </div>
+                          <div className="bg-white p-2 rounded border border-indigo-300 font-mono text-[11px] text-indigo-950 space-y-1">
+                            <div><strong>[시간당 굴착량 Qh]</strong> = (3,600 × 0.8 × 0.9 × 0.75) ÷ 32 = <strong>60.75 m³/hr</strong></div>
+                            <div><strong>[일일 토사 반출량 Qd]</strong> = 60.75 m³/hr × 8hr/일 × 0.85 × 2대 = <strong>826 m³/일</strong></div>
+                            <div><strong>[토공 굴착 소요 공기 Te]</strong> = 40,000 m³ ÷ 826 m³/일 = <strong className="text-indigo-700 text-xs">49 일</strong></div>
+                            <div><strong>[고각 천공/긴장 공기 Ta]</strong> = 급경사 천공 연장 증가 = <strong className="text-indigo-700 text-xs">+27 일</strong></div>
+                          </div>
+                          <div className="flex justify-between items-center bg-indigo-100/90 p-2 rounded font-extrabold text-indigo-950 text-xs">
+                            <span>∴ 2안-B 고각 어스앵커 총 공기 (사유지 0m 회피 & 55일 단축):</span>
+                            <span className="font-mono text-indigo-800 text-sm">총 125 일 (-55일 단축)</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ③ LCC 총생애주기비용 (8.05억원) 산출 구조 & 사유지 0m 회피 */}
+                      <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs text-slate-700 space-y-1.5">
+                        <div className="font-extrabold text-slate-900 flex items-center justify-between">
+                          <span>③ LCC 총생애주기비용 산출 구조 및 사유지 0m 완전 회피 특장점</span>
+                          <span className="font-mono font-bold text-indigo-700">8.05 억원</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-1.5 text-[11px]">
+                          <div className="bg-white p-1.5 rounded border border-slate-200">
+                            <span className="text-slate-500 font-bold block">1. 직접공사비</span>
+                            <span className="font-mono font-bold text-slate-900">8억 0,500만원</span>
+                          </div>
+                          <div className="bg-white p-1.5 rounded border border-slate-200">
+                            <span className="text-slate-500 font-bold block">2. 125일 현장간접비</span>
+                            <span className="font-mono font-bold text-indigo-700">1억 6,562만원</span> (-7,288만 절감)
+                          </div>
+                          <div className="bg-white p-1.5 rounded border border-emerald-200 bg-emerald-50/50">
+                            <span className="text-emerald-700 font-bold block">3. 사유지 침범 0m</span>
+                            <span className="font-mono font-bold text-emerald-800">민원 리스크 0원 (100% 안전)</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
