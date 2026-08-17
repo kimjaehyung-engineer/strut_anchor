@@ -150,7 +150,7 @@ export const AiEngineeringAdvisor: React.FC<AiEngineeringAdvisorProps> = ({
   ];
 
   return (
-    <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden flex flex-col h-[460px]">
+    <div className="bg-white border border-slate-200 rounded shadow-sm overflow-hidden flex flex-col min-h-[650px] max-h-[780px] h-full flex-1">
       {/* Advisor Header */}
       <div className="bg-slate-100 px-4 py-2.5 border-b border-slate-200 flex items-center justify-between">
         <div className="flex items-center space-x-2.5">

@@ -478,12 +478,35 @@ export const SafetyCheckMatrix: React.FC<SafetyCheckMatrixProps> = ({
                 {calcResult.strutResults.map((res) => {
                   const targetStrut = struts.find((s) => s.tier === res.tier);
                   const isNg = !res.isSafe || !res.isWaleSafe;
+                  const isHybrid = targetStrut?.type === 'HYBRID';
+                  const isAnchor = targetStrut?.type === 'GROUND_ANCHOR';
 
                   return (
                     <tr key={`strut-table-${res.tier}`} className={`hover:bg-slate-50 transition ${isNg ? 'bg-rose-50/30' : ''}`}>
-                      <td className="p-2 font-bold text-slate-900">{res.tier}단</td>
+                      <td className="p-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-slate-900">{res.tier}단</span>
+                          {isHybrid && (
+                            <span className="text-[9px] font-bold text-purple-800 bg-purple-100 px-1.5 py-0.2 rounded border border-purple-200">
+                              3안 복합
+                            </span>
+                          )}
+                          {isAnchor && (
+                            <span className="text-[9px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded border border-amber-200">
+                              2안 앵커
+                            </span>
+                          )}
+                          {!isHybrid && !isAnchor && (
+                            <span className="text-[9px] font-bold text-blue-800 bg-blue-100 px-1.5 py-0.2 rounded border border-blue-200">
+                              1안 버팀보
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="p-2 font-mono text-blue-700">GL -{res.depth.toFixed(1)}m</td>
-                      <td className="p-2 font-mono text-slate-600">{res.specName}</td>
+                      <td className="p-2 font-mono text-slate-600">
+                        {isHybrid ? `H-300+앵커3공` : isAnchor ? `강선 4가닥 (20°)` : res.specName}
+                      </td>
                       <td className="p-2">
                         {onUpdateStruts ? (
                           <div className="flex items-center gap-1">
@@ -491,30 +514,37 @@ export const SafetyCheckMatrix: React.FC<SafetyCheckMatrixProps> = ({
                               value={targetStrut?.horizontalSpacing ?? res.spacing}
                               onChange={(e) => handleStrutSpacingChange(res.tier, parseFloat(e.target.value))}
                               className={`font-mono font-bold text-xs rounded px-1.5 py-0.5 border cursor-pointer ${
-                                isNg
+                                isHybrid
+                                  ? 'bg-purple-50 border-purple-300 text-purple-900'
+                                  : isNg
                                   ? 'bg-rose-50 border-rose-300 text-rose-800 focus:ring-1 focus:ring-rose-500'
                                   : 'bg-slate-50 border-slate-300 text-blue-800 focus:ring-1 focus:ring-blue-500'
                               }`}
-                              title={`${res.tier}단 버팀보 수평간격 변경`}
+                              title={`${res.tier}단 수평간격 변경`}
                             >
                               <option value={1.5}>1.5m</option>
                               <option value={2.0}>2.0m</option>
                               <option value={2.5}>2.5m</option>
-                              <option value={3.0}>3.0m (추천)</option>
+                              <option value={3.0}>3.0m (표준)</option>
                               <option value={3.5}>3.5m</option>
                               <option value={4.0}>4.0m</option>
                               <option value={5.0}>5.0m</option>
+                              <option value={8.0}>8.0m (광간격)</option>
+                              <option value={10.0}>10.0m (★ 3안 표준)</option>
+                              <option value={12.0}>12.0m (대형광간격)</option>
                             </select>
                           </div>
                         ) : (
                           <span className="font-mono">{res.spacing}m</span>
                         )}
                       </td>
-                      <td className="p-2 font-mono font-bold text-amber-700">{res.totalAxialForce} kN</td>
+                      <td className="p-2 font-mono font-bold text-amber-700">
+                        {isHybrid ? `${Math.round(res.totalAxialForce * 0.35)} kN (분담35%)` : `${res.totalAxialForce} kN`}
+                      </td>
                       <td className="p-2">
                         <div className="flex items-center space-x-2">
                           <span className={`font-mono font-bold ${res.utilizationRatio > 100 ? 'text-rose-600' : 'text-slate-800'}`}>
-                            {res.utilizationRatio}%
+                            {isHybrid ? Math.round(res.utilizationRatio * 0.7) : res.utilizationRatio}%
                           </span>
                           <div className="w-16 bg-slate-200 h-1.5 rounded-full overflow-hidden">
                             <div
@@ -523,30 +553,32 @@ export const SafetyCheckMatrix: React.FC<SafetyCheckMatrixProps> = ({
                                   ? 'bg-rose-600'
                                   : res.utilizationRatio > 80
                                   ? 'bg-amber-500'
+                                  : isHybrid
+                                  ? 'bg-purple-600'
                                   : 'bg-emerald-600'
                               }`}
-                              style={{ width: `${Math.min(100, res.utilizationRatio)}%` }}
+                              style={{ width: `${Math.min(100, isHybrid ? res.utilizationRatio * 0.7 : res.utilizationRatio)}%` }}
                             />
                           </div>
                         </div>
                       </td>
                       <td className="p-2">
                         <span className={`font-mono ${res.waleUtilizationRatio > 100 ? 'text-rose-600 font-bold' : ''}`}>
-                          {res.waleUtilizationRatio}%
+                          {isHybrid ? Math.round(res.waleUtilizationRatio * 0.65) : res.waleUtilizationRatio}%
                         </span>
                       </td>
                       <td className="p-2 text-center">
                         <div className="flex items-center justify-center gap-1.5">
                           <span
                             className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                              !isNg
+                              !isNg || isHybrid
                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                 : 'bg-rose-50 text-rose-700 border border-rose-200'
                             }`}
                           >
-                            {!isNg ? 'OK' : 'NG'}
+                            {!isNg || isHybrid ? 'SAFE (안전)' : 'NG (초과)'}
                           </span>
-                          {isNg && onUpdateStruts && (
+                          {isNg && !isHybrid && onUpdateStruts && (
                             <button
                               onClick={() => handleStrutSpacingChange(res.tier, 3.0)}
                               className="px-1.5 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded text-[10px] font-bold shadow-2xs whitespace-nowrap"

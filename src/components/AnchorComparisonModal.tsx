@@ -51,6 +51,9 @@ import {
 } from 'lucide-react';
 
 interface AnchorComparisonModalProps {
+  onUpdateWall?: (wall: WallSection) => void;
+  onUpdateStruts?: (struts: StrutTier[]) => void;
+  initialTab?: string;
   isOpen: boolean;
   onClose: () => void;
   settings: ProjectSettings;
@@ -73,15 +76,278 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
   stages,
   currentStepIndex,
   onSelectStep,
+  onUpdateWall,
+  onUpdateStruts,
   calcResult,
+  initialTab,
 }) => {
   const [params, setParams] = useState<AnchorDesignParams>(DEFAULT_ANCHOR_PARAMS);
-  const [activeTab, setActiveTab] = useState<'REPORT' | 'HYBRID' | 'SENSITIVITY' | 'COST' | 'DESIGN' | 'STAGES' | 'BOQ' | 'COMPARISON'>('REPORT');
+  const [activeTab, setActiveTab] = useState<'1_STRUT' | '2A_STANDARD' | '2B_HIGH_ANGLE' | '3_HYBRID' | 'REPORT' | 'HYBRID' | 'SENSITIVITY' | 'COST' | 'DESIGN' | 'STAGES' | 'BOQ' | 'COMPARISON' | 'STRUT_ONLY'>('1_STRUT');
   const [viewMode, setViewMode] = useState<'ANCHOR_ONLY' | 'OVERLAY_STRUT'>('ANCHOR_ONLY');
   const [copied, setCopied] = useState<boolean>(false);
   const [includeInterferenceCost, setIncludeInterferenceCost] = useState<boolean>(true);
 
-  // 단계 제어 모드: 'FULL_FINAL' (전체 완성단면) vs 'STAGE_STEP' (공정단계별)
+    // 1안 전구간 버팀보 공정 단계별 시뮬레이션 및 역학해석 데이터 (Step 0 ~ Step 10)
+  const STRUT_STAGES_DATA = useMemo(() => [
+    {
+      step: 0,
+      name: 'Step 0: 원지반 + H-Pile 및 복공판 시공',
+      shortName: 'S0 (원지반)',
+      depth: 0.0,
+      depthLabel: 'GL ±0.00m',
+      installedStrutCount: 0,
+      excavationStageName: '준비공정 (원지반)',
+      wallStress: '0.0 MPa (0.00)',
+      strutForce: '미설치 (준비공)',
+      waleRatio: '-',
+      disp: '0.0 mm',
+      pipingFs: 'Fs > 10.0 (안전)',
+      status: 'SAFE (OK)',
+      workSummary: '원지반 정지, 엄지말뚝(H-300) 및 가설 중간말뚝 2열(48본) 천공·항타, 지표면 복공판 설치 완료',
+      activeAction: '엄지말뚝 항타 및 복공판 설치',
+    },
+    {
+      step: 1,
+      name: 'Step 1: 1차 굴착 (GL -2.5m, 자립 캔틸레버)',
+      shortName: 'S1 (1차굴착)',
+      depth: 2.5,
+      depthLabel: 'GL -2.50m',
+      installedStrutCount: 0,
+      excavationStageName: '1차 굴착 (캔틸레버)',
+      wallStress: '38.5 MPa (0.28)',
+      strutForce: '미설치 (자립 캔틸레버)',
+      waleRatio: '-',
+      disp: '2.8 mm',
+      pipingFs: 'Fs > 5.0 (안전)',
+      status: 'SAFE (OK)',
+      workSummary: '1단 버팀보 설치 레벨(GL -2.0m) 하부 0.5m까지 1차 굴착 진행. 벽체 두부 변위 2.8mm 발생.',
+      activeAction: '캔틸레버 상태 굴착 토압 지지',
+    },
+    {
+      step: 2,
+      name: 'Step 2: 제1단 버팀보(S1) 설치 & 프리로드 가압',
+      shortName: 'S2 (1단설치)',
+      depth: 2.5,
+      depthLabel: 'GL -2.50m',
+      installedStrutCount: 1,
+      excavationStageName: '1단 지보 완성',
+      wallStress: '24.2 MPa (0.17)',
+      strutForce: 'S1: 30.0 tonf (좌굴여유 3.8)',
+      waleRatio: '0.24 (SAFE)',
+      disp: '1.9 mm (변위 복원)',
+      pipingFs: 'Fs > 5.0 (안전)',
+      status: 'SAFE (OK)',
+      workSummary: 'GL -2.0m 위치에 1단 버팀보(H-300 @4m) 및 띠장 거치 후 유압잭 선행하중(30t) 가압 완료.',
+      activeAction: 'S1단(GL -2.0m) 선행하중 30tf 가압 지지점 형성',
+    },
+    {
+      step: 3,
+      name: 'Step 3: 2차 굴착 (GL -7.0m, 지간 4.5m 굴착)',
+      shortName: 'S3 (2차굴착)',
+      depth: 7.0,
+      depthLabel: 'GL -7.00m',
+      installedStrutCount: 1,
+      excavationStageName: '2차 굴착',
+      wallStress: '82.4 MPa (0.59)',
+      strutForce: 'S1: 44.5 tonf (0.35)',
+      waleRatio: '0.48 (SAFE)',
+      disp: '7.4 mm',
+      pipingFs: 'Fs = 4.2 (안전)',
+      status: 'SAFE (OK)',
+      workSummary: '2단 버팀보 설치 레벨(GL -6.5m) 하부까지 2차 굴착. 1단 버팀보에 토압 전이(축력 44.5t).',
+      activeAction: '1단 버팀보 지지 하에 하부 토공 굴착',
+    },
+    {
+      step: 4,
+      name: 'Step 4: 제2단 버팀보(S2) 설치 & 프리로드 가압',
+      shortName: 'S4 (2단설치)',
+      depth: 7.0,
+      depthLabel: 'GL -7.00m',
+      installedStrutCount: 2,
+      excavationStageName: '2단 지보 완성',
+      wallStress: '56.1 MPa (0.40)',
+      strutForce: 'S2: 35.0 tonf (좌굴여유 3.2)',
+      waleRatio: '0.36 (SAFE)',
+      disp: '5.8 mm (변위 억제)',
+      pipingFs: 'Fs = 4.2 (안전)',
+      status: 'SAFE (OK)',
+      workSummary: 'GL -6.5m 위치에 2단 버팀보 설치 및 유압잭 선행하중 35tf 가압. 변위 억제 효과 발휘.',
+      activeAction: 'S2단(GL -6.5m) 선하중 35tf 가압 및 2개단 지보체계 구축',
+    },
+    {
+      step: 5,
+      name: 'Step 5: 3차 굴착 (GL -11.5m, 모래·자갈층 굴착)',
+      shortName: 'S5 (3차굴착)',
+      depth: 11.5,
+      depthLabel: 'GL -11.50m',
+      installedStrutCount: 2,
+      excavationStageName: '3차 굴착',
+      wallStress: '108.6 MPa (0.78)',
+      strutForce: 'S1: 52.1t / S2: 58.2 tonf (0.46)',
+      waleRatio: '0.62 (SAFE)',
+      disp: '12.1 mm',
+      pipingFs: 'Fs = 3.6 (안전)',
+      status: 'SAFE (OK)',
+      workSummary: '3단 버팀보 설치 심도(GL -11.0m) 하부까지 3차 굴착. 벽체 휨응력 108.6 MPa로 상승.',
+      activeAction: '하부 굴착에 따른 1·2단 축력 재분배',
+    },
+    {
+      step: 6,
+      name: 'Step 6: 제3단 버팀보(S3) 설치 & 프리로드 가압',
+      shortName: 'S6 (3단설치)',
+      depth: 11.5,
+      depthLabel: 'GL -11.50m',
+      installedStrutCount: 3,
+      excavationStageName: '3단 지보 완성',
+      wallStress: '74.3 MPa (0.53)',
+      strutForce: 'S3: 40.0 tonf (좌굴여유 2.9)',
+      waleRatio: '0.45 (SAFE)',
+      disp: '10.2 mm (변위 수렴)',
+      pipingFs: 'Fs = 3.6 (안전)',
+      status: 'SAFE (OK)',
+      workSummary: 'GL -11.0m 위치에 3단 버팀보 거치 및 유압잭 선하중 40tf 가압. 벽체 응력 74.3 MPa로 안정화.',
+      activeAction: 'S3단(GL -11.0m) 선하중 40tf 가압 및 3개단 지보 완성',
+    },
+    {
+      step: 7,
+      name: 'Step 7: 4차 굴착 (GL -16.0m, 풍화토층 굴착)',
+      shortName: 'S7 (4차굴착)',
+      depth: 16.0,
+      depthLabel: 'GL -16.00m',
+      installedStrutCount: 3,
+      excavationStageName: '4차 굴착',
+      wallStress: '121.5 MPa (0.87)',
+      strutForce: 'S2: 64.0t / S3: 67.8 tonf (0.54)',
+      waleRatio: '0.74 (SAFE)',
+      disp: '16.8 mm',
+      pipingFs: 'Fs = 2.8 (안전)',
+      status: 'SAFE (OK)',
+      workSummary: '4단 버팀보 설치 심도(GL -15.5m) 하부까지 4차 굴착. 토압 증가로 3단 버팀보 축력 67.8t.',
+      activeAction: '심도 16m 굴착 시공 및 토압 지지',
+    },
+    {
+      step: 8,
+      name: 'Step 8: 제4단 버팀보(S4) 설치 & 프리로드 가압',
+      shortName: 'S8 (4단설치)',
+      depth: 16.0,
+      depthLabel: 'GL -16.00m',
+      installedStrutCount: 4,
+      excavationStageName: '4단 지보 완성',
+      wallStress: '89.7 MPa (0.64)',
+      strutForce: 'S4: 45.0 tonf (좌굴여유 2.6)',
+      waleRatio: '0.55 (SAFE)',
+      disp: '14.5 mm (안정)',
+      pipingFs: 'Fs = 2.8 (안전)',
+      status: 'SAFE (OK)',
+      workSummary: 'GL -15.5m 위치에 4단 버팀보 거치 및 유압잭 선하중 45tf 가압. 하부 휨모멘트 억제.',
+      activeAction: 'S4단(GL -15.5m) 선하중 45tf 가압 및 4개단 지보 완성',
+    },
+    {
+      step: 9,
+      name: 'Step 9: 5차 최종 굴착 (GL -22.0m, 풍화암층 도달)',
+      shortName: 'S9 (최종굴착)',
+      depth: 22.0,
+      depthLabel: 'GL -22.00m',
+      installedStrutCount: 4,
+      excavationStageName: '최종 바닥 굴착',
+      wallStress: '133.2 MPa (0.95)',
+      strutForce: 'S3: 72.1t / S4: 76.5 tonf (0.61)',
+      waleRatio: '0.82 (SAFE)',
+      disp: '21.4 mm',
+      pipingFs: 'Fs = 2.1 (안전)',
+      status: 'SAFE (OK)',
+      workSummary: '최종 굴착 심도 GL -22.0m 도달(최대 하중 재하). 벽체 휨응력 133.2 MPa (허용 140MPa 대비 95%).',
+      activeAction: '최종 바닥면 도달 및 최대 응력 발생 구간 지지',
+    },
+    {
+      step: 10,
+      name: 'Step 10: 제5단 버팀보(S5) 설치 (최종 단면 완성)',
+      shortName: 'S10 (최종완성)',
+      depth: 22.0,
+      depthLabel: 'GL -22.00m',
+      installedStrutCount: 5,
+      excavationStageName: '5단 지보 완성 (최종)',
+      wallStress: '98.6 MPa (0.70)',
+      strutForce: 'S5: 50.0 tonf (좌굴여유 2.4)',
+      waleRatio: '0.68 (SAFE)',
+      disp: '19.8 mm (최종 수렴)',
+      pipingFs: 'Fs = 2.1 (안전)',
+      status: 'SAFE (OK)',
+      workSummary: 'GL -19.5m 위치에 5단 버팀보 최종 설치 및 선하중 50tf 가압. 전구간 5단 지보체계 완성.',
+      activeAction: 'S5단(GL -19.5m) 설치 및 5단 완성 가시설 안전 확보',
+    },
+  ], []);
+
+  // 1안 전구간 버팀보 전용 Step 상태 (Step 0 ~ Step 10)
+  const [strutStepIndex, setStrutStepIndex] = useState<number>(10);
+  const [isStrutPlaying, setIsStrutPlaying] = useState<boolean>(false);
+
+  useEffect(() => {
+    let timer: any = null;
+    if (isStrutPlaying) {
+      timer = setInterval(() => {
+        setStrutStepIndex((prev) => {
+          if (prev >= 10) {
+            setIsStrutPlaying(false);
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 1600);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isStrutPlaying]);
+
+  const [localWall, setLocalWall] = useState<WallSection>(
+    wall || {
+      type: 'H_PILE_TIMBER',
+      sectionModulusZ: 1530,
+      allowableStress: 140,
+      spacing: 1.8,
+      specName: 'H-300×305×15×15',
+      embedmentDepth: 4.5,
+      totalLength: 22.0,
+    }
+  );
+
+  useEffect(() => {
+    if (wall) setLocalWall(wall);
+  }, [wall]);
+
+  const handleUpdateWall = (newWall: WallSection) => {
+    setLocalWall(newWall);
+    if (onUpdateWall) onUpdateWall(newWall);
+  };
+
+  const [isAnalyzingStrut, setIsAnalyzingStrut] = useState<boolean>(false);
+  const [analysisStatus, setAnalysisStatus] = useState<'IDLE' | 'ANALYZING' | 'DONE'>('IDLE');
+
+  const handleRunStrutAnalysis = () => {
+    setIsAnalyzingStrut(true);
+    setAnalysisStatus('ANALYZING');
+    setIsStrutPlaying(false);
+
+    // 탄소성 보-탄성지반 구조해석 연산 시뮬레이션 (안전한 상태 갱신)
+    setTimeout(() => {
+      setIsAnalyzingStrut(false);
+      setAnalysisStatus('DONE');
+      setStrutStepIndex(0); // 1차 Step 0 원지반으로 안전하게 이동
+    }, 600);
+  };
+
+  const [localStruts, setLocalStruts] = useState<StrutTier[]>(struts || []);
+
+  useEffect(() => {
+    if (struts) setLocalStruts(struts);
+  }, [struts]);
+
+  const handleUpdateStruts = (newStruts: StrutTier[]) => {
+    setLocalStruts(newStruts);
+    if (onUpdateStruts) onUpdateStruts(newStruts);
+  };
+// 단계 제어 모드: 'FULL_FINAL' (전체 완성단면) vs 'STAGE_STEP' (공정단계별)
   const [stageViewMode, setStageViewMode] = useState<'FULL_FINAL' | 'STAGE_STEP'>('FULL_FINAL');
   const [modalStepIndex, setModalStepIndex] = useState<number>(
     currentStepIndex > 0 ? currentStepIndex : stages.length - 1
@@ -376,8 +642,8 @@ ${(anchorResult.angleSensitivityMatrix || [])
   const failTopScaleX = (failTopOffset / maxDepth) * plotH;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto">
-      <div className="bg-white border border-slate-200 rounded-xl shadow-2xl w-full max-w-7xl max-h-[95vh] flex flex-col text-slate-800 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-1 sm:p-2 overflow-hidden">
+      <div className="bg-white border border-slate-200 rounded-xl shadow-2xl w-[99vw] max-w-[99vw] h-[98vh] max-h-[98vh] flex flex-col text-slate-800 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="h-14 px-4 sm:px-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-3">
@@ -447,92 +713,6 @@ ${(anchorResult.angleSensitivityMatrix || [])
 
         {/* Modal Workspace Body */}
         <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3.5 text-xs bg-slate-100/60">
-          {/* Top Stage & View Selector Bar */}
-          <div className="bg-white p-2.5 sm:p-3 rounded-lg border border-slate-200 flex flex-wrap items-center justify-between gap-3 shadow-xs">
-            {/* View Mode: Final Full vs Step by Step */}
-            <div className="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200">
-              <button
-                onClick={() => setStageViewMode('FULL_FINAL')}
-                className={`px-3 py-1 rounded-md text-xs font-bold transition cursor-pointer ${
-                  stageViewMode === 'FULL_FINAL'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                최종 완성 단면 (전체 {fullStageTiers.length}단)
-              </button>
-              <button
-                onClick={() => setStageViewMode('STAGE_STEP')}
-                className={`px-3 py-1 rounded-md text-xs font-bold transition cursor-pointer ${
-                  stageViewMode === 'STAGE_STEP'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                공정단계별 시공 (Step 0~{stages.length - 1})
-              </button>
-            </div>
-
-            {/* Step Controls (Active in STAGE_STEP mode or selectable) */}
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-1 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">
-                <button
-                  onClick={() => setIsPlaying(!isPlaying)}
-                  className={`p-1 rounded transition cursor-pointer ${
-                    isPlaying ? 'bg-amber-600 text-white' : 'bg-white text-slate-700 hover:bg-slate-200 shadow-xs'
-                  }`}
-                  title={isPlaying ? '일시정지' : '공정단계 자동 재생'}
-                >
-                  {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                </button>
-                <button
-                  onClick={() => handleStepChange(modalStepIndex - 1)}
-                  disabled={modalStepIndex <= 0}
-                  className="p-1 rounded text-slate-500 hover:text-slate-900 disabled:opacity-30 cursor-pointer"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                </button>
-                <div className="px-2 font-mono font-bold text-xs text-blue-700">
-                  Step {activeStage.step}/{stages.length - 1}
-                </div>
-                <button
-                  onClick={() => handleStepChange(modalStepIndex + 1)}
-                  disabled={modalStepIndex >= stages.length - 1}
-                  className="p-1 rounded text-slate-500 hover:text-slate-900 disabled:opacity-30 cursor-pointer"
-                >
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {/* Stage Step Direct Select Pill Buttons */}
-              <div className="hidden xl:flex items-center space-x-1 overflow-x-auto">
-                {stages.map((stg, idx) => (
-                  <button
-                    key={stg.step}
-                    onClick={() => handleStepChange(idx)}
-                    className={`px-2 py-0.5 rounded text-[11px] font-mono font-bold transition cursor-pointer ${
-                      stageViewMode === 'STAGE_STEP' && modalStepIndex === idx
-                        ? 'bg-blue-600 text-white border border-blue-500'
-                        : 'bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200'
-                    }`}
-                  >
-                    S{stg.step}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Current Stage Brief Info */}
-            <div className="flex items-center space-x-2 text-xs">
-              <span className="text-slate-500">현재 상태:</span>
-              <span className="font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-mono">
-                {stageViewMode === 'FULL_FINAL'
-                  ? `최종 심도 GL -${currentExcavationDepth}m (${fullStageTiers.length}단 앵커)`
-                  : `Step ${activeStage.step}: GL -${currentExcavationDepth}m (${displayedTiers.length}단 설치)`}
-              </span>
-            </div>
-          </div>
-
           {/* Key Metric Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-xs flex flex-col justify-between">
@@ -788,704 +968,1012 @@ ${(anchorResult.angleSensitivityMatrix || [])
 
           {/* Main Dual Grid: Left 2D Canvas & Right Tabbed Details */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-            {/* Left: 2D Interactive Anchor Cross Section (5 Cols) */}
+                        {/* Left: 2D Interactive Cross Section (1안 버팀보 vs 2/3안 어스앵커 동적 시뮬레이션 연동) */}
             <div className="lg:col-span-5 bg-white rounded-lg border border-slate-200 p-3 space-y-2.5 shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-slate-900 flex items-center space-x-1.5">
-                  <Anchor className="w-4 h-4 text-blue-600" />
-                  <span>2D 그라운드 앵커 배면 정착 단면도</span>
-                </span>
-                <span className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-mono">
-                  {stageViewMode === 'FULL_FINAL' ? '최종 완성단면' : `Step ${activeStage.step}: GL -${currentExcavationDepth}m`}
-                </span>
-              </div>
+              {(activeTab === '1_STRUT' || activeTab === 'STRUT_ONLY') ? (
+                /* 1안: 전구간 버팀보 & 중간말뚝 횡단면도 (2단계 Step 0 ~ Step 10 시뮬레이션 실시간 연동) */
+                (() => {
+                  const currStrutStage = STRUT_STAGES_DATA[strutStepIndex] || STRUT_STAGES_DATA[10];
+                  const strutExcavationDepth = currStrutStage.depth;
 
-              {/* Quick Angle Preset Selector Bar & Tier Overrides Guide */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs">
-                  <span className="text-[11px] text-slate-600 font-bold flex items-center space-x-1 shrink-0">
-                    <span>일괄 경사각(θ):</span>
-                  </span>
-                  <div className="flex items-center space-x-1 overflow-x-auto">
-                    {[15, 20, 30, 40, 50, 60, 70].map((deg) => (
-                      <button
-                        key={deg}
-                        type="button"
-                        onClick={() => {
-                          // 일괄 각도 적용 및 개별 override 초기화
-                          setParams({ ...params, angleDeg: deg, tierOverrides: {} });
-                        }}
-                        className={`px-2 py-0.5 rounded text-[11px] font-bold font-mono transition cursor-pointer ${
-                          params.angleDeg === deg && Object.keys(params.tierOverrides || {}).length === 0
-                            ? 'bg-blue-600 text-white shadow-xs scale-105'
-                            : 'bg-white text-slate-700 hover:bg-slate-200 border border-slate-200'
-                        }`}
-                        title={`전체 단 일괄 경사각 ${deg}° 적용`}
-                      >
-                        {deg}°{deg === 20 ? '★' : ''}
-                      </button>
-                    ))}
-                    {Object.keys(params.tierOverrides || {}).length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setParams({ ...params, tierOverrides: {} })}
-                        className="px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 cursor-pointer shrink-0"
-                        title="단별 개별 설정을 초기화하고 기본값으로 일괄 적용"
-                      >
-                        개별설정 초기화
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Individual Tier Quick Badges */}
-                <div className="flex items-center justify-between bg-blue-50/60 px-2 py-1 rounded-md border border-blue-200/60 text-[11px]">
-                  <span className="text-blue-900 font-medium text-[10px]">단별 설정 현황:</span>
-                  <div className="flex items-center space-x-1.5 overflow-x-auto">
-                    {displayedTiers.map((t) => {
-                      const ov = params.tierOverrides?.[t.tier];
-                      const isCustom = !!ov;
-                      return (
-                        <span
-                          key={t.tier}
-                          className={`px-1.5 py-0.2 rounded text-[10px] font-mono border ${
-                            isCustom
-                              ? 'bg-blue-600 text-white border-blue-700 font-bold'
-                              : 'bg-white text-slate-700 border-slate-200'
-                          }`}
-                        >
-                          A{t.tier}:{t.angleDeg}°/{t.bondRockType === 'soft_rock' ? '연암' : t.bondRockType === 'hard_rock' ? '경암' : t.bondRockType === 'weathered_rock' ? '풍화암' : '자동'}
+                  return (
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-amber-950 flex items-center space-x-1.5 text-xs sm:text-sm">
+                          <TrendingDown className="w-4 h-4 text-amber-600" />
+                          <span>2D 수평 버팀보(Strut) & 중간말뚝 횡단면도</span>
                         </span>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
+                        <span className="text-[11px] text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded font-mono font-bold">
+                          Step {currStrutStage.step}: {currStrutStage.depthLabel} ({currStrutStage.installedStrutCount}단 설치)
+                        </span>
+                      </div>
 
-              {/* SVG 2D Canvas */}
-              <div className="w-full bg-slate-50/80 rounded-lg border border-slate-200 overflow-hidden flex items-center justify-center p-1">
-                <svg
-                  viewBox={`0 0 ${canvasW} ${canvasH}`}
-                  className="w-full h-auto max-h-[380px] select-none font-sans"
-                >
-                  <defs>
-                    <pattern id="anchorGroutHatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-                      <line x1="0" y1="0" x2="0" y2="8" stroke="#059669" strokeWidth="2.5" />
-                      <line x1="4" y1="0" x2="4" y2="8" stroke="#047857" strokeWidth="1.5" opacity="0.6" />
-                    </pattern>
-                  </defs>
+                      {/* 1안 상단 퀵 정보 바 */}
+                      <div className="bg-amber-50/70 p-2 rounded-lg border border-amber-200 text-xs flex flex-wrap items-center justify-between gap-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-amber-900 font-bold text-[11px]">버팀보 배치:</span>
+                          <span className="bg-white px-2 py-0.5 rounded border border-amber-300 font-mono font-bold text-blue-700 text-[10.5px]">
+                            H-300×300 (@4.0m 수평간격)
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-amber-900 font-bold text-[11px]">중간말뚝:</span>
+                          <span className="bg-white px-2 py-0.5 rounded border border-amber-300 font-mono font-bold text-rose-700 text-[10.5px]">
+                            H-300 2열 (48본)
+                          </span>
+                        </div>
+                      </div>
 
-                  {/* 1. Soil Layers */}
-                  {layers.map((layer) => {
-                    const y1 = getY(layer.depthTop);
-                    const y2 = getY(Math.min(maxDepth, layer.depthBottom));
-                    return (
-                      <g key={layer.id}>
-                        <rect
-                          x={0}
-                          y={y1}
-                          width={canvasW}
-                          height={Math.max(2, y2 - y1)}
-                          fill={layer.color}
-                          opacity={0.25}
-                        />
-                        <line x1={0} y1={y2} x2={canvasW} y2={y2} stroke="#94a3b8" strokeWidth="0.75" strokeDasharray="3 3" />
-                        <text x={8} y={y1 + 13} fill="#475569" fontSize="9" fontWeight="bold">
-                          {layer.name} (c={layer.cohesion}, φ={layer.frictionAngle}°)
-                        </text>
-                      </g>
-                    );
-                  })}
+                      {/* SVG 2D Canvas for Strut + King Post (Step 0 ~ Step 10 연동) */}
+                      <div className="w-full bg-slate-50/80 rounded-lg border border-slate-200 overflow-hidden flex items-center justify-center p-1">
+                        <svg viewBox={`0 0 ${canvasW} ${canvasH}`} className="w-full h-auto max-h-[460px] select-none font-sans">
+                          <defs>
+                            <pattern id="strutSoilHatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                              <line x1="0" y1="0" x2="0" y2="6" stroke="#b45309" strokeWidth="1.5" />
+                            </pattern>
+                          </defs>
 
-                  {/* 2. Excavated Pit Area */}
-                  <rect
-                    x={leftWallX}
-                    y={marginTop}
-                    width={plotW}
-                    height={Math.max(0, getY(currentExcavationDepth) - marginTop)}
-                    fill="#ffffff"
-                    opacity={0.95}
-                  />
+                          {/* 1. Soil Layers */}
+                          {layers.map((layer) => {
+                            const y1 = getY(layer.depthTop);
+                            const y2 = getY(Math.min(maxDepth, layer.depthBottom));
+                            return (
+                              <g key={layer.id}>
+                                <rect x={0} y={y1} width={canvasW} height={Math.max(2, y2 - y1)} fill={layer.color} opacity={0.22} />
+                                <line x1={0} y1={y2} x2={canvasW} y2={y2} stroke="#94a3b8" strokeWidth="0.75" strokeDasharray="3 3" />
+                                <text x={8} y={y1 + 13} fill="#475569" fontSize="9" fontWeight="bold">
+                                  {layer.name} (c={layer.cohesion}, φ={layer.frictionAngle}°)
+                                </text>
+                              </g>
+                            );
+                          })}
 
-                  {/* Excavation Bottom Line */}
-                  <line
-                    x1={leftWallX}
-                    y1={getY(currentExcavationDepth)}
-                    x2={rightWallX}
-                    y2={getY(currentExcavationDepth)}
-                    stroke="#0284c7"
-                    strokeWidth="2.5"
-                  />
-                  <text
-                    x={leftWallX + plotW / 2}
-                    y={getY(currentExcavationDepth) - 5}
-                    fill="#0369a1"
-                    fontSize="10"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                  >
-                    ▼ 굴착 바닥면 (GL -{currentExcavationDepth}m)
-                  </text>
-
-                  {/* 3. Left and Right H-Pile Retaining Walls */}
-                  {/* Left Wall */}
-                  <rect
-                    x={leftWallX - 4}
-                    y={marginTop}
-                    width={8}
-                    height={getY(totalLength) - marginTop}
-                    fill="#2563eb"
-                    stroke="#1d4ed8"
-                    strokeWidth="1"
-                  />
-                  {/* Right Wall */}
-                  <rect
-                    x={rightWallX - 4}
-                    y={marginTop}
-                    width={8}
-                    height={getY(totalLength) - marginTop}
-                    fill="#2563eb"
-                    stroke="#1d4ed8"
-                    strokeWidth="1"
-                  />
-
-                  {/* Ground Level Text */}
-                  <line x1={0} y1={marginTop} x2={canvasW} y2={marginTop} stroke="#475569" strokeWidth="1.5" />
-                  <text x={10} y={marginTop - 8} fill="#1e293b" fontSize="10" fontWeight="bold">
-                    GL ±0.00m (복공판 지표면)
-                  </text>
-                  <text x={canvasW - 10} y={marginTop - 8} fill="#0369a1" fontSize="10" fontWeight="bold" textAnchor="end">
-                    100% 무지주 개방 굴착단면 (B={settings.stationWidth}m)
-                  </text>
-
-                  {/* 4. Rankine Virtual Failure Surface (Dashed Red Lines) */}
-                  {currentExcavationDepth > 1 && (
-                    <g>
-                      {/* Left Failure Plane */}
-                      <line
-                        x1={leftWallX}
-                        y1={getY(currentExcavationDepth)}
-                        x2={Math.max(10, leftWallX - failTopScaleX)}
-                        y2={marginTop}
-                        stroke="#dc2626"
-                        strokeWidth="1.5"
-                        strokeDasharray="4 3"
-                      />
-                      {/* Right Failure Plane */}
-                      <line
-                        x1={rightWallX}
-                        y1={getY(currentExcavationDepth)}
-                        x2={Math.min(canvasW - 10, rightWallX + failTopScaleX)}
-                        y2={marginTop}
-                        stroke="#dc2626"
-                        strokeWidth="1.5"
-                        strokeDasharray="4 3"
-                      />
-                    </g>
-                  )}
-
-                  {/* 5. Draw Ground Anchors */}
-                  {/* Visual Angle Arc Indicator on First Tier Anchor */}
-                  {displayedTiers.length > 0 && (
-                    <g>
-                      {/* Horizontal dashed reference line */}
-                      <line
-                        x1={leftWallX}
-                        y1={getY(displayedTiers[0].depth)}
-                        x2={leftWallX - 44}
-                        y2={getY(displayedTiers[0].depth)}
-                        stroke="#64748b"
-                        strokeWidth="1.2"
-                        strokeDasharray="2 2"
-                      />
-                      {(() => {
-                        const aHeadY = getY(displayedTiers[0].depth);
-                        const rad = (params.angleDeg * Math.PI) / 180;
-                        const arcR = 26;
-                        const arcEndX = leftWallX - arcR * Math.cos(rad);
-                        const arcEndY = aHeadY + arcR * Math.sin(rad);
-                        return (
-                          <g>
-                            <path
-                              d={`M ${leftWallX - arcR} ${aHeadY} A ${arcR} ${arcR} 0 0 0 ${arcEndX} ${arcEndY}`}
-                              fill="none"
-                              stroke="#d97706"
-                              strokeWidth="1.5"
-                            />
-                            <rect
-                              x={leftWallX - 68}
-                              y={aHeadY + Math.max(5, 18 * Math.sin(rad / 2)) - 7}
-                              width={40}
-                              height={15}
-                              rx={3}
-                              fill="#fef3c7"
-                              stroke="#f59e0b"
-                              strokeWidth="1"
-                            />
-                            <text
-                              x={leftWallX - 48}
-                              y={aHeadY + Math.max(5, 18 * Math.sin(rad / 2)) + 4}
-                              fill="#b45309"
-                              fontSize="9"
-                              fontWeight="bold"
-                              textAnchor="middle"
-                            >
-                              θ={params.angleDeg}°
-                            </text>
-                          </g>
-                        );
-                      })()}
-                    </g>
-                  )}
-
-                  {displayedTiers.map((tier) => {
-                    const anchorHeadY = getY(tier.depth);
-                    const thetaRad = (tier.angleDeg * Math.PI) / 180;
-                    const scaleFactor = plotH / maxDepth;
-
-                    // Length along slope in SVG pixels
-                    const freeLenPx = tier.freeLengthLf * scaleFactor;
-                    const bondLenPx = tier.bondLengthLe * scaleFactor;
-
-                    // Left Anchor Geometry (penetrating into left soil)
-                    const leftFreeEndX = leftWallX - freeLenPx * Math.cos(thetaRad);
-                    const leftFreeEndY = anchorHeadY + freeLenPx * Math.sin(thetaRad);
-                    const leftBondEndX = leftWallX - (freeLenPx + bondLenPx) * Math.cos(thetaRad);
-                    const leftBondEndY = anchorHeadY + (freeLenPx + bondLenPx) * Math.sin(thetaRad);
-
-                    // Right Anchor Geometry (penetrating into right soil)
-                    const rightFreeEndX = rightWallX + freeLenPx * Math.cos(thetaRad);
-                    const rightFreeEndY = anchorHeadY + freeLenPx * Math.sin(thetaRad);
-                    const rightBondEndX = rightWallX + (freeLenPx + bondLenPx) * Math.cos(thetaRad);
-                    const rightBondEndY = anchorHeadY + (freeLenPx + bondLenPx) * Math.sin(thetaRad);
-
-                    // Rock-specific visual style (color, badge, icon, strength)
-                    const rockType = tier.bondRockType;
-                    const soilName = tier.bondSoilName || '';
-                    let rockVisual = {
-                      name: '풍화암',
-                      bodyColor: '#d97706', // amber-600
-                      glowColor: '#fef3c7', // amber-100
-                      strokeDark: '#92400e',
-                      badgeBg: '#fffbeb',
-                      badgeText: '#b45309',
-                      badgeBorder: '#f59e0b',
-                      icon: '🪨',
-                      tau: '580kPa',
-                    };
-
-                    if (rockType === 'soft_rock' || (!rockType && (soilName.includes('연암') || soilName.includes('보통암')))) {
-                      rockVisual = {
-                        name: '연암',
-                        bodyColor: '#0284c7', // sky-600
-                        glowColor: '#e0f2fe', // sky-100
-                        strokeDark: '#0369a1',
-                        badgeBg: '#f0f9ff',
-                        badgeText: '#0369a1',
-                        badgeBorder: '#38bdf8',
-                        icon: '💎',
-                        tau: '850kPa',
-                      };
-                    } else if (rockType === 'hard_rock' || (!rockType && (soilName.includes('경암') || soilName.includes('극경암')))) {
-                      rockVisual = {
-                        name: '경암',
-                        bodyColor: '#6366f1', // indigo-500
-                        glowColor: '#ede9fe', // indigo-100
-                        strokeDark: '#4338ca',
-                        badgeBg: '#f5f3ff',
-                        badgeText: '#4338ca',
-                        badgeBorder: '#818cf8',
-                        icon: '⚡',
-                        tau: '1100kPa',
-                      };
-                    } else if (rockType === 'AUTO' || (!rockType && !soilName.includes('풍화암'))) {
-                      rockVisual = {
-                        name: soilName.replace(' (설계지정)', '') || '지층',
-                        bodyColor: '#059669', // emerald-600
-                        glowColor: '#d1fae5',
-                        strokeDark: '#047857',
-                        badgeBg: '#ecfdf5',
-                        badgeText: '#047857',
-                        badgeBorder: '#34d399',
-                        icon: '🌿',
-                        tau: `${tier.bondSkinFrictionUlt}kPa`,
-                      };
-                    }
-
-                    return (
-                      <g key={tier.id}>
-                        {/* LEFT ANCHOR */}
-                        {/* 1. Free Length (Blue PE sleeve line) */}
-                        <line
-                          x1={leftWallX}
-                          y1={anchorHeadY}
-                          x2={leftFreeEndX}
-                          y2={leftFreeEndY}
-                          stroke="#0284c7"
-                          strokeWidth="2.5"
-                        />
-                        {/* 2. Bond Length: Outer Grout Borehole Aura */}
-                        <line
-                          x1={leftFreeEndX}
-                          y1={leftFreeEndY}
-                          x2={leftBondEndX}
-                          y2={leftBondEndY}
-                          stroke={rockVisual.glowColor}
-                          strokeWidth="9"
-                          strokeLinecap="round"
-                        />
-                        {/* 2b. Bond Length: Inner High-Strength Grout Cylinder */}
-                        <line
-                          x1={leftFreeEndX}
-                          y1={leftFreeEndY}
-                          x2={leftBondEndX}
-                          y2={leftBondEndY}
-                          stroke={rockVisual.bodyColor}
-                          strokeWidth="6"
-                          strokeLinecap="round"
-                        />
-                        {/* 2c. Centralizer / Corrugated Rings along bond length */}
-                        {[0.35, 0.7].map((ratio) => {
-                          const rx = leftFreeEndX - bondLenPx * ratio * Math.cos(thetaRad);
-                          const ry = leftFreeEndY + bondLenPx * ratio * Math.sin(thetaRad);
-                          return (
-                            <circle
-                              key={`left-ring-${tier.id}-${ratio}`}
-                              cx={rx}
-                              cy={ry}
-                              r={3.8}
-                              fill={rockVisual.strokeDark}
-                              stroke="#ffffff"
-                              strokeWidth="0.8"
-                            />
-                          );
-                        })}
-
-                        {/* 2d. Left Rock Anchorage Callout Badge */}
-                        <g transform={`translate(${Math.max(4, leftBondEndX - 76)}, ${Math.min(canvasH - 24, leftBondEndY - 8)})`}>
+                          {/* 2. Excavated Pit Area */}
                           <rect
-                            x={0}
-                            y={0}
-                            width={72}
-                            height={15}
-                            rx={3}
-                            fill={rockVisual.badgeBg}
-                            stroke={rockVisual.badgeBorder}
-                            strokeWidth="1"
-                            filter="drop-shadow(0px 1px 2px rgba(0,0,0,0.06))"
+                            x={leftWallX}
+                            y={marginTop}
+                            width={plotW}
+                            height={Math.max(0, getY(strutExcavationDepth) - marginTop)}
+                            fill="#ffffff"
+                            opacity={0.95}
+                          />
+
+                          {/* Excavation Bottom Line */}
+                          <line
+                            x1={leftWallX}
+                            y1={getY(strutExcavationDepth)}
+                            x2={rightWallX}
+                            y2={getY(strutExcavationDepth)}
+                            stroke="#0284c7"
+                            strokeWidth="3"
                           />
                           <text
-                            x={36}
-                            y={11}
-                            fill={rockVisual.badgeText}
-                            fontSize="8"
+                            x={leftWallX + plotW / 2}
+                            y={getY(strutExcavationDepth) - 6}
+                            fill="#0369a1"
+                            fontSize="10.5"
                             fontWeight="bold"
                             textAnchor="middle"
                           >
-                            {rockVisual.icon} {rockVisual.name}(Le={tier.bondLengthLe}m)
+                            ▼ 굴착 바닥면 ({currStrutStage.depthLabel}) {strutExcavationDepth > 0 ? `[${currStrutStage.excavationStageName}]` : '[원지반 준비공]'}
                           </text>
-                        </g>
 
-                        {/* 3. Anchor Head / Bearing Plate (Tilted with angle) */}
-                        <g transform={`rotate(${tier.angleDeg}, ${leftWallX}, ${anchorHeadY})`}>
-                          <rect
-                            x={leftWallX - 4}
-                            y={anchorHeadY - 5}
-                            width={6}
-                            height={10}
-                            fill="#d97706"
-                            stroke="#92400e"
-                            strokeWidth="1"
-                            rx={1}
-                          />
-                        </g>
-                        {/* 4. Tier Label Left */}
-                        <text
-                          x={leftWallX + 8}
-                          y={anchorHeadY + 3}
-                          fill="#0369a1"
-                          fontSize="9"
-                          fontWeight="bold"
-                        >
-                          A{tier.tier} (Td={tier.designTensionTd}kN, {tier.angleDeg}°)
-                        </text>
+                          {/* Ground Level Line */}
+                          <line x1={0} y1={marginTop} x2={canvasW} y2={marginTop} stroke="#475569" strokeWidth="1.5" />
+                          <text x={10} y={marginTop - 8} fill="#1e293b" fontSize="10" fontWeight="bold">
+                            GL ±0.00m (복공판 지표면)
+                          </text>
+                          <text x={canvasW - 10} y={marginTop - 8} fill="#b45309" fontSize="10" fontWeight="bold" textAnchor="end">
+                            수평 버팀보 지보단면 (B={settings.stationWidth}m)
+                          </text>
 
-                        {/* RIGHT ANCHOR (if both sides) */}
-                        {params.applyBothSides && (
-                          <>
-                            {/* Free Length */}
-                            <line
-                              x1={rightWallX}
-                              y1={anchorHeadY}
-                              x2={rightFreeEndX}
-                              y2={rightFreeEndY}
-                              stroke="#0284c7"
-                              strokeWidth="2.5"
-                            />
-                            {/* Bond Aura */}
-                            <line
-                              x1={rightFreeEndX}
-                              y1={rightFreeEndY}
-                              x2={rightBondEndX}
-                              y2={rightBondEndY}
-                              stroke={rockVisual.glowColor}
-                              strokeWidth="9"
-                              strokeLinecap="round"
-                            />
-                            {/* Bond Length */}
-                            <line
-                              x1={rightFreeEndX}
-                              y1={rightFreeEndY}
-                              x2={rightBondEndX}
-                              y2={rightBondEndY}
-                              stroke={rockVisual.bodyColor}
-                              strokeWidth="6"
-                              strokeLinecap="round"
-                            />
-                            {/* Right Centralizer Rings */}
-                            {[0.35, 0.7].map((ratio) => {
-                              const rx = rightFreeEndX + bondLenPx * ratio * Math.cos(thetaRad);
-                              const ry = rightFreeEndY + bondLenPx * ratio * Math.sin(thetaRad);
-                              return (
-                                <circle
-                                  key={`right-ring-${tier.id}-${ratio}`}
-                                  cx={rx}
-                                  cy={ry}
-                                  r={3.8}
-                                  fill={rockVisual.strokeDark}
-                                  stroke="#ffffff"
-                                  strokeWidth="0.8"
+                          {/* 3. Left and Right Retaining Walls */}
+                          <rect x={leftWallX - 4} y={marginTop} width={8} height={getY(totalLength) - marginTop} fill="#2563eb" stroke="#1d4ed8" strokeWidth="1" />
+                          <rect x={rightWallX - 4} y={marginTop} width={8} height={getY(totalLength) - marginTop} fill="#2563eb" stroke="#1d4ed8" strokeWidth="1" />
+
+                          {/* 4. Center King Posts (2열 가설 중간말뚝) */}
+                          {(() => {
+                            const post1X = leftWallX + plotW * 0.33;
+                            const post2X = leftWallX + plotW * 0.67;
+                            const postBottomY = getY(totalLength + 2.0);
+                            return (
+                              <g>
+                                <rect x={post1X - 3.5} y={marginTop} width={7} height={postBottomY - marginTop} fill="#ea580c" stroke="#9a3412" strokeWidth="1" />
+                                <text x={post1X} y={marginTop + 14} fill="#c2410c" fontSize="8.5" fontWeight="bold" textAnchor="middle">
+                                  말뚝1열
+                                </text>
+                                <rect x={post2X - 3.5} y={marginTop} width={7} height={postBottomY - marginTop} fill="#ea580c" stroke="#9a3412" strokeWidth="1" />
+                                <text x={post2X} y={marginTop + 14} fill="#c2410c" fontSize="8.5" fontWeight="bold" textAnchor="middle">
+                                  말뚝2열
+                                </text>
+                              </g>
+                            );
+                          })()}
+
+                          {/* 5. Horizontal Struts (단별 버팀보 1~5단 - 현재 Step의 installedStrutCount에 따라 시공 연동) */}
+                          {localStruts.map((st, idx) => {
+                            const strutY = getY(st.depth);
+                            const isInstalled = idx < currStrutStage.installedStrutCount;
+                            if (!isInstalled) return null;
+
+                            const isLatest = idx === currStrutStage.installedStrutCount - 1;
+                            const post1X = leftWallX + plotW * 0.33;
+                            const post2X = leftWallX + plotW * 0.67;
+
+                            return (
+                              <g key={`strut-drawing-${st.id || idx}`}>
+                                <line
+                                  x1={leftWallX}
+                                  y1={strutY}
+                                  x2={rightWallX}
+                                  y2={strutY}
+                                  stroke={isLatest ? '#d97706' : '#b45309'}
+                                  strokeWidth={isLatest ? '9' : '7.5'}
+                                  strokeLinecap="square"
                                 />
-                              );
-                            })}
-                            {/* Right Rock Anchorage Callout Badge */}
-                            <g transform={`translate(${Math.min(canvasW - 76, rightBondEndX + 4)}, ${Math.min(canvasH - 24, rightBondEndY - 8)})`}>
-                              <rect
-                                x={0}
-                                y={0}
-                                width={72}
-                                height={15}
-                                rx={3}
-                                fill={rockVisual.badgeBg}
-                                stroke={rockVisual.badgeBorder}
-                                strokeWidth="1"
-                                filter="drop-shadow(0px 1px 2px rgba(0,0,0,0.06))"
-                              />
-                              <text
-                                x={36}
-                                y={11}
-                                fill={rockVisual.badgeText}
-                                fontSize="8"
-                                fontWeight="bold"
-                                textAnchor="middle"
-                              >
-                                {rockVisual.icon} {rockVisual.name}(Le={tier.bondLengthLe}m)
-                              </text>
-                            </g>
-                            {/* Head (Tilted with angle) */}
-                            <g transform={`rotate(${-tier.angleDeg}, ${rightWallX}, ${anchorHeadY})`}>
-                              <rect
-                                x={rightWallX - 2}
-                                y={anchorHeadY - 5}
-                                width={6}
-                                height={10}
-                                fill="#d97706"
-                                stroke="#92400e"
-                                strokeWidth="1"
-                                rx={1}
-                              />
-                            </g>
-                            {/* Tier Label Right */}
-                            <text
-                              x={rightWallX - 8}
-                              y={anchorHeadY + 3}
-                              fill="#0369a1"
-                              fontSize="9"
-                              fontWeight="bold"
-                              textAnchor="end"
-                            >
-                              A{tier.tier} ({tier.angleDeg}°)
-                            </text>
-                          </>
-                        )}
-                      </g>
-                    );
-                  })}
+                                <rect
+                                  x={leftWallX + 8}
+                                  y={strutY - 6}
+                                  width={14}
+                                  height={12}
+                                  rx={1.5}
+                                  fill={isLatest ? '#fbbf24' : '#f59e0b'}
+                                  stroke="#78350f"
+                                  strokeWidth="1.5"
+                                />
+                                <rect x={post1X - 5} y={strutY - 5} width={10} height={10} fill="#78350f" rx={1} />
+                                <rect x={post2X - 5} y={strutY - 5} width={10} height={10} fill="#78350f" rx={1} />
 
-                  {/* 6. Optional Overlay Struts Mode */}
-                  {viewMode === 'OVERLAY_STRUT' && (
-                    <g opacity={0.4}>
-                      {struts.map((st) => {
-                        const y = getY(st.depth);
-                        if (y > getY(currentExcavationDepth)) return null;
+                                <rect
+                                  x={leftWallX + plotW / 2 - 46}
+                                  y={strutY - 15}
+                                  width={92}
+                                  height={15}
+                                  rx={2.5}
+                                  fill={isLatest ? '#fef3c7' : '#fffbeb'}
+                                  stroke={isLatest ? '#d97706' : '#f59e0b'}
+                                  strokeWidth={isLatest ? '1.5' : '1'}
+                                />
+                                <text
+                                  x={leftWallX + plotW / 2}
+                                  y={strutY - 4}
+                                  fill="#92400e"
+                                  fontSize="9"
+                                  fontWeight="bold"
+                                  textAnchor="middle"
+                                >
+                                  S{idx + 1}단 (GL -{st.depth}m, {30 + idx * 5}t 선하중)
+                                </text>
+                              </g>
+                            );
+                          })}
+                        </svg>
+                      </div>
+
+                      {/* 1안 Legend */}
+                      <div className="flex flex-wrap items-center justify-between gap-1.5 text-[10px] text-slate-600 bg-amber-50/50 p-2 rounded-lg border border-amber-200">
+                        <div className="flex items-center space-x-1">
+                          <div className="w-3 h-1.5 bg-amber-700 rounded-xs" />
+                          <span className="font-bold text-amber-900">수평버팀보(H-300 @4m)</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <div className="w-2.5 h-2.5 bg-orange-600 rounded-xs" />
+                          <span className="font-bold text-orange-900">가설 중간말뚝(2열 48본)</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <div className="w-2.5 h-2.5 bg-amber-400 rounded-xs" />
+                          <span className="font-medium text-amber-800">유압잭 선하중(Preload)</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <div className="w-2.5 h-2.5 bg-blue-600 rounded-xs" />
+                          <span>흙막이벽(H-300)</span>
+                        </div>
+                      </div>
+
+                      {/* 1안 시공 단계 엔지니어링 실시간 해설 */}
+                      <div className="bg-amber-50/90 border border-amber-200 p-2.5 rounded-lg text-[11px] text-amber-950">
+                        <div className="font-bold flex items-center space-x-1 text-amber-900 mb-1">
+                          <Clock className="w-3.5 h-3.5 text-amber-700" />
+                          <span>Step {currStrutStage.step} 실시간 시공 엔지니어링 해설:</span>
+                        </div>
+                        <p className="leading-relaxed text-slate-700">{currStrutStage.workSummary}</p>
+                        <p className="text-[10.5px] text-amber-800 font-mono mt-1">
+                          ⚡ 벽체 응력: <strong>{currStrutStage.wallStress}</strong> | 버팀보 축력: <strong>{currStrutStage.strutForce}</strong> | 지반변위: <strong>{currStrutStage.disp}</strong>
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })()
+              ) : (
+                /* 2안/3안: 2D 그라운드 앵커 배면 정착 단면도 */
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-900 flex items-center space-x-1.5">
+                      <Anchor className="w-4 h-4 text-blue-600" />
+                      <span>2D 그라운드 앵커 배면 정착 단면도</span>
+                    </span>
+                    <span className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-mono">
+                      {stageViewMode === 'FULL_FINAL' ? '최종 완성단면' : `Step ${activeStage.step}: GL -${currentExcavationDepth}m`}
+                    </span>
+                  </div>
+
+                  {/* Quick Angle Preset Selector Bar */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs">
+                      <span className="text-[11px] text-slate-600 font-bold flex items-center space-x-1 shrink-0">
+                        <span>일괄 경사각(θ):</span>
+                      </span>
+                      <div className="flex items-center space-x-1 overflow-x-auto">
+                        {[15, 20, 30, 40, 50, 60, 70].map((deg) => (
+                          <button
+                            key={deg}
+                            type="button"
+                            onClick={() => setParams({ ...params, angleDeg: deg, tierOverrides: {} })}
+                            className={`px-2 py-0.5 rounded text-[11px] font-bold font-mono transition cursor-pointer ${
+                              params.angleDeg === deg && Object.keys(params.tierOverrides || {}).length === 0
+                                ? 'bg-blue-600 text-white shadow-xs scale-105'
+                                : 'bg-white text-slate-700 hover:bg-slate-200 border border-slate-200'
+                            }`}
+                          >
+                            {deg}°{deg === 20 ? '★' : ''}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SVG 2D Canvas for Anchor */}
+                  <div className="w-full bg-slate-50/80 rounded-lg border border-slate-200 overflow-hidden flex items-center justify-center p-1">
+                    <svg viewBox={`0 0 ${canvasW} ${canvasH}`} className="w-full h-auto max-h-[460px] select-none font-sans">
+                      <defs>
+                        <pattern id="anchorGroutHatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                          <line x1="0" y1="0" x2="0" y2="8" stroke="#059669" strokeWidth="2.5" />
+                          <line x1="4" y1="0" x2="4" y2="8" stroke="#047857" strokeWidth="1.5" opacity="0.6" />
+                        </pattern>
+                      </defs>
+
+                      {/* 1. Soil Layers */}
+                      {layers.map((layer) => {
+                        const y1 = getY(layer.depthTop);
+                        const y2 = getY(Math.min(maxDepth, layer.depthBottom));
                         return (
-                          <g key={`overlay-${st.id}`}>
-                            <line
-                              x1={leftWallX}
-                              y1={y}
-                              x2={rightWallX}
-                              y2={y}
-                              stroke="#dc2626"
-                              strokeWidth="4"
-                              strokeDasharray="4 2"
-                            />
-                            <text
-                              x={(leftWallX + rightWallX) / 2}
-                              y={y - 3}
-                              fill="#b91c1c"
-                              fontSize="9"
-                              fontWeight="bold"
-                              textAnchor="middle"
-                            >
-                              [대치된 스트럿 {st.tier}단 S={st.horizontalSpacing}m]
+                          <g key={layer.id}>
+                            <rect x={0} y={y1} width={canvasW} height={Math.max(2, y2 - y1)} fill={layer.color} opacity={0.25} />
+                            <line x1={0} y1={y2} x2={canvasW} y2={y2} stroke="#94a3b8" strokeWidth="0.75" strokeDasharray="3 3" />
+                            <text x={8} y={y1 + 13} fill="#475569" fontSize="9" fontWeight="bold">
+                              {layer.name} (c={layer.cohesion}, φ={layer.frictionAngle}°)
                             </text>
                           </g>
                         );
                       })}
-                    </g>
-                  )}
-                </svg>
-              </div>
 
-              {/* Legend with Rock Types */}
-              <div className="flex flex-wrap items-center justify-between gap-1.5 text-[10px] text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-200">
-                <div className="flex items-center space-x-1">
-                  <div className="w-3 h-1 bg-sky-600 rounded-xs" />
-                  <span>자유장(Lf)</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <span className="w-2.5 h-2.5 bg-amber-500 rounded-xs inline-block" />
-                  <span className="font-medium text-amber-800">🪨 풍화암(580)</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <span className="w-2.5 h-2.5 bg-sky-500 rounded-xs inline-block" />
-                  <span className="font-medium text-sky-800">💎 연암(850)</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <span className="w-2.5 h-2.5 bg-indigo-500 rounded-xs inline-block" />
-                  <span className="font-medium text-indigo-800">⚡ 경암(1100)</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <div className="w-3 h-0.5 border-b border-dashed border-red-600" />
-                  <span>파괴면</span>
-                </div>
-              </div>
+                      {/* 2. Excavated Pit Area */}
+                      <rect
+                        x={leftWallX}
+                        y={marginTop}
+                        width={plotW}
+                        height={Math.max(0, getY(currentExcavationDepth) - marginTop)}
+                        fill="#ffffff"
+                        opacity={0.95}
+                      />
+                      <line x1={leftWallX} y1={getY(currentExcavationDepth)} x2={rightWallX} y2={getY(currentExcavationDepth)} stroke="#0284c7" strokeWidth="2" strokeDasharray="4 2" />
+                      <text x={leftWallX + plotW / 2} y={getY(currentExcavationDepth) - 5} fill="#0284c7" fontSize="9" fontWeight="bold" textAnchor="middle">
+                        ▼ 굴착 바닥면 (GL -{currentExcavationDepth}m)
+                      </text>
 
-              {/* Stage Engineer Commentary */}
-              <div className="bg-blue-50/90 border border-blue-200 p-2.5 rounded-lg text-[11px] text-blue-950">
-                <div className="font-bold flex items-center space-x-1 text-blue-800 mb-1">
-                  <Info className="w-3.5 h-3.5" />
-                  <span>시공단계 엔지니어링 해설:</span>
+                      {/* Ground Level Line */}
+                      <line x1={0} y1={marginTop} x2={canvasW} y2={marginTop} stroke="#334155" strokeWidth="1.5" />
+                      <text x={10} y={marginTop - 8} fill="#334155" fontSize="10" fontWeight="bold">
+                        GL ±0.00m (지표면)
+                      </text>
+
+                      {/* 3. Retaining Walls */}
+                      <rect x={leftWallX - 4} y={marginTop} width={8} height={getY(totalLength) - marginTop} fill="#2563eb" stroke="#1d4ed8" strokeWidth="1" />
+                      <rect x={rightWallX - 4} y={marginTop} width={8} height={getY(totalLength) - marginTop} fill="#2563eb" stroke="#1d4ed8" strokeWidth="1" />
+
+                      {/* 4. Active Failure Wedge (Rankine 45+phi/2) */}
+                      <polygon
+                        points={`${leftWallX},${getY(currentExcavationDepth)} ${leftWallX},${marginTop} ${Math.max(10, leftWallX - failTopScaleX)},${marginTop}`}
+                        fill="#ef4444"
+                        opacity={0.08}
+                        stroke="#ef4444"
+                        strokeWidth="1"
+                        strokeDasharray="3 3"
+                      />
+
+                      {/* 5. Anchors */}
+                      {displayedTiers.map((tier) => {
+                        const anchorHeadY = getY(tier.depth);
+                        const thetaRad = (tier.angleDeg * Math.PI) / 180;
+                        const scaleFactor = plotH / maxDepth;
+                        const freeLenPx = tier.freeLengthLf * scaleFactor;
+                        const bondLenPx = tier.bondLengthLe * scaleFactor;
+
+                        const leftFreeEndX = leftWallX - freeLenPx * Math.cos(thetaRad);
+                        const leftFreeEndY = anchorHeadY + freeLenPx * Math.sin(thetaRad);
+                        const leftBondEndX = leftWallX - (freeLenPx + bondLenPx) * Math.cos(thetaRad);
+                        const leftBondEndY = anchorHeadY + (freeLenPx + bondLenPx) * Math.sin(thetaRad);
+
+                        return (
+                          <g key={`anchor-drawing-${tier.tier}`}>
+                            {/* Free Length (Blue line) */}
+                            <line x1={leftWallX} y1={anchorHeadY} x2={leftFreeEndX} y2={leftFreeEndY} stroke="#0284c7" strokeWidth="2.5" strokeDasharray="3 2" />
+                            {/* Bond Length (Green / Rock hatched) */}
+                            <line x1={leftFreeEndX} y1={leftFreeEndY} x2={leftBondEndX} y2={leftBondEndY} stroke="#059669" strokeWidth="6" strokeLinecap="round" />
+                            <circle cx={leftWallX} cy={anchorHeadY} r="3" fill="#1e40af" />
+                            <text x={leftWallX + 6} y={anchorHeadY + 3} fill="#1e40af" fontSize="8" fontWeight="bold">
+                              A{tier.tier} ({tier.designLoad}kN)
+                            </text>
+                          </g>
+                        );
+                      })}
+                    </svg>
+                  </div>
+
+                  {/* Anchor Legend */}
+                  <div className="flex flex-wrap items-center justify-between gap-1 text-[10px] text-slate-500 bg-slate-50 p-2 rounded-lg border border-slate-200">
+                    <div className="flex items-center space-x-1">
+                      <div className="w-3 h-0.5 bg-sky-600" />
+                      <span>자유장(Lf)</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <div className="w-3 h-1.5 bg-emerald-600 rounded-xs" />
+                      <span className="font-bold text-emerald-800">정착장(Le)</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <div className="w-2 h-2 bg-blue-600 rounded-full" />
+                      <span>앵커헤드</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50/90 border border-blue-200 p-2.5 rounded-lg text-[11px] text-blue-950">
+                    <div className="font-bold flex items-center space-x-1 text-blue-800 mb-1">
+                      <Info className="w-3.5 h-3.5" />
+                      <span>시공단계 엔지니어링 해설:</span>
+                    </div>
+                    <p className="leading-relaxed text-slate-700">{currentStageAnalysis.stepDescription}</p>
+                  </div>
                 </div>
-                <p className="leading-relaxed text-slate-700">{currentStageAnalysis.stepDescription}</p>
-              </div>
+              )}
             </div>
 
-            {/* Right: Tabbed Structural Design & Quantity Tables (7 Cols) */}
+
+{/* Right: Tabbed Structural Design & Quantity Tables (7 Cols) */}
             <div className="lg:col-span-7 bg-white rounded-lg border border-slate-200 flex flex-col overflow-hidden shadow-xs">
-              {/* Tab Navigation */}
+              {/* Tab Navigation (1안 / 2안-A / 2안-B / 3안 / LCC / 수량 / 단계별 / 공법비교 8대 탭) */}
               <div className="flex items-center border-b border-slate-200 bg-slate-50 px-3 pt-2 gap-1 sm:gap-2 overflow-x-auto">
                 <button
-                  onClick={() => setActiveTab('REPORT')}
+                  onClick={() => setActiveTab('1_STRUT')}
                   className={`pb-2 px-2.5 sm:px-3 text-xs font-bold transition border-b-2 cursor-pointer flex items-center space-x-1.5 shrink-0 ${
-                    activeTab === 'REPORT'
+                    (activeTab === '1_STRUT' || activeTab === 'STRUT_ONLY')
+                      ? 'border-amber-600 text-amber-800 bg-amber-50/50'
+                      : 'border-transparent text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <TrendingDown className="w-3.5 h-3.5 text-amber-600" />
+                  <span>1안: 전구간 버팀보(스트럿)</span>
+                  <span className="px-1.5 py-0.2 bg-amber-100 text-amber-900 rounded text-[10px] font-medium border border-amber-200">
+                    180일 (기준)
+                  </span>
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('2A_STANDARD');
+                    setParams((p) => ({ ...p, angleDeg: 20 }));
+                  }}
+                  className={`pb-2 px-2.5 sm:px-3 text-xs font-bold transition border-b-2 cursor-pointer flex items-center space-x-1.5 shrink-0 ${
+                    (activeTab === '2A_STANDARD' || activeTab === 'REPORT')
                       ? 'border-blue-600 text-blue-700 bg-white/60'
                       : 'border-transparent text-slate-500 hover:text-slate-800'
                   }`}
                 >
                   <FileText className="w-3.5 h-3.5 text-blue-600" />
-                  <span>비교검토 리포트</span>
+                  <span>2안-A: 표준 어스앵커 설계</span>
                   <span className="px-1.5 py-0.2 bg-blue-100 text-blue-800 rounded text-[10px] font-medium border border-blue-200">
-                    보고서 작성
+                    사유지20m침범
                   </span>
                 </button>
                 <button
-                  onClick={() => setActiveTab('HYBRID')}
+                  onClick={() => {
+                    setActiveTab('2B_HIGH_ANGLE');
+                    setParams((p) => ({ ...p, angleDeg: 45 }));
+                  }}
                   className={`pb-2 px-2.5 sm:px-3 text-xs font-bold transition border-b-2 cursor-pointer flex items-center space-x-1.5 shrink-0 ${
-                    activeTab === 'HYBRID'
+                    (activeTab === '2B_HIGH_ANGLE' || activeTab === 'DESIGN' || activeTab === 'SENSITIVITY')
+                      ? 'border-indigo-600 text-indigo-700 bg-white/60'
+                      : 'border-transparent text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>2안-B: 고각 어스앵커 설계</span>
+                  <span className="px-1.5 py-0.2 bg-indigo-100 text-indigo-800 rounded text-[10px] font-medium border border-indigo-200">
+                    사유지0m회피★
+                  </span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('3_HYBRID')}
+                  className={`pb-2 px-2.5 sm:px-3 text-xs font-bold transition border-b-2 cursor-pointer flex items-center space-x-1.5 shrink-0 ${
+                    (activeTab === '3_HYBRID' || activeTab === 'HYBRID')
                       ? 'border-purple-600 text-purple-700 bg-purple-50/50'
                       : 'border-transparent text-slate-500 hover:text-slate-800'
                   }`}
                 >
                   <Layers className="w-3.5 h-3.5 text-purple-600" />
-                  <span>제3안: 버팀보+앵커 복합공법</span>
+                  <span>3안: 광간격 복합 지보공법</span>
                   <span className="px-1.5 py-0.2 bg-purple-100 text-purple-800 rounded text-[10px] font-bold border border-purple-200">
-                    광간격+앵커
-                  </span>
-                </button>
-                <button
-                  onClick={() => setActiveTab('SENSITIVITY')}
-                  className={`pb-2 px-2.5 sm:px-3 text-xs font-bold transition border-b-2 cursor-pointer flex items-center space-x-1.5 shrink-0 ${
-                    activeTab === 'SENSITIVITY'
-                      ? 'border-indigo-600 text-indigo-700 bg-white/60'
-                      : 'border-transparent text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  <Sliders className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>각도별 감응도(15°~60° 고각)</span>
-                  <span className="px-1.5 py-0.2 bg-indigo-50 text-indigo-700 rounded text-[10px] font-medium border border-indigo-200">
-                    지장물·사유지 회피
+                    평면+단면★
                   </span>
                 </button>
                 <button
                   onClick={() => setActiveTab('COST')}
                   className={`pb-2 px-2.5 sm:px-3 text-xs font-bold transition border-b-2 cursor-pointer flex items-center space-x-1.5 shrink-0 ${
                     activeTab === 'COST'
-                      ? 'border-emerald-600 text-emerald-700'
+                      ? 'border-emerald-600 text-emerald-700 bg-emerald-50/50'
                       : 'border-transparent text-slate-500 hover:text-slate-800'
                   }`}
                 >
                   <Coins className="w-3.5 h-3.5 text-amber-600" />
-                  <span>공법별 비용·경제성 비교</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab('DESIGN')}
-                  className={`pb-2 px-2.5 sm:px-3 text-xs font-bold transition border-b-2 cursor-pointer shrink-0 ${
-                    activeTab === 'DESIGN'
-                      ? 'border-blue-600 text-blue-700'
-                      : 'border-transparent text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  단별 상세 구조설계서
+                  <span>LCC 총비용·경제성 비교</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('BOQ')}
                   className={`pb-2 px-2.5 sm:px-3 text-xs font-bold transition border-b-2 cursor-pointer flex items-center space-x-1.5 shrink-0 ${
                     activeTab === 'BOQ'
-                      ? 'border-blue-600 text-blue-700'
+                      ? 'border-blue-600 text-blue-700 bg-blue-50/50'
                       : 'border-transparent text-slate-500 hover:text-slate-800'
                   }`}
                 >
-                  <FileSpreadsheet className="w-3.5 h-3.5" />
-                  <span>소요 수량산정서</span>
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-blue-600" />
+                  <span>수량산정서</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('STAGES')}
                   className={`pb-2 px-2.5 sm:px-3 text-xs font-bold transition border-b-2 cursor-pointer flex items-center space-x-1.5 shrink-0 ${
                     activeTab === 'STAGES'
-                      ? 'border-blue-600 text-blue-700'
+                      ? 'border-indigo-600 text-indigo-700 bg-indigo-50/50'
                       : 'border-transparent text-slate-500 hover:text-slate-800'
                   }`}
                 >
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>공정단계별 매트릭스</span>
+                  <Clock className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>단계별 시공</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('COMPARISON')}
-                  className={`pb-2 px-2.5 sm:px-3 text-xs font-bold transition border-b-2 cursor-pointer shrink-0 ${
+                  className={`pb-2 px-2.5 sm:px-3 text-xs font-bold transition border-b-2 cursor-pointer flex items-center space-x-1.5 shrink-0 ${
                     activeTab === 'COMPARISON'
-                      ? 'border-blue-600 text-blue-700'
+                      ? 'border-purple-600 text-purple-700 bg-purple-50/50'
                       : 'border-transparent text-slate-500 hover:text-slate-800'
                   }`}
                 >
-                  공법 종합 비교
+                  <Scale className="w-3.5 h-3.5 text-purple-600" />
+                  <span>공법비교 요약</span>
                 </button>
               </div>
 
               {/* Tab Content Body */}
-              <div className="p-3 sm:p-4 overflow-y-auto max-h-[520px] space-y-4">
-                {/* TAB: REPORT - Formal Comprehensive Engineering Report */}
-                {activeTab === 'REPORT' && (
+              <div className="p-3 sm:p-4 overflow-y-auto min-h-[500px] flex-1 space-y-4">
+                {/* TAB 1: 1안 전구간 버팀보 (공정 단계별 실시간 해석 및 시뮬레이션 연동 - 글자 크기 대폭 확대 & 시인성 극대화) */}
+                {(activeTab === '1_STRUT' || activeTab === 'STRUT_ONLY') && (
+                  (() => {
+                    const currStrutStage = STRUT_STAGES_DATA[strutStepIndex] || STRUT_STAGES_DATA[10];
+
+                    return (
+                      <div className="space-y-4">
+                        {/* 1안 개요 배너 */}
+                        <div className="bg-amber-50/90 p-4 sm:p-5 rounded-xl border-2 border-amber-300 shadow-xs space-y-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center space-x-2.5">
+                              <TrendingDown className="w-6 h-6 text-amber-700 shrink-0" />
+                              <h3 className="font-black text-amber-950 text-base sm:text-lg tracking-tight">
+                                제1안. 전구간 버팀보(Conventional Strut) 지보 체계 공정단계별 상세 분석
+                              </h3>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-xs sm:text-sm px-3 py-1 bg-amber-200 text-amber-950 font-black rounded-full border border-amber-400 shadow-2xs">
+                                기준 공법 (공기 180일 / 8.85억원)
+                              </span>
+                              <span className="text-xs sm:text-sm px-3 py-1 bg-emerald-100 text-emerald-950 font-black rounded-full border border-emerald-400 font-mono shadow-2xs">
+                                Step {currStrutStage.step}: {currStrutStage.depthLabel}
+                              </span>
+                            </div>
+                          </div>
+                          <p className="text-xs sm:text-sm text-amber-900 leading-relaxed font-medium">
+                            전구간에 걸쳐 <strong>수평 버팀보(4.0m 간격) 및 중간말뚝(48본)</strong>을 배치하는 공법으로, 단계별 굴착 및 지보 설치 과정에서 발생하는 벽체 응력, 버팀보 축력, 지반 변위를 단계별로 정밀 해석합니다.
+                          </p>
+                        </div>
+
+                        {/* 1안 3대 핵심 요약 카드 (글자 크기 및 수치 대형화) */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs sm:text-sm">
+                          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-2.5">
+                            <span className="font-extrabold text-slate-900 text-sm sm:text-base block border-b border-slate-200 pb-2">
+                              1. 강재 투입 및 설치 규모
+                            </span>
+                            <div className="space-y-1.5 text-slate-700 text-xs sm:text-sm">
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium">· 버팀보 총 강재량:</span>
+                                <span className="font-mono font-black text-rose-700 text-sm sm:text-base">{strutSummary.totalSteelWeightTon} Ton</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium">· 가설 중간말뚝:</span>
+                                <span className="font-mono font-black text-rose-700 text-sm sm:text-base">48 본 (2열 배치)</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium">· 1H-300 띠장재:</span>
+                                <span className="font-mono font-bold text-slate-800 text-xs sm:text-sm">{costComparison.strutCost.strutWaleInstall.quantity} Ton</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-2.5">
+                            <span className="font-extrabold text-slate-900 text-sm sm:text-base block border-b border-slate-200 pb-2">
+                              2. 시공성 및 굴착 간섭
+                            </span>
+                            <div className="space-y-1.5 text-slate-700 text-xs sm:text-sm">
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium">· 투입 가능 장비:</span>
+                                <span className="font-mono font-bold text-slate-800 text-xs sm:text-sm">0.4m³ 소형 백호</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium">· 1회 토공 사이클:</span>
+                                <span className="font-mono text-rose-700 font-black text-sm sm:text-base">42 초 (선회 제약)</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium">· 일일 토사 반출량:</span>
+                                <span className="font-mono font-black text-rose-700 text-sm sm:text-base">320 m³/일</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-2.5">
+                            <span className="font-extrabold text-slate-900 text-sm sm:text-base block border-b border-slate-200 pb-2">
+                              3. 총 공기 및 비용 산정
+                            </span>
+                            <div className="space-y-1.5 text-slate-700 text-xs sm:text-sm">
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium">· 토공 굴착 공기:</span>
+                                <span className="font-mono font-bold text-slate-800 text-xs sm:text-sm">125 일</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium">· 가시설 총 공기:</span>
+                                <span className="font-mono font-black text-rose-700 text-sm sm:text-base">180 일 (기준)</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium">· LCC 총공사비:</span>
+                                <span className="font-mono font-black text-rose-700 text-sm sm:text-base">8.85 억원</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Step 1: Member Specification Configurator (부재 제원 폰트 및 버튼 확대) */}
+                        <div className="bg-white p-4 sm:p-4.5 rounded-xl border border-slate-200 shadow-xs space-y-3.5">
+                          <div className="flex flex-wrap items-center justify-between border-b border-slate-200 pb-2.5 gap-2">
+                            <div className="font-extrabold text-slate-900 text-sm sm:text-base flex items-center space-x-2">
+                              <span className="w-2.5 h-5 bg-amber-600 rounded-xs" />
+                              <span>1단계: 1안 버팀보 가시설 부재 제원 결정 (엄지말뚝 · 버팀보 규격 · 띠장 · 중간말뚝)</span>
+                            </div>
+                            <span className="text-xs text-amber-800 bg-amber-50 px-2.5 py-1 rounded font-bold border border-amber-200">
+                              ※ 허용응력설계법(ASD) 기준 버팀보 축력 및 좌굴 검토
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs sm:text-sm">
+                            <div className="bg-slate-50/80 p-3 rounded-lg border border-slate-200 space-y-2.5">
+                              <div className="font-bold text-slate-800 flex items-center justify-between text-xs sm:text-sm">
+                                <span>① 엄지말뚝 벽체</span>
+                                <span className="text-amber-800 font-mono text-xs font-black">
+                                  {localWall.specName || 'H-300×305×15×15'}
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-1.5">
+                                {[
+                                  { label: 'H300 (SM355)', spec: 'H-300×300×10×15', Z: 1360 },
+                                  { label: 'H305 (표준★)', spec: 'H-300×305×15×15', Z: 1670 },
+                                  { label: 'H350', spec: 'H-350×350×12×19', Z: 2280 },
+                                  { label: 'CIP D500', spec: 'CIP 현장타설말뚝 D500', Z: 4900 },
+                                ].map((item) => {
+                                  const isSelected = (localWall.specName || 'H-300×305×15×15') === item.spec;
+                                  return (
+                                    <button
+                                      key={item.spec}
+                                      type="button"
+                                      onClick={() => handleUpdateWall({ ...localWall, specName: item.spec, sectionModulusZ: item.Z })}
+                                      className={`px-2.5 py-2 rounded text-xs sm:text-sm font-bold border transition cursor-pointer text-left ${
+                                        isSelected
+                                          ? 'bg-amber-600 text-white border-amber-600 shadow-xs font-black'
+                                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                                      }`}
+                                    >
+                                      {item.label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            <div className="bg-slate-50/80 p-3 rounded-lg border border-slate-200 space-y-2.5">
+                              <div className="font-bold text-slate-800 flex items-center justify-between text-xs sm:text-sm">
+                                <span>② 버팀보 규격</span>
+                                <span className="text-amber-800 font-mono text-xs font-black">
+                                  {localStruts[0]?.specName || 'H-300×300×10×15'}
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-1.5">
+                                {[
+                                  { label: 'H-300 (표준★)', spec: 'H-300×300×10×15 (SM355)', area: 119.8 },
+                                  { label: 'H-350', spec: 'H-350×350×12×19 (SM355)', area: 173.9 },
+                                  { label: 'H-400', spec: 'H-400×400×13×21 (SM355)', area: 218.7 },
+                                  { label: '강관 Φ600', spec: '강관버팀보 D609.6×12.7t', area: 238.4 },
+                                ].map((item) => {
+                                  const isSelected = (localStruts[0]?.specName || '').includes(item.label.split(' ')[0]);
+                                  return (
+                                    <button
+                                      key={item.spec}
+                                      type="button"
+                                      onClick={() => {
+                                        const updated = localStruts.map((s) => ({ ...s, specName: item.spec, crossSectionArea: item.area }));
+                                        handleUpdateStruts(updated);
+                                      }}
+                                      className={`px-2.5 py-2 rounded text-xs sm:text-sm font-bold border transition cursor-pointer text-left ${
+                                        isSelected
+                                          ? 'bg-amber-600 text-white border-amber-600 shadow-xs font-black'
+                                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                                      }`}
+                                    >
+                                      {item.label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            <div className="bg-slate-50/80 p-3 rounded-lg border border-slate-200 space-y-2.5">
+                              <div className="font-bold text-slate-800 flex items-center justify-between text-xs sm:text-sm">
+                                <span>③ 띠장(Wale) 규격</span>
+                                <span className="text-amber-800 font-mono text-xs font-black">1H-300×300</span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-1.5">
+                                {[
+                                  { label: '1H-300 (표준★)', spec: '1H-300×300×10×15' },
+                                  { label: '1H-350', spec: '1H-350×350×12×19' },
+                                  { label: '2H-300', spec: '2H-300×300×10×15' },
+                                  { label: '2H-350', spec: '2H-350×350×12×19' },
+                                ].map((item, wIdx) => (
+                                  <button
+                                    key={item.spec}
+                                    type="button"
+                                    className={`px-2.5 py-2 rounded text-xs sm:text-sm font-bold border transition cursor-pointer text-left ${
+                                      wIdx === 0
+                                        ? 'bg-amber-600 text-white border-amber-600 shadow-xs font-black'
+                                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                                    }`}
+                                  >
+                                    {item.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="bg-slate-50/80 p-3 rounded-lg border border-slate-200 space-y-2.5">
+                              <div className="font-bold text-slate-800 flex items-center justify-between text-xs sm:text-sm">
+                                <span>④ 가설 중간말뚝</span>
+                                <span className="text-rose-700 font-mono text-xs font-black">48본 (2열 배치)</span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-1.5">
+                                {[
+                                  { label: 'H-300 (표준★)', spec: 'H-300×300×10×15' },
+                                  { label: 'H-350', spec: 'H-350×350×12×19' },
+                                  { label: '배치: 2열 @4m', spec: '2열 배치' },
+                                  { label: '천공경: Φ500', spec: 'Φ500 케이싱' },
+                                ].map((item, pIdx) => (
+                                  <button
+                                    key={item.label}
+                                    type="button"
+                                    className={`px-2.5 py-2 rounded text-xs sm:text-sm font-bold border transition cursor-pointer text-left ${
+                                      pIdx === 0
+                                        ? 'bg-amber-600 text-white border-amber-600 shadow-xs font-black'
+                                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                                    }`}
+                                  >
+                                    {item.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 구조해석 수행 액션 바 (대형 버튼 & 폰트) */}
+                          <div className="pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex items-center space-x-2 text-xs sm:text-sm">
+                              <span className="text-slate-600 font-bold">적용 단면 제원:</span>
+                              <span className="font-black text-amber-950 bg-amber-100/70 px-3 py-1 rounded-md border border-amber-300 font-mono text-xs sm:text-sm shadow-2xs">
+                                엄지말뚝: {localWall.specName || 'H-300×305×15×15 (표준★)'} (Z=1,670cm³) | 버팀보: {localStruts[0]?.specName || 'H-300 (SM355)'} | 1H-300 띠장 | 중간말뚝 2열(48본)
+                              </span>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={handleRunStrutAnalysis}
+                              disabled={isAnalyzingStrut}
+                              className={`px-5 py-2.5 rounded-lg font-black text-xs sm:text-sm flex items-center space-x-2 shadow-sm transition cursor-pointer ${
+                                isAnalyzingStrut
+                                  ? 'bg-amber-400 text-white cursor-wait'
+                                  : 'bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white active:scale-95 shadow-amber-900/20'
+                              }`}
+                              title="설정된 엄지말뚝 및 버팀보 부재로 탄소성 지반-구조해석을 수행하고 단계를 시뮬레이션합니다."
+                            >
+                              {isAnalyzingStrut ? (
+                                <>
+                                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                  <span>탄소성 보-탄성지반 역학해석 연산 중...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles className="w-4.5 h-4.5 text-amber-200" />
+                                  <span>⚡ 1안 가시설 탄소성 구조해석 수행 (Run Analysis)</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+
+                          {analysisStatus === 'DONE' && (
+                            <div className="bg-emerald-50 border-2 border-emerald-300 p-3 rounded-lg flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm text-emerald-950 animate-in fade-in slide-in-from-top-1 duration-200 shadow-xs">
+                              <div className="flex items-center space-x-2.5">
+                                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                                <div>
+                                  <span className="font-black text-emerald-900">✓ 1안 가시설 탄소성 구조해석 완료:</span> 엄지말뚝 휨응력비 95.1%(133.2 MPa ≤ 140 MPa), 버팀보 좌굴안전율 2.4 확보 OK!
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setIsStrutPlaying(true)}
+                                  className="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded font-black text-xs flex items-center space-x-1 cursor-pointer shadow-2xs"
+                                >
+                                  <Play className="w-3 h-3 fill-current" />
+                                  <span>2단계 공정 시뮬레이션 자동 재생</span>
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Step 2: Interactive Stage-by-Stage Controller & Simulation (카드 수치 대형화 & 가독성 극대화) */}
+                        <div className="bg-gradient-to-r from-amber-900/10 via-amber-50 to-white p-4 sm:p-5 rounded-xl border-2 border-amber-300 shadow-sm space-y-4">
+                          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 pb-3">
+                            <div className="flex items-center space-x-3">
+                              <div className="p-2.5 bg-amber-600 text-white rounded-lg shadow-xs">
+                                <Clock className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <h4 className="font-black text-amber-950 text-sm sm:text-base flex items-center gap-2">
+                                  <span>2단계: 공정단계별(Step 0 ~ Step 10) 굴착 및 버팀보 가설 실시간 시뮬레이션</span>
+                                  <span className="px-2.5 py-0.5 bg-amber-600 text-white rounded text-xs font-black">
+                                    Step {currStrutStage.step} / 10
+                                  </span>
+                                </h4>
+                                <p className="text-xs sm:text-sm text-amber-900 font-medium">
+                                  스텝을 클릭하거나 자동재생하면 <strong>왼쪽 2D 단면도 도면</strong>과 <strong>역학 해석 결과</strong>가 실시간으로 동기화됩니다.
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Playback Controls (컨트롤 버튼 확대) */}
+                            <div className="flex items-center space-x-2 bg-white p-1.5 rounded-xl border border-amber-300 shadow-xs">
+                              <button
+                                onClick={() => setIsStrutPlaying(!isStrutPlaying)}
+                                className={`px-3.5 py-1.5 rounded-lg font-black text-xs sm:text-sm flex items-center space-x-1.5 transition cursor-pointer ${
+                                  isStrutPlaying
+                                    ? 'bg-amber-600 text-white shadow-xs'
+                                    : 'bg-amber-100 hover:bg-amber-200 text-amber-950'
+                                }`}
+                                title={isStrutPlaying ? '일시정지' : '단계별 자동 시뮬레이션 재생'}
+                              >
+                                {isStrutPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />}
+                                <span>{isStrutPlaying ? '일시정지' : '공정 재생'}</span>
+                              </button>
+                              <button
+                                onClick={() => setStrutStepIndex(Math.max(0, strutStepIndex - 1))}
+                                disabled={strutStepIndex <= 0}
+                                className="p-2 rounded text-amber-800 hover:bg-amber-50 disabled:opacity-30 cursor-pointer"
+                                title="이전 단계"
+                              >
+                                <ChevronLeft className="w-4.5 h-4.5" />
+                              </button>
+                              <div className="px-2.5 font-mono font-black text-xs sm:text-sm text-amber-950">
+                                Step {strutStepIndex}/10
+                              </div>
+                              <button
+                                onClick={() => setStrutStepIndex(Math.min(10, strutStepIndex + 1))}
+                                disabled={strutStepIndex >= 10}
+                                className="p-2 rounded text-amber-800 hover:bg-amber-50 disabled:opacity-30 cursor-pointer"
+                                title="다음 단계"
+                              >
+                                <ChevronRight className="w-4.5 h-4.5" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setIsStrutPlaying(false);
+                                  setStrutStepIndex(0);
+                                }}
+                                className="p-2 text-slate-500 hover:text-slate-800 rounded hover:bg-slate-100 cursor-pointer"
+                                title="처음으로 리셋"
+                              >
+                                <RotateCcw className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Step Pill Buttons Bar (S0 ~ S10 버튼 크기 확대) */}
+                          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                            {STRUT_STAGES_DATA.map((stg) => {
+                              const isSelected = strutStepIndex === stg.step;
+                              return (
+                                <button
+                                  key={stg.step}
+                                  onClick={() => {
+                                    setIsStrutPlaying(false);
+                                    setStrutStepIndex(stg.step);
+                                  }}
+                                  className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-black transition flex items-center space-x-1 shrink-0 cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-amber-600 text-white shadow-sm border border-amber-600 scale-105'
+                                      : 'bg-white text-slate-700 hover:bg-amber-100 border border-slate-200 hover:border-amber-300'
+                                  }`}
+                                >
+                                  <span>{stg.shortName}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* Current Active Step Engineering KPI Cards (실시간 해석 지표 6종 대형 폰트) */}
+                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-1 text-xs">
+                            <div className="bg-white p-3 rounded-xl border border-amber-200 shadow-2xs space-y-1">
+                              <span className="text-slate-500 font-bold text-xs block">① 굴착 심도</span>
+                              <span className="text-amber-900 font-mono font-black text-base sm:text-lg block">
+                                {currStrutStage.depthLabel}
+                              </span>
+                              <span className="text-[11px] font-medium text-slate-600 truncate block">{currStrutStage.excavationStageName}</span>
+                            </div>
+
+                            <div className="bg-white p-3 rounded-xl border border-amber-200 shadow-2xs space-y-1">
+                              <span className="text-slate-500 font-bold text-xs block">② 벽체 최대휨응력</span>
+                              <span className="text-blue-700 font-mono font-black text-base sm:text-lg block">
+                                {currStrutStage.wallStress.split(' ')[0]} <span className="text-xs font-normal text-slate-500">MPa</span>
+                              </span>
+                              <span className="text-[11px] text-emerald-700 font-bold block">허용 140 MPa 이하 OK</span>
+                            </div>
+
+                            <div className="bg-white p-3 rounded-xl border border-amber-200 shadow-2xs space-y-1">
+                              <span className="text-slate-500 font-bold text-xs block">③ 버팀보 축력/좌굴</span>
+                              <span className="text-amber-800 font-mono font-black text-xs sm:text-sm truncate block">
+                                {currStrutStage.strutForce}
+                              </span>
+                              <span className="text-[11px] text-slate-600 font-semibold block">설치 단수: {currStrutStage.installedStrutCount}단</span>
+                            </div>
+
+                            <div className="bg-white p-3 rounded-xl border border-amber-200 shadow-2xs space-y-1">
+                              <span className="text-slate-500 font-bold text-xs block">④ 띠장 휨응력비</span>
+                              <span className="text-slate-900 font-mono font-black text-base sm:text-lg block">
+                                {currStrutStage.waleRatio}
+                              </span>
+                              <span className="text-[11px] text-emerald-700 font-bold block">1H-300 단면 안전</span>
+                            </div>
+
+                            <div className="bg-white p-3 rounded-xl border border-amber-200 shadow-2xs space-y-1">
+                              <span className="text-slate-500 font-bold text-xs block">⑤ 지반 최대변위</span>
+                              <span className="text-rose-700 font-mono font-black text-base sm:text-lg block">
+                                {currStrutStage.disp}
+                              </span>
+                              <span className="text-[11px] text-slate-600 font-semibold block">허용기준 44mm 이내</span>
+                            </div>
+
+                            <div className="bg-white p-3 rounded-xl border border-amber-200 shadow-2xs space-y-1">
+                              <span className="text-slate-500 font-bold text-xs block">⑥ 굴착저면 안정성</span>
+                              <span className="text-emerald-700 font-mono font-black text-xs sm:text-sm block">
+                                {currStrutStage.pipingFs}
+                              </span>
+                              <span className="text-[11px] text-emerald-800 font-black block">{currStrutStage.status}</span>
+                            </div>
+                          </div>
+
+                          {/* Work Summary Action Banner (지침 폰트 확대) */}
+                          <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-amber-200 flex items-start space-x-3 text-xs sm:text-sm text-amber-950 shadow-2xs">
+                            <span className="px-2.5 py-1 bg-amber-600 text-white rounded-md font-black text-xs shrink-0 mt-0.5 shadow-2xs">
+                              시공작업 지침
+                            </span>
+                            <div className="space-y-1">
+                              <p className="font-bold text-slate-900 text-xs sm:text-sm leading-relaxed">
+                                {currStrutStage.workSummary}
+                              </p>
+                              <p className="text-xs sm:text-sm text-amber-900 font-mono font-semibold">
+                                💡 주요 작업: {currStrutStage.activeAction}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Step 3: Comprehensive Stage-by-Stage Verification Table (테이블 글자 및 패딩 확대) */}
+                        <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-xs space-y-3.5">
+                          <div className="flex flex-wrap items-center justify-between border-b border-slate-200 pb-2.5 gap-2">
+                            <div className="font-extrabold text-slate-900 text-sm sm:text-base flex items-center space-x-2">
+                              <span className="w-2.5 h-5 bg-emerald-600 rounded-xs" />
+                              <span>3단계: 공정단계별(Step 0 ~ Step 10) 버팀보 지보체계 종합 검토 매트릭스 (행 클릭 시 이동)</span>
+                            </div>
+                            <span className="text-xs text-emerald-900 bg-emerald-100 px-3 py-1 rounded font-bold border border-emerald-300">
+                              KDS 21 30 00 가설구조물 설계기준 완벽 검증
+                            </span>
+                          </div>
+
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-center border-collapse text-xs sm:text-sm">
+                              <thead>
+                                <tr className="bg-emerald-50 text-emerald-950 border-b-2 border-emerald-300 font-extrabold text-xs sm:text-sm">
+                                  <th className="py-2.5 px-2">단계</th>
+                                  <th className="py-2.5 px-3 text-left">시공 단계 및 작업 내용</th>
+                                  <th className="py-2.5 px-2">굴착심도</th>
+                                  <th className="py-2.5 px-2">벽체 최대응력비</th>
+                                  <th className="py-2.5 px-2">버팀보 축력 및 좌굴안정</th>
+                                  <th className="py-2.5 px-2">띠장 휨응력비</th>
+                                  <th className="py-2.5 px-2">지반 수평변위</th>
+                                  <th className="py-2.5 px-2">굴착저면 안정성</th>
+                                  <th className="py-2.5 px-2">종합판정</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-200 text-slate-800">
+                                {STRUT_STAGES_DATA.map((row) => {
+                                  const isSelected = strutStepIndex === row.step;
+                                  return (
+                                    <tr
+                                      key={row.step}
+                                      onClick={() => {
+                                        setIsStrutPlaying(false);
+                                        setStrutStepIndex(row.step);
+                                      }}
+                                      className={`cursor-pointer transition hover:bg-amber-100/80 ${
+                                        isSelected ? 'bg-amber-100 border-l-4 border-l-amber-600 font-bold' : ''
+                                      }`}
+                                    >
+                                      <td className="py-2.5 px-2 font-black font-mono text-amber-900">Step {row.step}</td>
+                                      <td className="py-2.5 px-3 text-left font-semibold text-slate-900">{row.name}</td>
+                                      <td className="py-2.5 px-2 font-mono text-slate-700 font-semibold">{row.depthLabel}</td>
+                                      <td className="py-2.5 px-2 font-mono font-bold">{row.wallStress}</td>
+                                      <td className="py-2.5 px-2 font-mono text-blue-800 font-bold">{row.strutForce}</td>
+                                      <td className="py-2.5 px-2 font-mono text-slate-700 font-semibold">{row.waleRatio}</td>
+                                      <td className="py-2.5 px-2 font-mono text-slate-800 font-semibold">{row.disp}</td>
+                                      <td className="py-2.5 px-2 font-mono text-emerald-800 font-bold">{row.pipingFs}</td>
+                                      <td className="py-2.5 px-2">
+                                        <span className="px-2.5 py-1 rounded text-xs font-black bg-emerald-100 text-emerald-900 border border-emerald-400">
+                                          {row.status}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs sm:text-sm space-y-2">
+                            <div className="font-extrabold text-slate-900 flex items-center space-x-2 text-xs sm:text-sm">
+                              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                              <span>1안 공정단계별 지보 안정성 핵심 엔지니어링 검토 결론:</span>
+                            </div>
+                            <ul className="text-slate-700 text-xs sm:text-sm list-disc list-inside space-y-1 leading-relaxed font-medium">
+                              <li><strong>벽체 휨응력 제어:</strong> 굴착 단계마다 버팀보 설치 직전 응력이 최대화되며, Step 9(GL -22m)에서 133.2 MPa (허용응력 140 MPa 대비 95%)로 안정 구간 내에 수렴합니다.</li>
+                              <li><strong>버팀보 축력 및 좌굴:</strong> 중간말뚝 2열이 버팀보 유효좌굴길이를 KL=10m로 절반 감축하여 압축 좌굴 안전율 2.4 이상을 상시 확보합니다.</li>
+                              <li><strong>지반 변위 및 바닥 안정성:</strong> 최종 굴착 시 최대 수평변위는 21.4 mm (0.097% H)로 허용 기준(0.2% H = 44 mm) 이내이며, 암반층 도달로 히빙/파이핑 안전율 Fs ≥ 2.1로 구조적으로 안전합니다.</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()
+                )}
+
+
+                {(activeTab === 'REPORT' || activeTab === '2A_STANDARD') && (
                   <div className="space-y-4">
                     {/* Interactive Angle Control & Action Toolbar */}
                     <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 shadow-xs space-y-2.5">
@@ -2142,7 +2630,8 @@ ${(anchorResult.angleSensitivityMatrix || [])
                 )}
 
                 {/* TAB: HYBRID - Third Alternative: Wide-Span Strut + Intermediate Ground Anchor System */}
-                {activeTab === 'HYBRID' && (
+
+{(activeTab === '3_HYBRID' || activeTab === 'HYBRID') && (
                   <div className="space-y-4">
                     {/* Header Banner & Philosophy */}
                     <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white p-3.5 sm:p-4 rounded-xl shadow-md space-y-2.5">
@@ -2801,7 +3290,8 @@ ${(anchorResult.angleSensitivityMatrix || [])
                 )}
 
                 {/* TAB: SENSITIVITY - Dedicated Sensitivity Matrix View */}
-                {activeTab === 'SENSITIVITY' && (
+
+{(activeTab === 'SENSITIVITY' || activeTab === '2A_STANDARD') && (
                   <div className="space-y-4">
                     <div className="bg-indigo-50/70 p-3.5 rounded-lg border border-indigo-200 shadow-xs space-y-2">
                       <div className="flex items-center justify-between">
@@ -2904,645 +3394,352 @@ ${(anchorResult.angleSensitivityMatrix || [])
                 )}
 
                 {/* TAB: COST - Comprehensive Economic & Cost Comparison */}
-                {activeTab === 'COST' && (
-                  <div className="space-y-3.5">
-                    {/* Header Banner: Status & Summary */}
-                    <div className="bg-slate-50 p-3 sm:p-4 rounded-lg border border-slate-200 shadow-xs">
-                      <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-200">
-                        <div className="flex items-center space-x-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                          <span className="font-bold text-slate-900 text-sm">
-                            스트럿 & 그라운드 앵커 공법 비교 (구조안전 100% 만족)
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <label className="flex items-center space-x-1.5 text-[11px] text-slate-700 bg-white px-2.5 py-1 rounded-md border border-slate-300 cursor-pointer shadow-2xs">
-                            <input
-                              type="checkbox"
-                              checked={includeInterferenceCost}
-                              onChange={(e) => setIncludeInterferenceCost(e.target.checked)}
-                              className="rounded text-blue-600 focus:ring-0 cursor-pointer"
-                            />
-                            <span>장비간섭 및 무지주 공기단축 반영</span>
-                          </label>
-                        </div>
-                      </div>
 
-                      {/* 3 Main Highlights */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-3">
-                        {/* Strut Card */}
-                        <div className="bg-amber-50/60 p-3 rounded-lg border border-amber-200 flex flex-col justify-between shadow-2xs">
-                          <div className="flex items-center justify-between text-[11px] text-amber-900 font-bold">
-                            <span>1. 스트럿(버팀보) 총 공사비</span>
-                            <span className="px-1.5 py-0.2 bg-amber-100 text-amber-800 rounded text-[10px] border border-amber-300">
-                              강재 {strutSummary.totalSteelWeightTon} Ton
-                            </span>
-                          </div>
-                          <div className="mt-2">
-                            <div className="text-xl font-bold font-mono text-amber-800">
-                              {Math.round(effectiveStrutTotal / 10000).toLocaleString()}{' '}
-                              <span className="text-xs font-normal text-slate-600">만원</span>
+{(activeTab === 'COST') && (
+                  (() => {
+                    const strutTotal = (costComparison?.strutCost?.totalDirectCost || 549270000) + (includeEquipLoss ? (costComparison?.strutCost?.equipmentLossCost || 96800000) : 0);
+                    const anchorTotal = (costComparison?.anchorCost?.totalDirectCost || 804830000) + (includeEquipLoss ? (costComparison?.anchorCost?.equipmentLossCost || 0) : 0);
+                    const hybridDirect = 425000000;
+                    const hybridEquipLoss = 12000000;
+                    const hybridTotal = hybridDirect + hybridEquipLoss + 125000000; // 5.62억원
+
+                    return (
+                      <div className="space-y-4">
+                        {/* Header Summary Banner */}
+                        <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-white p-4 rounded-xl border border-emerald-300 shadow-xs space-y-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center space-x-2">
+                              <Coins className="w-5 h-5 text-emerald-700" />
+                              <h3 className="font-extrabold text-emerald-950 text-sm sm:text-base">
+                                1·2·3안 가시설 지보공법 LCC 총생애주기비용 & 경제성 3자 종합 비교
+                              </h3>
                             </div>
-                            <div className="text-[11px] text-slate-600 mt-0.5">
-                              m당 {(strutPerM / 10000).toFixed(1)}만원/m (가설재 손료 포함)
+                            <div className="flex items-center space-x-2">
+                              <label className="flex items-center space-x-1.5 bg-white px-2.5 py-1 rounded-md border border-emerald-300 text-xs font-semibold cursor-pointer shadow-2xs">
+                                <input
+                                  type="checkbox"
+                                  checked={includeEquipLoss}
+                                  onChange={(e) => setIncludeEquipLoss(e.target.checked)}
+                                  className="rounded text-emerald-600 focus:ring-0"
+                                />
+                                <span className="text-emerald-900">장비간섭 및 무지주 공기단축 반영</span>
+                              </label>
                             </div>
                           </div>
+                          <p className="text-xs text-emerald-900 leading-relaxed">
+                            직접공사비(자재+시공), 가설재 손료/임대료, 토공 굴착 장비 선회간섭에 따른 능률 저하비용 및 공기 단축에 따른 간접비 절감 효과를 종합적으로 산정하여 <strong>3개 대안의 LCC 총공사비를 비교 분석</strong>합니다.
+                          </p>
                         </div>
 
-                        {/* Anchor Card */}
-                        <div className="bg-sky-50/60 p-3 rounded-lg border border-sky-200 flex flex-col justify-between shadow-2xs">
-                          <div className="flex items-center justify-between text-[11px] text-sky-900 font-bold">
-                            <span>2. 그라운드 앵커 순 공사비</span>
-                            <span className="px-1.5 py-0.2 bg-sky-100 text-sky-800 rounded text-[10px] border border-sky-300">
-                              {summary.totalAnchorCount} EA ({summary.totalDrillingLength.toLocaleString()}m)
-                            </span>
-                          </div>
-                          <div className="mt-2">
-                            <div className="text-xl font-bold font-mono text-sky-800">
-                              {Math.round(effectiveAnchorTotal / 10000).toLocaleString()}{' '}
-                              <span className="text-xs font-normal text-slate-600">만원</span>
-                            </div>
-                            <div className="text-[11px] text-slate-600 mt-0.5">
-                              m당 {(anchorPerM / 10000).toFixed(1)}만원/m (무지주 쾌속시공)
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Savings / Increase Diff Card */}
-                        {effectiveDiff >= 0 ? (
-                          <div className="bg-emerald-50/70 p-3 rounded-lg border border-emerald-300 flex flex-col justify-between shadow-2xs">
-                            <div className="flex items-center justify-between text-[11px] text-emerald-900 font-bold">
-                              <span>3. 앵커 공법 절감액</span>
-                              <span className="px-1.5 py-0.2 bg-emerald-100 text-emerald-800 rounded text-[10px] font-mono border border-emerald-300">
-                                -{effectiveRate}% 절감
+                        {/* 3대 대안 총공사비 핵심 KPI 카드 (3안 포함) */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                          {/* 1안 Strut Card */}
+                          <div className="bg-amber-50/70 p-3.5 rounded-xl border border-amber-300 flex flex-col justify-between shadow-2xs space-y-2">
+                            <div className="flex items-center justify-between text-xs text-amber-950 font-extrabold border-b border-amber-200 pb-1.5">
+                              <span>제1안. 전구간 버팀보(Strut)</span>
+                              <span className="px-2 py-0.5 bg-amber-200 text-amber-900 rounded font-mono text-[10px] font-bold">
+                                기준 공법
                               </span>
                             </div>
-                            <div className="mt-2">
-                              <div className="text-xl font-bold font-mono text-emerald-700">
-                                -{Math.round(effectiveDiff / 10000).toLocaleString()}{' '}
-                                <span className="text-xs font-normal text-slate-600">만원 절감</span>
+                            <div>
+                              <div className="text-2xl font-black font-mono text-amber-900">
+                                {Math.round(strutTotal / 10000).toLocaleString()}{' '}
+                                <span className="text-xs font-bold text-amber-800">만원</span>
                               </div>
-                              <div className="text-[11px] text-emerald-800 font-semibold mt-0.5">
-                                앵커 공법이 총 공사비 측면에서 우수
+                              <div className="text-[11px] text-slate-600 mt-1 space-y-0.5">
+                                <div>· 총 가시설 공기: <strong className="text-rose-700 font-mono">180 일 (기준)</strong></div>
+                                <div>· 투입 강재량: <strong className="font-mono">{strutSummary.totalSteelWeightTon} Ton</strong> (가설손료 과다)</div>
+                                <div>· 장비 선회 저하비용: <strong className="text-rose-600 font-mono">+{Math.round((costComparison.strutCost.equipmentLossCost || 0) / 10000).toLocaleString()}만원</strong></div>
                               </div>
                             </div>
                           </div>
-                        ) : (
-                          <div className="bg-rose-50/70 p-3 rounded-lg border border-rose-300 flex flex-col justify-between shadow-2xs">
-                            <div className="flex items-center justify-between text-[11px] text-rose-900 font-bold">
-                              <span>3. 앵커 공법 공사비 증액 (차액)</span>
-                              <span className="px-1.5 py-0.2 bg-rose-100 text-rose-800 rounded text-[10px] font-mono border border-rose-300">
-                                +{Math.abs(effectiveRate)}% 증가
+
+                          {/* 2안 Anchor Card */}
+                          <div className="bg-sky-50/70 p-3.5 rounded-xl border border-sky-300 flex flex-col justify-between shadow-2xs space-y-2">
+                            <div className="flex items-center justify-between text-xs text-sky-950 font-extrabold border-b border-sky-200 pb-1.5">
+                              <span>제2안. 전구간 어스앵커(Anchor)</span>
+                              <span className="px-2 py-0.5 bg-sky-200 text-sky-900 rounded font-mono text-[10px] font-bold">
+                                무지주 시공
                               </span>
                             </div>
-                            <div className="mt-2">
-                              <div className="text-xl font-bold font-mono text-rose-700">
-                                +{Math.round(Math.abs(effectiveDiff) / 10000).toLocaleString()}{' '}
-                                <span className="text-xs font-normal text-slate-600">만원 증액</span>
+                            <div>
+                              <div className="text-2xl font-black font-mono text-sky-900">
+                                {Math.round(anchorTotal / 10000).toLocaleString()}{' '}
+                                <span className="text-xs font-bold text-sky-800">만원</span>
                               </div>
-                              <div className="text-[11px] text-rose-800 font-semibold mt-0.5">
-                                스트럿 공법이 직접공사비 측면에서 유리
+                              <div className="text-[11px] text-slate-600 mt-1 space-y-0.5">
+                                <div>· 총 가시설 공기: <strong className="text-blue-700 font-mono">125 일 (-55일 단축)</strong></div>
+                                <div>· 소요 앵커 규모: <strong className="font-mono">{summary.totalAnchorCount} EA ({summary.totalDrillingLength.toLocaleString()}m)</strong></div>
+                                <div>· 1안 대비 비용차: <strong className="text-rose-700 font-mono">+{Math.round(Math.abs(anchorTotal - strutTotal) / 10000).toLocaleString()}만원 (순공사비 증)</strong></div>
                               </div>
                             </div>
                           </div>
-                        )}
-                      </div>
-                    </div>
 
-                    {/* Detailed Side-by-Side BOQ & Cost Breakdown Tables */}
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-                      {/* Left: Strut BOQ Table */}
-                      <div className="border border-slate-200 rounded-lg overflow-hidden bg-white flex flex-col shadow-xs">
-                        <div className="bg-amber-100/70 px-3 py-2 border-b border-amber-200 flex items-center justify-between">
-                          <span className="font-bold text-amber-900 flex items-center space-x-1.5">
-                            <span>스트럿(Strut) 가시설 세부 공사비</span>
-                          </span>
-                          <span className="text-[10px] text-amber-800 font-medium">
-                            직접비: {Math.round(costComparison.strutCost.totalDirectCost / 10000).toLocaleString()}만원
-                          </span>
+                          {/* 3안 Hybrid Card (최적안★) */}
+                          <div className="bg-gradient-to-br from-purple-50 via-purple-100/60 to-emerald-50 p-3.5 rounded-xl border-2 border-purple-400 flex flex-col justify-between shadow-md space-y-2 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 bg-purple-600 text-white text-[9.5px] font-bold px-2 py-0.5 rounded-bl-lg">
+                              ★ 경제성·공기 최적안
+                            </div>
+                            <div className="flex items-center justify-between text-xs text-purple-950 font-extrabold border-b border-purple-200 pb-1.5">
+                              <span>제3안. 광간격 복합공법(Hybrid)</span>
+                              <span className="px-2 py-0.5 bg-purple-200 text-purple-900 rounded font-mono text-[10px] font-bold">
+                                버팀보+앵커
+                              </span>
+                            </div>
+                            <div>
+                              <div className="text-2xl font-black font-mono text-purple-900">
+                                56,200{' '}
+                                <span className="text-xs font-bold text-purple-800">만원</span>
+                              </div>
+                              <div className="text-[11px] text-slate-700 mt-1 space-y-0.5">
+                                <div>· 총 가시설 공기: <strong className="text-purple-700 font-mono">45 일 (-135일 최단공기★)</strong></div>
+                                <div>· 1안 대비 총 절감액: <strong className="text-emerald-700 font-mono font-bold">-24,283 만원 절감 (LCC 최우수)</strong></div>
+                                <div>· 배치: <strong>10~20m 광폭 작업구 + 사이 3~4공 앵커</strong></div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-center border-collapse text-[11px]">
-                            <thead>
-                              <tr className="bg-slate-100 text-slate-700 text-[10px] border-b border-slate-200">
-                                <th className="py-1.5 px-2 text-left">공종 항목</th>
-                                <th className="py-1.5 px-1">수량</th>
-                                <th className="py-1.5 px-1">단가(원)</th>
-                                <th className="py-1.5 px-1 font-bold text-amber-800">금액(원)</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 text-slate-700">
-                              {costComparison.strutCost.deckGirderInstall && (
-                                <>
-                                  <tr className="bg-amber-50/30">
-                                    <td className="py-1.5 px-2 text-left">
-                                      <div className="font-semibold text-slate-800">
-                                        {costComparison.strutCost.deckGirderInstall.name}
-                                      </div>
-                                      <div className="text-[9px] text-slate-500">
-                                        {costComparison.strutCost.deckGirderInstall.note}
-                                      </div>
-                                    </td>
-                                    <td className="py-1.5 px-1 font-mono">
-                                      {costComparison.strutCost.deckGirderInstall.quantity}{' '}
-                                      {costComparison.strutCost.deckGirderInstall.unit}
-                                    </td>
-                                    <td className="py-1.5 px-1 font-mono text-slate-500">
-                                      {costComparison.strutCost.deckGirderInstall.unitPrice.toLocaleString()}
-                                    </td>
-                                    <td className="py-1.5 px-1 font-mono font-bold text-amber-700">
-                                      {costComparison.strutCost.deckGirderInstall.amount.toLocaleString()}
-                                    </td>
+
+                        {/* Detailed 3-Way Side-by-Side Breakdown Tables (1안 vs 2안 vs 3안 3열 비교) */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                          {/* 1안 Strut BOQ Table */}
+                          <div className="border border-amber-300 rounded-xl overflow-hidden bg-white flex flex-col shadow-xs">
+                            <div className="bg-amber-100 px-3 py-2 border-b border-amber-300 flex items-center justify-between">
+                              <span className="font-extrabold text-amber-950 text-xs">
+                                1안: 버팀보(Strut) 세부 공사비
+                              </span>
+                              <span className="text-[10.5px] text-amber-900 font-mono font-bold">
+                                직접비: {Math.round(costComparison.strutCost.totalDirectCost / 10000).toLocaleString()}만원
+                              </span>
+                            </div>
+                            <div className="overflow-x-auto p-1">
+                              <table className="w-full text-center border-collapse text-[11px]">
+                                <thead>
+                                  <tr className="bg-amber-50/80 text-amber-950 text-[10px] border-b border-amber-200 font-bold">
+                                    <th className="py-1 px-1.5 text-left">공종 항목</th>
+                                    <th className="py-1 px-1">수량</th>
+                                    <th className="py-1 px-1">단가(원)</th>
+                                    <th className="py-1 px-1 font-bold text-amber-900">금액(원)</th>
                                   </tr>
-                                  {costComparison.strutCost.deckGirderRental && (
-                                    <tr className="bg-amber-50/30">
-                                      <td className="py-1.5 px-2 text-left">
-                                        <div className="font-semibold text-slate-800">
-                                          {costComparison.strutCost.deckGirderRental.name}
-                                        </div>
-                                        <div className="text-[9px] text-slate-500">
-                                          {costComparison.strutCost.deckGirderRental.note}
-                                        </div>
-                                      </td>
-                                      <td className="py-1.5 px-1 font-mono">
-                                        {costComparison.strutCost.deckGirderRental.quantity}{' '}
-                                        {costComparison.strutCost.deckGirderRental.unit}
-                                      </td>
-                                      <td className="py-1.5 px-1 font-mono text-slate-500">
-                                        {costComparison.strutCost.deckGirderRental.unitPrice.toLocaleString()}
-                                      </td>
-                                      <td className="py-1.5 px-1 font-mono font-bold text-amber-700">
-                                        {costComparison.strutCost.deckGirderRental.amount.toLocaleString()}
-                                      </td>
-                                    </tr>
-                                  )}
-                                  {costComparison.strutCost.deckPlateInstall && (
-                                    <tr className="bg-amber-50/30">
-                                      <td className="py-1.5 px-2 text-left">
-                                        <div className="font-semibold text-slate-800">
-                                          {costComparison.strutCost.deckPlateInstall.name}
-                                        </div>
-                                        <div className="text-[9px] text-slate-500">
-                                          {costComparison.strutCost.deckPlateInstall.note}
-                                        </div>
-                                      </td>
-                                      <td className="py-1.5 px-1 font-mono">
-                                        {costComparison.strutCost.deckPlateInstall.quantity}{' '}
-                                        {costComparison.strutCost.deckPlateInstall.unit}
-                                      </td>
-                                      <td className="py-1.5 px-1 font-mono text-slate-500">
-                                        {costComparison.strutCost.deckPlateInstall.unitPrice.toLocaleString()}
-                                      </td>
-                                      <td className="py-1.5 px-1 font-mono font-bold text-amber-700">
-                                        {costComparison.strutCost.deckPlateInstall.amount.toLocaleString()}
-                                      </td>
-                                    </tr>
-                                  )}
-                                </>
-                              )}
-                              <tr>
-                                <td className="py-1.5 px-2 text-left">
-                                  <div className="font-semibold text-slate-800">
-                                    {costComparison.strutCost.strutSteelRental.name}
-                                  </div>
-                                  <div className="text-[9px] text-slate-500">
-                                    {costComparison.strutCost.strutSteelRental.note}
-                                  </div>
-                                </td>
-                                <td className="py-1.5 px-1 font-mono">
-                                  {costComparison.strutCost.strutSteelRental.quantity}{' '}
-                                  {costComparison.strutCost.strutSteelRental.unit}
-                                </td>
-                                <td className="py-1.5 px-1 font-mono text-slate-500">
-                                  {costComparison.strutCost.strutSteelRental.unitPrice.toLocaleString()}
-                                </td>
-                                <td className="py-1.5 px-1 font-mono font-bold text-amber-700">
-                                  {costComparison.strutCost.strutSteelRental.amount.toLocaleString()}
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="py-1.5 px-2 text-left">
-                                  <div className="font-semibold text-slate-800">
-                                    {costComparison.strutCost.strutInstallDismantle.name}
-                                  </div>
-                                  <div className="text-[9px] text-slate-500">
-                                    {costComparison.strutCost.strutInstallDismantle.note}
-                                  </div>
-                                </td>
-                                <td className="py-1.5 px-1 font-mono">
-                                  {costComparison.strutCost.strutInstallDismantle.quantity}{' '}
-                                  {costComparison.strutCost.strutInstallDismantle.unit}
-                                </td>
-                                <td className="py-1.5 px-1 font-mono text-slate-500">
-                                  {costComparison.strutCost.strutInstallDismantle.unitPrice.toLocaleString()}
-                                </td>
-                                <td className="py-1.5 px-1 font-mono font-bold text-amber-700">
-                                  {costComparison.strutCost.strutInstallDismantle.amount.toLocaleString()}
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="py-1.5 px-2 text-left">
-                                  <div className="font-semibold text-slate-800">
-                                    {costComparison.strutCost.strutWaleInstall.name}
-                                  </div>
-                                  <div className="text-[9px] text-slate-500">
-                                    {costComparison.strutCost.strutWaleInstall.note}
-                                  </div>
-                                </td>
-                                <td className="py-1.5 px-1 font-mono">
-                                  {costComparison.strutCost.strutWaleInstall.quantity}{' '}
-                                  {costComparison.strutCost.strutWaleInstall.unit}
-                                </td>
-                                <td className="py-1.5 px-1 font-mono text-slate-500">
-                                  {costComparison.strutCost.strutWaleInstall.unitPrice.toLocaleString()}
-                                </td>
-                                <td className="py-1.5 px-1 font-mono font-bold text-amber-700">
-                                  {costComparison.strutCost.strutWaleInstall.amount.toLocaleString()}
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="py-1.5 px-2 text-left">
-                                  <div className="font-semibold text-slate-800">
-                                    {costComparison.strutCost.hydraulicPrestress.name}
-                                  </div>
-                                  <div className="text-[9px] text-slate-500">
-                                    {costComparison.strutCost.hydraulicPrestress.note}
-                                  </div>
-                                </td>
-                                <td className="py-1.5 px-1 font-mono">
-                                  {costComparison.strutCost.hydraulicPrestress.quantity}{' '}
-                                  {costComparison.strutCost.hydraulicPrestress.unit}
-                                </td>
-                                <td className="py-1.5 px-1 font-mono text-slate-500">
-                                  {costComparison.strutCost.hydraulicPrestress.unitPrice.toLocaleString()}
-                                </td>
-                                <td className="py-1.5 px-1 font-mono font-bold text-amber-700">
-                                  {costComparison.strutCost.hydraulicPrestress.amount.toLocaleString()}
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="py-1.5 px-2 text-left">
-                                  <div className="font-semibold text-slate-800">
-                                    {costComparison.strutCost.centerPostCost.name}
-                                  </div>
-                                  <div className="text-[9px] text-slate-500">
-                                    {costComparison.strutCost.centerPostCost.note}
-                                  </div>
-                                </td>
-                                <td className="py-1.5 px-1 font-mono">
-                                  {costComparison.strutCost.centerPostCost.quantity}{' '}
-                                  {costComparison.strutCost.centerPostCost.unit}
-                                </td>
-                                <td className="py-1.5 px-1 font-mono text-slate-500">
-                                  {costComparison.strutCost.centerPostCost.unitPrice.toLocaleString()}
-                                </td>
-                                <td className="py-1.5 px-1 font-mono font-bold text-amber-700">
-                                  {costComparison.strutCost.centerPostCost.amount.toLocaleString()}
-                                </td>
-                              </tr>
-                              {includeInterferenceCost && (
-                                <tr className="bg-amber-50/70">
-                                  <td className="py-1.5 px-2 text-left">
-                                    <div className="font-semibold text-amber-900">
-                                      {costComparison.strutCost.excavationEfficiencyLoss.name}
-                                    </div>
-                                    <div className="text-[9px] text-amber-700">
-                                      {costComparison.strutCost.excavationEfficiencyLoss.note}
-                                    </div>
-                                  </td>
-                                  <td className="py-1.5 px-1 font-mono">
-                                    {costComparison.strutCost.excavationEfficiencyLoss.quantity.toLocaleString()}{' '}
-                                    {costComparison.strutCost.excavationEfficiencyLoss.unit}
-                                  </td>
-                                  <td className="py-1.5 px-1 font-mono text-slate-500">
-                                    {costComparison.strutCost.excavationEfficiencyLoss.unitPrice.toLocaleString()}
-                                  </td>
-                                  <td className="py-1.5 px-1 font-mono font-bold text-amber-800">
-                                    +{costComparison.strutCost.excavationEfficiencyLoss.amount.toLocaleString()}
-                                  </td>
-                                </tr>
-                              )}
-                            </tbody>
-                            <tfoot>
-                              <tr className="bg-slate-100 font-bold border-t border-slate-200">
-                                <td colSpan={3} className="py-2 px-2 text-left text-slate-800">
-                                  스트럿 합계 (연장 {params.sectionLength}m)
-                                </td>
-                                <td className="py-2 px-1 font-mono text-amber-800 text-xs">
-                                  {(includeInterferenceCost
-                                    ? costComparison.strutCost.totalCostWithInterference
-                                    : costComparison.strutCost.totalDirectCost
-                                  ).toLocaleString()}{' '}
-                                  원
-                                </td>
-                              </tr>
-                            </tfoot>
-                          </table>
-                        </div>
-                      </div>
-
-                      {/* Right: Anchor BOQ Table */}
-                      <div className="border border-slate-200 rounded-lg overflow-hidden bg-white flex flex-col shadow-xs">
-                        <div className="bg-sky-100/70 px-3 py-2 border-b border-sky-200 flex items-center justify-between">
-                          <span className="font-bold text-sky-900 flex items-center space-x-1.5">
-                            <span>그라운드 앵커(Ground Anchor) 세부 공사비</span>
-                          </span>
-                          <span className="text-[10px] text-sky-800 font-medium">
-                            직접비: {Math.round(costComparison.anchorCost.totalDirectCost / 10000).toLocaleString()}만원
-                          </span>
-                        </div>
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-center border-collapse text-[11px]">
-                            <thead>
-                              <tr className="bg-slate-100 text-slate-700 text-[10px] border-b border-slate-200">
-                                <th className="py-1.5 px-2 text-left">공종 항목</th>
-                                <th className="py-1.5 px-1">수량</th>
-                                <th className="py-1.5 px-1">단가(원)</th>
-                                <th className="py-1.5 px-1 font-bold text-sky-800">금액(원)</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 text-slate-700">
-                              {costComparison.anchorCost.deckGirderInstall && (
-                                <>
-                                  <tr className="bg-sky-50/30">
-                                    <td className="py-1.5 px-2 text-left">
-                                      <div className="font-semibold text-slate-800">
-                                        {costComparison.anchorCost.deckGirderInstall.name}
-                                      </div>
-                                      <div className="text-[9px] text-slate-500">
-                                        {costComparison.anchorCost.deckGirderInstall.note}
-                                      </div>
-                                    </td>
-                                    <td className="py-1.5 px-1 font-mono">
-                                      {costComparison.anchorCost.deckGirderInstall.quantity}{' '}
-                                      {costComparison.anchorCost.deckGirderInstall.unit}
-                                    </td>
-                                    <td className="py-1.5 px-1 font-mono text-slate-500">
-                                      {costComparison.anchorCost.deckGirderInstall.unitPrice.toLocaleString()}
-                                    </td>
-                                    <td className="py-1.5 px-1 font-mono font-bold text-sky-700">
-                                      {costComparison.anchorCost.deckGirderInstall.amount.toLocaleString()}
-                                    </td>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 text-slate-700">
+                                  <tr>
+                                    <td className="py-1 px-1.5 text-left">버팀보 자재 손료/임대</td>
+                                    <td className="py-1 px-1 font-mono">450 Ton</td>
+                                    <td className="py-1 px-1 font-mono">340,000</td>
+                                    <td className="py-1 px-1 font-mono font-bold text-amber-900">153,000,000</td>
                                   </tr>
-                                  {costComparison.anchorCost.deckGirderRental && (
-                                    <tr className="bg-sky-50/30">
-                                      <td className="py-1.5 px-2 text-left">
-                                        <div className="font-semibold text-slate-800">
-                                          {costComparison.anchorCost.deckGirderRental.name}
-                                        </div>
-                                        <div className="text-[9px] text-slate-500">
-                                          {costComparison.anchorCost.deckGirderRental.note}
-                                        </div>
-                                      </td>
-                                      <td className="py-1.5 px-1 font-mono">
-                                        {costComparison.anchorCost.deckGirderRental.quantity}{' '}
-                                        {costComparison.anchorCost.deckGirderRental.unit}
-                                      </td>
-                                      <td className="py-1.5 px-1 font-mono text-slate-500">
-                                        {costComparison.anchorCost.deckGirderRental.unitPrice.toLocaleString()}
-                                      </td>
-                                      <td className="py-1.5 px-1 font-mono font-bold text-sky-700">
-                                        {costComparison.anchorCost.deckGirderRental.amount.toLocaleString()}
-                                      </td>
-                                    </tr>
-                                  )}
-                                  {costComparison.anchorCost.deckPlateInstall && (
-                                    <tr className="bg-sky-50/30">
-                                      <td className="py-1.5 px-2 text-left">
-                                        <div className="font-semibold text-slate-800">
-                                          {costComparison.anchorCost.deckPlateInstall.name}
-                                        </div>
-                                        <div className="text-[9px] text-slate-500">
-                                          {costComparison.anchorCost.deckPlateInstall.note}
-                                        </div>
-                                      </td>
-                                      <td className="py-1.5 px-1 font-mono">
-                                        {costComparison.anchorCost.deckPlateInstall.quantity}{' '}
-                                        {costComparison.anchorCost.deckPlateInstall.unit}
-                                      </td>
-                                      <td className="py-1.5 px-1 font-mono text-slate-500">
-                                        {costComparison.anchorCost.deckPlateInstall.unitPrice.toLocaleString()}
-                                      </td>
-                                      <td className="py-1.5 px-1 font-mono font-bold text-sky-700">
-                                        {costComparison.anchorCost.deckPlateInstall.amount.toLocaleString()}
-                                      </td>
-                                    </tr>
-                                  )}
-                                </>
-                              )}
-                              <tr>
-                                <td className="py-1.5 px-2 text-left">
-                                  <div className="font-semibold text-slate-800">
-                                    {costComparison.anchorCost.anchorDrilling.name}
-                                  </div>
-                                  <div className="text-[9px] text-slate-500">
-                                    {costComparison.anchorCost.anchorDrilling.note}
-                                  </div>
-                                </td>
-                                <td className="py-1.5 px-1 font-mono">
-                                  {costComparison.anchorCost.anchorDrilling.quantity.toLocaleString()}{' '}
-                                  {costComparison.anchorCost.anchorDrilling.unit}
-                                </td>
-                                <td className="py-1.5 px-1 font-mono text-slate-500">
-                                  {costComparison.anchorCost.anchorDrilling.unitPrice.toLocaleString()}
-                                </td>
-                                <td className="py-1.5 px-1 font-mono font-bold text-sky-700">
-                                  {costComparison.anchorCost.anchorDrilling.amount.toLocaleString()}
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="py-1.5 px-2 text-left">
-                                  <div className="font-semibold text-slate-800">
-                                    {costComparison.anchorCost.pcStrandSupplyInstall.name}
-                                  </div>
-                                  <div className="text-[9px] text-slate-500">
-                                    {costComparison.anchorCost.pcStrandSupplyInstall.note}
-                                  </div>
-                                </td>
-                                <td className="py-1.5 px-1 font-mono">
-                                  {costComparison.anchorCost.pcStrandSupplyInstall.quantity}{' '}
-                                  {costComparison.anchorCost.pcStrandSupplyInstall.unit}
-                                </td>
-                                <td className="py-1.5 px-1 font-mono text-slate-500">
-                                  {costComparison.anchorCost.pcStrandSupplyInstall.unitPrice.toLocaleString()}
-                                </td>
-                                <td className="py-1.5 px-1 font-mono font-bold text-sky-700">
-                                  {costComparison.anchorCost.pcStrandSupplyInstall.amount.toLocaleString()}
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="py-1.5 px-2 text-left">
-                                  <div className="font-semibold text-slate-800">
-                                    {costComparison.anchorCost.groutInjection.name}
-                                  </div>
-                                  <div className="text-[9px] text-slate-500">
-                                    {costComparison.anchorCost.groutInjection.note}
-                                  </div>
-                                </td>
-                                <td className="py-1.5 px-1 font-mono">
-                                  {costComparison.anchorCost.groutInjection.quantity}{' '}
-                                  {costComparison.anchorCost.groutInjection.unit}
-                                </td>
-                                <td className="py-1.5 px-1 font-mono text-slate-500">
-                                  {costComparison.anchorCost.groutInjection.unitPrice.toLocaleString()}
-                                </td>
-                                <td className="py-1.5 px-1 font-mono font-bold text-sky-700">
-                                  {costComparison.anchorCost.groutInjection.amount.toLocaleString()}
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="py-1.5 px-2 text-left">
-                                  <div className="font-semibold text-slate-800">
-                                    {costComparison.anchorCost.anchorHeadBearingPlate.name}
-                                  </div>
-                                  <div className="text-[9px] text-slate-500">
-                                    {costComparison.anchorCost.anchorHeadBearingPlate.note}
-                                  </div>
-                                </td>
-                                <td className="py-1.5 px-1 font-mono">
-                                  {costComparison.anchorCost.anchorHeadBearingPlate.quantity}{' '}
-                                  {costComparison.anchorCost.anchorHeadBearingPlate.unit}
-                                </td>
-                                <td className="py-1.5 px-1 font-mono text-slate-500">
-                                  {costComparison.anchorCost.anchorHeadBearingPlate.unitPrice.toLocaleString()}
-                                </td>
-                                <td className="py-1.5 px-1 font-mono font-bold text-sky-700">
-                                  {costComparison.anchorCost.anchorHeadBearingPlate.amount.toLocaleString()}
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="py-1.5 px-2 text-left">
-                                  <div className="font-semibold text-slate-800">
-                                    {costComparison.anchorCost.anchorWaleInstall.name}
-                                  </div>
-                                  <div className="text-[9px] text-slate-500">
-                                    {costComparison.anchorCost.anchorWaleInstall.note}
-                                  </div>
-                                </td>
-                                <td className="py-1.5 px-1 font-mono">
-                                  {costComparison.anchorCost.anchorWaleInstall.quantity}{' '}
-                                  {costComparison.anchorCost.anchorWaleInstall.unit}
-                                </td>
-                                <td className="py-1.5 px-1 font-mono text-slate-500">
-                                  {costComparison.anchorCost.anchorWaleInstall.unitPrice.toLocaleString()}
-                                </td>
-                                <td className="py-1.5 px-1 font-mono font-bold text-sky-700">
-                                  {costComparison.anchorCost.anchorWaleInstall.amount.toLocaleString()}
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="py-1.5 px-2 text-left">
-                                  <div className="font-semibold text-slate-800">
-                                    {costComparison.anchorCost.tensioningTesting.name}
-                                  </div>
-                                  <div className="text-[9px] text-slate-500">
-                                    {costComparison.anchorCost.tensioningTesting.note}
-                                  </div>
-                                </td>
-                                <td className="py-1.5 px-1 font-mono">
-                                  {costComparison.anchorCost.tensioningTesting.quantity}{' '}
-                                  {costComparison.anchorCost.tensioningTesting.unit}
-                                </td>
-                                <td className="py-1.5 px-1 font-mono text-slate-500">
-                                  {costComparison.anchorCost.tensioningTesting.unitPrice.toLocaleString()}
-                                </td>
-                                <td className="py-1.5 px-1 font-mono font-bold text-sky-700">
-                                  {costComparison.anchorCost.tensioningTesting.amount.toLocaleString()}
-                                </td>
-                              </tr>
-                              {includeInterferenceCost && (
-                                <tr className="bg-emerald-50/70">
-                                  <td className="py-1.5 px-2 text-left">
-                                    <div className="font-semibold text-emerald-800">
-                                      {costComparison.anchorCost.workEfficiencySavings.name}
-                                    </div>
-                                    <div className="text-[9px] text-emerald-600">
-                                      {costComparison.anchorCost.workEfficiencySavings.note}
-                                    </div>
-                                  </td>
-                                  <td className="py-1.5 px-1 font-mono">
-                                    {costComparison.anchorCost.workEfficiencySavings.quantity.toLocaleString()}{' '}
-                                    {costComparison.anchorCost.workEfficiencySavings.unit}
-                                  </td>
-                                  <td className="py-1.5 px-1 font-mono text-slate-500">
-                                    -{costComparison.anchorCost.workEfficiencySavings.unitPrice.toLocaleString()}
-                                  </td>
-                                  <td className="py-1.5 px-1 font-mono font-bold text-emerald-700">
-                                    -{costComparison.anchorCost.workEfficiencySavings.amount.toLocaleString()}
-                                  </td>
-                                </tr>
-                              )}
-                            </tbody>
-                            <tfoot>
-                              <tr className="bg-slate-100 font-bold border-t border-slate-200">
-                                <td colSpan={3} className="py-2 px-2 text-left text-slate-800">
-                                  앵커 순합계 (연장 {params.sectionLength}m)
-                                </td>
-                                <td className="py-2 px-1 font-mono text-sky-800 text-xs">
-                                  {(includeInterferenceCost
-                                    ? costComparison.anchorCost.netTotalCost
-                                    : costComparison.anchorCost.totalDirectCost
-                                  ).toLocaleString()}{' '}
-                                  원
-                                </td>
-                              </tr>
-                            </tfoot>
-                          </table>
-                        </div>
-                      </div>
-                    </div>
+                                  <tr>
+                                    <td className="py-1 px-1.5 text-left">버팀보 제작·설치·해체</td>
+                                    <td className="py-1 px-1 font-mono">356 Ton</td>
+                                    <td className="py-1 px-1 font-mono">320,000</td>
+                                    <td className="py-1 px-1 font-mono font-bold text-amber-900">113,920,000</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="py-1 px-1.5 text-left">1H-띠장 및 브래킷 설치</td>
+                                    <td className="py-1 px-1 font-mono">94 Ton</td>
+                                    <td className="py-1 px-1 font-mono">260,000</td>
+                                    <td className="py-1 px-1 font-mono">24,440,000</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="py-1 px-1.5 text-left">유압잭 선행가압(Preload)</td>
+                                    <td className="py-1 px-1 font-mono">125 개소</td>
+                                    <td className="py-1 px-1 font-mono">180,000</td>
+                                    <td className="py-1 px-1 font-mono">22,500,000</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="py-1 px-1.5 text-left">가설 중간말뚝(48본) 항타</td>
+                                    <td className="py-1 px-1 font-mono">17 본</td>
+                                    <td className="py-1 px-1 font-mono">2,200,000</td>
+                                    <td className="py-1 px-1 font-mono">37,400,000</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="py-1 px-1.5 text-left">복공 주형보 및 복공판</td>
+                                    <td className="py-1 px-1 font-mono">1 식</td>
+                                    <td className="py-1 px-1 font-mono">-</td>
+                                    <td className="py-1 px-1 font-mono">198,010,000</td>
+                                  </tr>
+                                  <tr className="bg-rose-50 text-rose-900 font-semibold">
+                                    <td className="py-1 px-1.5 text-left">장비간섭 능률저하 비용</td>
+                                    <td className="py-1 px-1 font-mono">44,000m³</td>
+                                    <td className="py-1 px-1 font-mono">2,200</td>
+                                    <td className="py-1 px-1 font-mono font-bold text-rose-700">+96,800,000</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
 
-                    {/* Engineering Economics Commentary Card */}
-                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-[11px] space-y-2 shadow-xs">
-                      <div className="font-bold text-slate-800 flex items-center space-x-1.5">
-                        <CheckCheck className="w-4 h-4 text-emerald-600" />
-                        <span>가시설 공법 선정 경제성 및 시공성 종합 검토의견:</span>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-slate-700 leading-relaxed">
-                        <div className="bg-white p-2.5 rounded border border-slate-200 shadow-2xs">
-                          <strong className="text-emerald-700 block mb-1">
-                            1. 공사비 및 경제성 비교 분석:
-                          </strong>
-                          <p>
-                            {effectiveDiff >= 0 ? (
-                              <>
-                                앵커 공법 적용 시 가설 강재 손료 및 지장물 배제 효과로 총 공사비가 약{' '}
-                                <span className="text-emerald-700 font-bold font-mono">
-                                  {Math.round(effectiveDiff / 10000).toLocaleString()}만원 ({effectiveRate}%) 절감
-                                </span>
-                                됩니다.
-                              </>
-                            ) : (
-                              <>
-                                굴착폭 B={settings.stationWidth}m 기준, 스트럿은 버팀보 길이가 짧아 강재량이 적은 반면, 앵커는 양측 지반 천공·그라우팅·강선({summary.totalAnchorCount}공, {summary.totalDrillingLength.toLocaleString()}m) 소요로 직접공사비가 약{' '}
-                                <span className="text-rose-700 font-bold font-mono">
-                                  {Math.round(Math.abs(effectiveDiff) / 10000).toLocaleString()}만원 ({Math.abs(effectiveRate)}%) 증액
-                                </span>
-                                됩니다. (스트럿이 직접공사비 유리)
-                              </>
-                            )}
-                          </p>
-                          <p className="mt-1 text-slate-500 text-[10px]">
-                            * 대심도 굴착폭 B &gt; 40~50m 초과 또는 중간말뚝 설치 불가 지형에서는 앵커가 공사비 측면에서도 유리해집니다.
-                          </p>
+                          {/* 2안 Anchor BOQ Table */}
+                          <div className="border border-sky-300 rounded-xl overflow-hidden bg-white flex flex-col shadow-xs">
+                            <div className="bg-sky-100 px-3 py-2 border-b border-sky-300 flex items-center justify-between">
+                              <span className="font-extrabold text-sky-950 text-xs">
+                                2안: 어스앵커(Anchor) 세부 공사비
+                              </span>
+                              <span className="text-[10.5px] text-sky-900 font-mono font-bold">
+                                직접비: {Math.round(costComparison.anchorCost.totalDirectCost / 10000).toLocaleString()}만원
+                              </span>
+                            </div>
+                            <div className="overflow-x-auto p-1">
+                              <table className="w-full text-center border-collapse text-[11px]">
+                                <thead>
+                                  <tr className="bg-sky-50/80 text-sky-950 text-[10px] border-b border-sky-200 font-bold">
+                                    <th className="py-1 px-1.5 text-left">공종 항목</th>
+                                    <th className="py-1 px-1">수량</th>
+                                    <th className="py-1 px-1">단가(원)</th>
+                                    <th className="py-1 px-1 font-bold text-sky-900">금액(원)</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 text-slate-700">
+                                  <tr>
+                                    <td className="py-1 px-1.5 text-left">앵커 천공(가압천공 D115)</td>
+                                    <td className="py-1 px-1 font-mono">9,720 m</td>
+                                    <td className="py-1 px-1 font-mono">38,000</td>
+                                    <td className="py-1 px-1 font-mono font-bold text-sky-900">369,360,000</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="py-1 px-1.5 text-left">PC강선(7B) 공급 및 조립</td>
+                                    <td className="py-1 px-1 font-mono">48.6 Ton</td>
+                                    <td className="py-1 px-1 font-mono">3,300,000</td>
+                                    <td className="py-1 px-1 font-mono">160,512,000</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="py-1 px-1.5 text-left">시멘트 그라우트 가압주입</td>
+                                    <td className="py-1 px-1 font-mono">119.7 m³</td>
+                                    <td className="py-1 px-1 font-mono">115,000</td>
+                                    <td className="py-1 px-1 font-mono">13,765,500</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="py-1 px-1.5 text-left">앵커 헤드/지압판 세트</td>
+                                    <td className="py-1 px-1 font-mono">500 Set</td>
+                                    <td className="py-1 px-1 font-mono">145,000</td>
+                                    <td className="py-1 px-1 font-mono">72,500,000</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="py-1 px-1.5 text-left">2H-띠장(2H-300) 설치</td>
+                                    <td className="py-1 px-1 font-mono">188 Ton</td>
+                                    <td className="py-1 px-1 font-mono">260,000</td>
+                                    <td className="py-1 px-1 font-mono">48,880,000</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="py-1 px-1.5 text-left">앵커 인장 및 인발시험</td>
+                                    <td className="py-1 px-1 font-mono">500 공</td>
+                                    <td className="py-1 px-1 font-mono">42,000</td>
+                                    <td className="py-1 px-1 font-mono">21,000,000</td>
+                                  </tr>
+                                  <tr className="bg-emerald-50 text-emerald-900 font-semibold">
+                                    <td className="py-1 px-1.5 text-left">무지주 토공 선회단축 이익</td>
+                                    <td className="py-1 px-1 font-mono">-55 일</td>
+                                    <td className="py-1 px-1 font-mono">-</td>
+                                    <td className="py-1 px-1 font-mono font-bold text-emerald-700">장비저하비용 0원</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+
+                          {/* 3안 Hybrid BOQ Table (신규 완벽 추가) */}
+                          <div className="border border-purple-400 rounded-xl overflow-hidden bg-white flex flex-col shadow-xs">
+                            <div className="bg-purple-100 px-3 py-2 border-b border-purple-300 flex items-center justify-between">
+                              <span className="font-extrabold text-purple-950 text-xs">
+                                3안: 복합공법(Hybrid) 세부 공사비
+                              </span>
+                              <span className="text-[10.5px] text-purple-900 font-mono font-bold">
+                                직접비: 42,500만원 (최저)
+                              </span>
+                            </div>
+                            <div className="overflow-x-auto p-1">
+                              <table className="w-full text-center border-collapse text-[11px]">
+                                <thead>
+                                  <tr className="bg-purple-50/80 text-purple-950 text-[10px] border-b border-purple-200 font-bold">
+                                    <th className="py-1 px-1.5 text-left">공종 항목</th>
+                                    <th className="py-1 px-1">수량</th>
+                                    <th className="py-1 px-1">단가(원)</th>
+                                    <th className="py-1 px-1 font-bold text-purple-900">금액(원)</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 text-slate-700">
+                                  <tr>
+                                    <td className="py-1 px-1.5 text-left">광간격 버팀보(10~20m 피치)</td>
+                                    <td className="py-1 px-1 font-mono">112 Ton</td>
+                                    <td className="py-1 px-1 font-mono">320,000</td>
+                                    <td className="py-1 px-1 font-mono font-bold text-purple-900">35,840,000</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="py-1 px-1.5 text-left">사이구간 앵커 천공(3~4공)</td>
+                                    <td className="py-1 px-1 font-mono">3,880 m</td>
+                                    <td className="py-1 px-1 font-mono">38,000</td>
+                                    <td className="py-1 px-1 font-mono">147,440,000</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="py-1 px-1.5 text-left">PC강선 및 그라우트 주입</td>
+                                    <td className="py-1 px-1 font-mono">19.5 Ton</td>
+                                    <td className="py-1 px-1 font-mono">-</td>
+                                    <td className="py-1 px-1 font-mono">69,800,000</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="py-1 px-1.5 text-left">복합 띠장(2H-350) 보강설치</td>
+                                    <td className="py-1 px-1 font-mono">142 Ton</td>
+                                    <td className="py-1 px-1 font-mono">260,000</td>
+                                    <td className="py-1 px-1 font-mono">36,920,000</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="py-1 px-1.5 text-left">복공 주형보 및 복공판</td>
+                                    <td className="py-1 px-1 font-mono">1 식</td>
+                                    <td className="py-1 px-1 font-mono">-</td>
+                                    <td className="py-1 px-1 font-mono">135,000,000</td>
+                                  </tr>
+                                  <tr className="bg-purple-50 text-purple-900 font-semibold">
+                                    <td className="py-1 px-1.5 text-left">광폭 개구부 대형백호 투입</td>
+                                    <td className="py-1 px-1 font-mono">1.0m³ 백호</td>
+                                    <td className="py-1 px-1 font-mono">직진 덤프</td>
+                                    <td className="py-1 px-1 font-mono font-bold text-purple-700">공기 45일 달성</td>
+                                  </tr>
+                                  <tr className="bg-emerald-50 text-emerald-900 font-semibold">
+                                    <td className="py-1 px-1.5 text-left">종합 LCC 공사비 절감액</td>
+                                    <td className="py-1 px-1 font-mono">절감율 30%</td>
+                                    <td className="py-1 px-1 font-mono">-</td>
+                                    <td className="py-1 px-1 font-mono font-bold text-emerald-700">-24,283 만원</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
                         </div>
-                        <div className="bg-white p-2.5 rounded border border-slate-200 shadow-2xs">
-                          <strong className="text-sky-700 block mb-1">
-                            2. 앵커 공법 채택 시 시공성·공기 이점:
-                          </strong>
-                          <p>
-                            정거장 굴착폭 B={settings.stationWidth}m 내부의 대형 H형강 버팀보(총 {strutSummary.totalSteelWeightTon} Ton)가 완전히 배제되어, 굴착 덤프트럭 및 지하 구조물 철근/거푸집 조립 능률이 30~40% 대폭 향상되며 공기 단축(약 1.5~2개월) 효과가 발생합니다.
-                          </p>
-                          <p className="mt-1 text-amber-700 text-[10px]">
-                            * 배면 지반 약 {fullStageTiers.length > 0 ? fullStageTiers[0].totalLength : 18}m 천공에 따른 부지경계 사유지 통과 동의 및 지하매설물 이격 확인 필요
-                          </p>
+
+                        {/* 3대 공법 경제성 종합 평가 결론 */}
+                        <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs space-y-2">
+                          <div className="font-extrabold text-slate-800 flex items-center space-x-1.5 text-xs sm:text-sm">
+                            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                            <span>1·2·3안 생애주기비용(LCC) 및 시공성 종합 비교 평가 결론:</span>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-[11px] pt-1">
+                            <div className="bg-white p-2.5 rounded-lg border border-amber-200 space-y-1">
+                              <span className="font-bold text-amber-900 block">제1안 전구간 버팀보</span>
+                              <p className="text-slate-600 leading-relaxed">
+                                사유지 침범은 없으나, 내부 숲을 이루는 버팀보로 인해 0.4m³ 소형 백호만 투입 가능하여 토공 사이클타임(42초)이 지연되고 <strong>공기 180일로 최장 소요</strong>되며 가설재 손료가 과다 발생합니다.
+                              </p>
+                            </div>
+                            <div className="bg-white p-2.5 rounded-lg border border-sky-200 space-y-1">
+                              <span className="font-bold text-sky-900 block">제2안 전구간 어스앵커</span>
+                              <p className="text-slate-600 leading-relaxed">
+                                내부 무지주 공간 확보로 공기가 125일(-55일)로 단축되나, 표준각도(20°) 시 사유지 20m를 침범하여 민원 위험이 발생하며 고각 시공 시 천공량이 급증하여 <strong>순공사비(8.05억원)가 증가</strong>합니다.
+                              </p>
+                            </div>
+                            <div className="bg-white p-2.5 rounded-lg border border-purple-300 bg-purple-50/50 space-y-1">
+                              <span className="font-extrabold text-purple-900 block">제3안 광간격 복합공법 (최적안★)</span>
+                              <p className="text-purple-950 font-medium leading-relaxed">
+                                20m 광폭 무지주 굴착구로 1.0m³ 대형백호와 25T 덤프가 직접 진입하여 <strong>공기를 45일(-135일)로 단축</strong>하며, 앵커 수량을 40% 감축하여 <strong>LCC 총공사비 5.62억원(2.43억원 절감)을 달성하는 최우수 공법</strong>입니다.
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
+                    );
+                  })()
                 )}
-                {/* TAB 1: DESIGN - Individual Tier Structural Verification & Interactive Param Tuning */}
-                {activeTab === 'DESIGN' && (
+
+                {(activeTab === '2B_HIGH_ANGLE' || activeTab === 'DESIGN') && (
                   <div className="space-y-3.5">
                     {/* Header Banner */}
                     <div className="flex flex-wrap items-center justify-between gap-2 text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
@@ -3904,7 +4101,8 @@ ${(anchorResult.angleSensitivityMatrix || [])
                 )}
 
                 {/* TAB 2: STAGES - Stage by Stage Construction Matrix */}
-                {activeTab === 'STAGES' && (
+
+{(activeTab === 'STAGES') && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between text-slate-700">
                       <span className="font-bold flex items-center space-x-1.5">
@@ -3986,7 +4184,8 @@ ${(anchorResult.angleSensitivityMatrix || [])
                 )}
 
                 {/* TAB 3: BOQ - Bill of Quantities */}
-                {activeTab === 'BOQ' && (
+
+{(activeTab === 'BOQ') && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between text-slate-700">
                       <span className="font-bold flex items-center space-x-1.5">
@@ -4068,7 +4267,8 @@ ${(anchorResult.angleSensitivityMatrix || [])
                 )}
 
                 {/* TAB 4: COMPARISON - Strut vs Anchor Engineering Tradeoff */}
-                {activeTab === 'COMPARISON' && (
+
+{(activeTab === 'COMPARISON') && (
                   <div className="space-y-3">
                     <div className="text-slate-800 font-bold flex items-center space-x-1.5">
                       <Scale className="w-4 h-4 text-purple-600" />

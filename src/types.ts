@@ -34,7 +34,18 @@ export interface WallSection {
   description: string;
 }
 
-export type StrutType = 'PIPE_STRUT' | 'H_BEAM' | 'GROUND_ANCHOR';
+export type StrutType = 'PIPE_STRUT' | 'H_BEAM' | 'GROUND_ANCHOR' | 'HYBRID';
+
+export interface TierAnchorConfig {
+  anchorsBetweenStruts?: number; // 버팀보 사이 앵커 공수 (e.g. 2, 3, 4공)
+  strandCount?: number; // 강선 가닥수 (e.g. 3, 4, 5가닥)
+  anchorAngle?: number; // 앵커 경사각 (deg, e.g. 15~25도)
+  anchorLoadRatio?: number; // 앵커 하중 분담율 (0.0~1.0, e.g. 0.65 = 65%)
+  anchorPreloadTon?: number; // 앵커 긴장력 (tonf)
+  freeLength?: number; // 자유장 Lf (m)
+  bondLength?: number; // 정착장 La (m)
+  strutSpacing?: number; // 복합공법 시 버팀보 광간격 (e.g. 10.0m)
+}
 
 export interface StrutTier {
   id: string;
@@ -42,7 +53,7 @@ export interface StrutTier {
   depth: number; // m (GL로부터 설치 깊이)
   type: StrutType;
   specName: string; // e.g. "Φ609.6×12t", "H-300×300×10×15"
-  horizontalSpacing: number; // m (버팀보 수평 간격, e.g. 3.0m, 4.0m)
+  horizontalSpacing: number; // m (버팀보 수평 간격, e.g. 3.0m, 4.0m, 10.0m)
   excavationWidth: number; // m (정거장 굴착폭/버팀보 지간, e.g. 20.0m)
   hasCenterPost: boolean; // 중간말뚝 유무 (좌굴장 1/2 감소)
   preloadTon: number; // kN or tonf (초기 프리로드 선하중)
@@ -54,6 +65,7 @@ export interface StrutTier {
   waleZ: number; // cm³ (띠장 단면계수)
   waleAllowableBending: number; // MPa
   installedAtStep: number; // 이 지보가 설치되는 단계
+  anchorConfig?: TierAnchorConfig; // 단별 앵커 / 3안 복합공법 상세 설정
 }
 
 export interface ExcavationStage {
@@ -84,19 +96,36 @@ export interface CenterPostConfig {
   impactFactor: number; // 충격계수 i (e.g. 0.30)
 }
 
+export interface UtilityPipe {
+  id: string;
+  name: string; // e.g. "도시가스관 (D300)", "상수도관 (D500)", "통신관로 (D150)", "한전 전력구 (D200)"
+  type: 'GAS' | 'WATER' | 'TELECOM' | 'POWER' | 'SEWER';
+  depth: number; // m (GL로부터 매설 깊이 3~5m)
+  offsetFromWall: number; // m (좌측 벽체로부터 이격거리)
+  diameterMm: number; // mm
+  color: string;
+}
+
 export interface ProjectSettings {
   projectName: string;
   stationName: string;
   location: string;
-  roadWidth: number; // m (도로 폭)
-  stationWidth: number; // m (정거장 굴착폭)
-  finalExcavationDepth: number; // m (최종 굴착 심도)
+  roadWidth: number; // m (상부 원도로 폭, e.g. 32.0m)
+  stationWidth: number; // m (정거장 본체 구조물 폭 B, e.g. 20.0m)
+  excavationWidth?: number; // m (가시설 굴착폭 B_excav = 구조물 폭 + 1.5m 시공여유)
+  deckWidth?: number; // m (도로 복공판 설치 폭 B_deck = 굴착폭 + 0.5m 거치여유)
+  stationLength?: number; // m (정거장 연장 L, e.g. 100m)
+  finalExcavationDepth: number; // m (최종 굴착 심도 H)
+  storyCount?: number; // 정거장 구조물 층수 (1층: 단층, 2층: 표준, 3층: 환승/심도, 4층: 대심도복합)
+  structureHeight?: number; // m (지하정거장 본체 구조물 높이, e.g. 14.5m)
+  topCoverDepth?: number; // m (지반면과 구조물 상단 높이/토피고, e.g. 7.5m)
   groundWaterTable: number; // m (지하수위 GL -m)
   surchargeLoad: number; // kN/m² (상재하중: 도로교통하중 q)
   earthPressureTheory: 'PECK' | 'RANKINE' | 'TSCHEBOTARIOFF';
   seismicCoefficient: number; // kh (지진계수, 0.12 etc)
   deckHouseLoad: number; // kN/m (복공판 및 주형보 자중)
   centerPost?: CenterPostConfig; // 중간말뚝 (교통하중 지지용)
+  utilities?: UtilityPipe[]; // 지하 매설 지장물 목록 (심도 3~5m)
 }
 
 export interface DepthAnalysisPoint {

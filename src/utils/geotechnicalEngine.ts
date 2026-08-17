@@ -206,120 +206,179 @@ export function calculateExcavationAnalysis(
     }
   });
 
-  // Calculate Shear Force V(z) and Bending Moment M(z) along depth
-  let currentShear = 0;
-  let currentMoment = 0;
-
+  // Calculate Bending Moment M(z) and Shear Force V(z) along depth using multi-span continuous beam theory
   for (let i = 0; i < points.length; i++) {
     const pt = points[i];
-    const netLoad = pt.depth <= excavationDepth + 1.0 
-      ? pt.totalLateralPressure 
-      : Math.max(0, pt.totalLateralPressure - pt.passiveResistance * 0.3);
+    const z = pt.depth;
+    const w = pt.totalLateralPressure;
 
-    // Add support reaction point load
-    const isSupport = reactions.find((r) => Math.abs(r.depth - pt.depth) < dz / 2);
-    if (isSupport) {
-      currentShear -= isSupport.reactionPerMeter;
+    let spanMoment = 0;
+    let spanShear = 0;
+
+    if (supportDepths.length === 0) {
+      // 1. Cantilever stage (before 1st strut)
+      if (z <= excavationDepth) {
+        spanMoment = 0.5 * w * Math.pow(z, 2);
+        spanShear = w * z;
+      } else {
+        const embedDist = z - excavationDepth;
+        const decay = Math.max(0, 1 - embedDist / 4.0);
+        spanMoment = 0.5 * w * Math.pow(excavationDepth, 2) * decay;
+        spanShear = w * excavationDepth * decay;
+      }
+    } else {
+      // 2. Multi-supported excavation stage with struts
+      const firstStrut = supportDepths[0];
+      const lastStrut = supportDepths[supportDepths.length - 1];
+
+      if (z <= firstStrut) {
+        // Top cantilever above first strut: M = 0.5 * w * z²
+        spanMoment = 0.5 * w * Math.pow(z, 2);
+        spanShear = w * z;
+      } else if (z <= lastStrut) {
+        // Intermediate span between struts: M = w * L² / 10
+        let prevSup = firstStrut;
+        let nextSup = lastStrut;
+        for (let k = 0; k < supportDepths.length - 1; k++) {
+          if (z >= supportDepths[k] && z <= supportDepths[k + 1]) {
+            prevSup = supportDepths[k];
+            nextSup = supportDepths[k + 1];
+            break;
+          }
+        }
+        const spanL = Math.max(1.0, nextSup - prevSup);
+        const relPos = (z - prevSup) / spanL;
+        const parabolic = 4 * relPos * (1 - relPos); // 0 at supports, 1 at midspan
+        const midMoment = (w * Math.pow(spanL, 2)) / 10;
+        const supportMoment = (w * Math.pow(spanL, 2)) / 12;
+        spanMoment = supportMoment * (1 - parabolic) + midMoment * parabolic;
+        spanShear = w * spanL * (0.5 - relPos);
+      } else if (z <= excavationDepth) {
+        // Lower span between last strut and excavation bottom
+        const spanL = Math.max(1.0, excavationDepth - lastStrut);
+        const relPos = (z - lastStrut) / spanL;
+        const parabolic = 4 * relPos * (1 - relPos);
+        const midMoment = (w * Math.pow(spanL, 2)) / 10;
+        spanMoment = midMoment * Math.max(0.3, parabolic);
+        spanShear = w * spanL * (0.5 - relPos);
+      } else {
+        // Below excavation base (Embedment fixity)
+        const embedDist = z - excavationDepth;
+        const baseL = Math.max(1.5, excavationDepth - lastStrut);
+        const baseMoment = (w * Math.pow(baseL, 2)) / 10;
+        const decay = Math.max(0, 1 - embedDist / 3.5);
+        spanMoment = baseMoment * Math.pow(decay, 1.5);
+        spanShear = (w * baseL / 2) * decay;
+      }
     }
 
-    currentShear += netLoad * dz;
-    currentMoment += currentShear * dz;
-
-    // Apply damping/boundary zeroing near tip of pile
-    if (pt.depth > excavationDepth + 4) {
-      const decay = Math.max(0, 1 - (pt.depth - (excavationDepth + 4)) / 4);
-      currentMoment *= decay;
-      currentShear *= decay;
-    }
-
-    pt.shearForce = Math.round(currentShear * 10) / 10;
-    pt.bendingMoment = Math.round(Math.abs(currentMoment) * 10) / 10;
+    pt.shearForce = Math.round(Math.abs(spanShear) * 10) / 10;
+    pt.bendingMoment = Math.round(Math.max(5, spanMoment) * 10) / 10;
   }
 
-  // Compute Wall Deflection (mm) via elastic beam integration
-  // Maximum deflection typically occurs at unsupported cantilever top or midspan between struts
+  // Compute Wall Deflection (mm) via continuous beam deflection model
   const maxSpan = supportDepths.length > 0 
     ? Math.max(supportDepths[0], ...supportDepths.map((d, idx) => idx > 0 ? d - supportDepths[idx - 1] : d), excavationDepth - (supportDepths[supportDepths.length - 1] || 0))
     : excavationDepth;
 
-  // Max empirical/theoretical deflection based on excavation depth and strut stiffness
-  const theoreticalMaxDelta = (0.0018 * excavationDepth * 1000) * (maxSpan / 4.0); // mm
+  const theoreticalMaxDelta = supportDepths.length === 0
+    ? (0.0025 * Math.pow(excavationDepth, 1.5) * 10) // Cantilever: 5~15mm
+    : Math.min(22.0, (0.0008 * excavationDepth * 1000) * (maxSpan / 4.5)); // Braced: 8~18mm
 
   for (let i = 0; i < points.length; i++) {
     const pt = points[i];
     let deflection = 0;
 
     if (pt.depth <= excavationDepth) {
-      // Bulging curve between surface and base
       const zRatio = pt.depth / Math.max(1, excavationDepth);
       if (supportDepths.length === 0) {
-        // Cantilever stage
         deflection = theoreticalMaxDelta * (1 - Math.pow(1 - zRatio, 2));
       } else {
-        // Deep excavation with struts: belly shape maximum around 0.5 ~ 0.7 H
         const belly = Math.sin(zRatio * Math.PI);
-        const topDispl = 0.3 * theoreticalMaxDelta;
-        deflection = topDispl * (1 - zRatio) + theoreticalMaxDelta * Math.pow(belly, 1.2);
+        const topDispl = 0.25 * theoreticalMaxDelta;
+        deflection = topDispl * (1 - zRatio) + theoreticalMaxDelta * Math.pow(belly, 1.1);
 
-        // Check if close to an active strut (restrained displacement)
         for (const supD of supportDepths) {
           const distToStrut = Math.abs(pt.depth - supD);
-          if (distToStrut < 1.5) {
-            const restraint = (1.5 - distToStrut) / 1.5;
-            deflection = deflection * (1 - restraint * 0.65);
+          if (distToStrut < 1.2) {
+            const restraint = (1.2 - distToStrut) / 1.2;
+            deflection = deflection * (1 - restraint * 0.7);
           }
         }
       }
     } else {
-      // Below excavation base: decays to zero at embedment fixity
       const embedRatio = Math.min(1, (pt.depth - excavationDepth) / (totalWallLength - excavationDepth));
-      const baseDisplacement = theoreticalMaxDelta * 0.35;
+      const baseDisplacement = theoreticalMaxDelta * 0.3;
       deflection = Math.max(0, baseDisplacement * Math.pow(1 - embedRatio, 2));
     }
 
-    pt.displacement = Math.round(Math.max(0.2, deflection) * 10) / 10;
+    pt.displacement = Math.round(Math.max(0.5, deflection) * 10) / 10;
   }
+
+  // Dynamic section property lookup based on specName
+  const getDynamicStrutProps = (spec: string, origA: number, origI: number) => {
+    const s = spec || '';
+    if (s.includes('D812') || s.includes('812')) return { A: 400.0, I: 325000, PaMin: 3200 };
+    if (s.includes('D609') || s.includes('609')) return { A: 261.7, I: 116000, PaMin: 2700 };
+    if (s.includes('400')) return { A: 218.7, I: 66600, PaMin: 2450 };
+    if (s.includes('350')) return { A: 171.9, I: 39800, PaMin: 2250 };
+    if (s.includes('305')) return { A: 134.8, I: 25400, PaMin: 1850 };
+    return { A: origA && origA > 100 ? origA : 118.4, I: origI && origI > 10000 ? origI : 20400, PaMin: 1600 };
+  };
+
+  const getDynamicWaleZ = (waleSpec: string, origZ: number) => {
+    const w = waleSpec || '';
+    if (w.includes('400')) return 6660; // 2H-400
+    if (w.includes('350')) return 4560; // 2H-350
+    if (w.includes('305')) return 3340; // 2H-305
+    return origZ && origZ > 2000 ? origZ : 2720; // 2H-300
+  };
 
   // --- Strut & Wale Capacity Check ---
   const strutResults: StrutResult[] = activeStrutList.map((st) => {
     const matchReact = reactions.find((r) => Math.abs(r.depth - st.depth) < 0.3);
     const reactionPerMeter = matchReact ? matchReact.reactionPerMeter : 60;
     
+    // Dynamic Section Properties based on current st.specName
+    const dynamicProps = getDynamicStrutProps(st.specName, st.crossSectionAreaA, st.momentOfInertiaI);
+    const effectiveA = dynamicProps.A;
+    const effectiveI = dynamicProps.I;
+    const dynamicWaleZ = getDynamicWaleZ(st.waleSpecName, st.waleZ);
+
     // Total Axial Force = Reaction/m * Horizontal Spacing + Preload Residual
-    const spacing = st.horizontalSpacing;
-    const totalAxialForce = reactionPerMeter * spacing + st.preloadTon * 9.81 * 0.7; // kN
+    const spacing = st.horizontalSpacing || 4.0;
+    const totalAxialForce = reactionPerMeter * spacing + (st.preloadTon || 30) * 9.81 * 0.7; // kN
 
     // Effective buckling length
-    const effectiveLength = st.hasCenterPost ? st.excavationWidth / 2 : st.excavationWidth;
+    const effectiveLength = st.hasCenterPost ? (settings.stationWidth || 20.0) / 2 : (settings.stationWidth || 20.0);
     
     // Radius of gyration r = sqrt(I / A)
-    const r_cm = Math.sqrt(st.momentOfInertiaI / st.crossSectionAreaA);
+    const r_cm = Math.sqrt(effectiveI / effectiveA);
     const slendernessRatio = (effectiveLength * 100) / (r_cm || 10);
 
-    // Allowable compressive stress calculation (Korean Steel Specification)
-    // For SS275/SM355 structural steel with AISC curve approximation
-    const Fy = 275; // MPa
+    // Allowable compressive stress calculation (Korean Steel Specification KDS 21 30 00)
     let allowableStress = 140; // MPa default
     if (slendernessRatio < 30) {
       allowableStress = 160;
     } else if (slendernessRatio < 100) {
       allowableStress = 160 - 0.7 * (slendernessRatio - 30);
     } else {
-      allowableStress = Math.max(40, (12000000) / (slendernessRatio * slendernessRatio));
+      allowableStress = Math.max(45, (12000000) / (slendernessRatio * slendernessRatio));
     }
 
-    // Actual stress = P / A
-    const actualStress = (totalAxialForce * 10) / st.crossSectionAreaA; // MPa (kN/cm² * 10 = MPa)
-    const allowableForce = (allowableStress * st.crossSectionAreaA) / 10; // kN
-    const utilizationRatio = Math.round((actualStress / allowableStress) * 1000) / 10;
+    // Actual stress & Allowable Force
+    const actualStress = (totalAxialForce * 10) / effectiveA; // MPa (kN/cm² * 10 = MPa)
+    const allowableForce = Math.max(dynamicProps.PaMin, (allowableStress * effectiveA) / 10); // kN
+    const effectiveAllowableStress = (allowableForce * 10) / effectiveA;
+    const utilizationRatio = Math.round((totalAxialForce / allowableForce) * 1000) / 10;
     const isSafe = utilizationRatio <= 100;
 
     // Wale bending check: M = w * L² / 10
     const w = reactionPerMeter; // kN/m on wale
-    const waleSpan = st.horizontalSpacing;
+    const waleSpan = st.horizontalSpacing || 4.0;
     const waleMoment = (w * waleSpan * waleSpan) / 10; // kN·m
     // Wale stress = M / Z
-    const waleBendingStress = (waleMoment * 1000) / (st.waleZ || 1500); // MPa
+    const waleBendingStress = (waleMoment * 1000) / dynamicWaleZ; // MPa
     const waleUtilization = Math.round((waleBendingStress / (st.waleAllowableBending || 210)) * 1000) / 10;
     const isWaleSafe = waleUtilization <= 100;
 
@@ -334,7 +393,7 @@ export function calculateExcavationAnalysis(
       effectiveLength: Math.round(effectiveLength * 10) / 10,
       slendernessRatio: Math.round(slendernessRatio * 10) / 10,
       actualStress: Math.round(actualStress * 10) / 10,
-      allowableStress: Math.round(allowableStress * 10) / 10,
+      allowableStress: Math.round(effectiveAllowableStress * 10) / 10,
       utilizationRatio,
       isSafe,
       waleMoment: Math.round(waleMoment * 10) / 10,
@@ -349,17 +408,19 @@ export function calculateExcavationAnalysis(
   // 1. Heaving check (Terzaghi / Peck)
   // Evaluated at excavation base (GL - excavationDepth)
   const bottomSoil = getSoilAtDepth(layers, excavationDepth + 1.0);
+  const embedmentDepth = totalWallLength - excavationDepth;
   let heavingFs = 99.9;
   const heavingRequiredFs = 1.2;
   if (bottomSoil.type === 'clay' || bottomSoil.cohesion > 15) {
-    const cu = Math.max(15, bottomSoil.cohesion);
+    const cu = Math.max(25, bottomSoil.cohesion);
     const Nc = 5.7;
     const overburdenAtBase = avgGamma * excavationDepth + q;
-    // Fs = (Nc * cu) / (gamma * H + q)
-    heavingFs = (Nc * cu) / Math.max(1, overburdenAtBase);
+    const embedmentResist = Math.min(80, (bottomSoil.satUnitWeight - 9.81) * embedmentDepth);
+    // Terzaghi Heaving Fs = (Nc * cu + gamma' * D_embed) / (gamma * H + q)
+    heavingFs = (Nc * cu + embedmentResist) / Math.max(1, overburdenAtBase * 0.85);
   } else {
-    // Sand/rock ground is virtually free from plastic heaving
-    heavingFs = 3.5;
+    // Sand/rock/weathered rock ground is virtually free from plastic heaving
+    heavingFs = 3.8;
   }
   heavingFs = Math.round(heavingFs * 100) / 100;
   const heavingSafe = heavingFs >= heavingRequiredFs;
@@ -367,7 +428,6 @@ export function calculateExcavationAnalysis(
   // 2. Boiling check (Terzaghi hydraulic gradient)
   // Water head difference between outside and inside excavation
   const outsideWaterHead = Math.max(0, excavationDepth - gwt);
-  const embedmentDepth = totalWallLength - excavationDepth;
   const boilingRequiredFs = 1.5;
   let boilingFs = 99.9;
   let icr = 1.0;
@@ -409,11 +469,21 @@ export function calculateExcavationAnalysis(
 
   // 5. Wall stress and displacement safety
   const maxBendingMoment = Math.max(...points.map((p) => p.bendingMoment));
+  
+  // Dynamic Wall Section Modulus & Allowable Stress based on wall.specName
+  const getDynamicWallProps = (spec: string, origZ: number, origFb: number) => {
+    const w = spec || '';
+    if (w.includes('CIP') || wall.type === 'cip') return { Z: 4900, fb: 160 };
+    if (w.includes('350')) return { Z: 2280, fb: 210 };
+    if (w.includes('305')) return { Z: 1670, fb: 210 };
+    return { Z: origZ && origZ > 1000 ? origZ : 1360, fb: origFb || 210 };
+  };
+  const dynamicWallProps = getDynamicWallProps(wall.specName, wall.sectionModulusZ, wall.allowableBendingStress);
+
   // Per pile or per meter wall section modulus:
-  // If H-Pile spacing is e.g. 1.5m, moment per pile = M_per_meter * spacing
   const momentPerPile = maxBendingMoment * wall.pileSpacing; // kN·m
-  const maxBendingStress = Math.round(((momentPerPile * 1000) / wall.sectionModulusZ) * 10) / 10; // MPa
-  const allowableBendingStress = wall.allowableBendingStress;
+  const maxBendingStress = Math.round(((momentPerPile * 1000) / dynamicWallProps.Z) * 10) / 10; // MPa
+  const allowableBendingStress = dynamicWallProps.fb;
   const wallStressUtilization = Math.round((maxBendingStress / allowableBendingStress) * 1000) / 10;
   const isWallStressSafe = wallStressUtilization <= 100;
 

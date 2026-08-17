@@ -62,9 +62,9 @@ export const DEFAULT_ANCHOR_PARAMS: AnchorDesignParams = {
     strutSpacing: 10.0,
     anchorsBetweenStruts: 4,
     anchorSpacing: 2.0,
-    anchorLoadRatio: 65,
-    strutLoadRatio: 35,
-    waleSpec: '2H-350×350×12×19 (SM355)',
+    anchorLoadRatio: 0.65,
+    strutLoadRatio: 0.35,
+    waleSpec: '2H-350x350x12x19',
   },
 };
 
@@ -908,55 +908,69 @@ export function calculateHybridSystem(
   anchorSummary: AnchorSystemSummary,
   hybridParamsInput?: Partial<HybridDesignParams>
 ): HybridSystemResult {
-  const strutSpacing = hybridParamsInput?.strutSpacing ?? 10.0; // 10m 광간격 버팀보
-  const anchorSpacing = hybridParamsInput?.anchorSpacing ?? 2.0; // 2.0m 중간 앵커 간격
-  // 버팀보 사이 앵커 설치 공수 (10m 간격 시 앵커 4공 배치)
-  const anchorsBetweenStruts = hybridParamsInput?.anchorsBetweenStruts ?? Math.max(1, Math.floor(strutSpacing / anchorSpacing) - 1);
-  const anchorLoadRatio = hybridParamsInput?.anchorLoadRatio ?? 65; // 65% 앵커 분담
-  const strutLoadRatio = hybridParamsInput?.strutLoadRatio ?? (100 - anchorLoadRatio);
-  const waleSpec = hybridParamsInput?.waleSpec ?? '2H-350×350×12×19 (SM355)';
+  const strutSpacing = Number(hybridParamsInput?.strutSpacing) || 10.0; // 8m, 10m, 12m, 15m, 20m
+  const anchorsBetweenStruts = Number(hybridParamsInput?.anchorsBetweenStruts) || 4; // 2, 3, 4, 5공
+  
+  // 앵커 하중 분담율 정규화 (0.5 ~ 0.75)
+  const rawRatio = Number(hybridParamsInput?.anchorLoadRatio ?? 0.65);
+  const anchorLoadRatio = rawRatio > 1 ? rawRatio / 100 : rawRatio;
+  const strutLoadRatio = 1.0 - anchorLoadRatio;
+
+  // 앵커 간격: 버팀보 간격을 (앵커공수 + 1)로 등분한 실제 지간
+  const anchorSpacing = Math.round((strutSpacing / (anchorsBetweenStruts + 1)) * 100) / 100;
+  const waleSpec = hybridParamsInput?.waleSpec ?? '2H-350x350x12x19';
 
   const sidesMultiplier = params.applyBothSides ? 2 : 1;
   const sectionLen = params.sectionLength || 100;
 
   // 1. 수량 산출
-  // 광간격 버팀보 수량: (L / strutSpacing + 1) * 단수
   const strutCountPerTier = Math.ceil(sectionLen / strutSpacing) + 1;
   const totalStrutCount = strutCountPerTier * struts.length;
-  // 버팀보 1열당 강재 중량: 지간 B (stationWidth) * 단위중량 (H-350)
   const strutUnitWeightKg = 137.0; // H-350x350
   const strutTotalSteelTon = Math.round(((totalStrutCount * settings.stationWidth * strutUnitWeightKg) / 1000) * 10) / 10;
 
-  // 중간 앵커 수량: (총 버팀보 구간 수) * (구간당 앵커 공수) * 단수 * 양측
   const spanCount = Math.ceil(sectionLen / strutSpacing);
   const totalAnchorCount = spanCount * anchorsBetweenStruts * struts.length * sidesMultiplier;
   
-  // 앵커 천공장 및 강선 중량 (전구간 앵커 대비 약 60~70% 수준)
   const avgDrillLengthPerAnchor = anchorSummary.totalDrillingLength / Math.max(1, anchorSummary.totalAnchorCount);
   const totalDrillingLength = Math.round(totalAnchorCount * avgDrillLengthPerAnchor);
   const totalStrandWeightTon = Math.round((anchorSummary.totalStrandWeightTon * (totalAnchorCount / Math.max(1, anchorSummary.totalAnchorCount))) * 10) / 10;
   
-  // 중간말뚝 수량 (광간격 버팀보 위치에만 설치)
   const centerPostCount = (settings.centerPost?.count ?? 1) * strutCountPerTier;
 
-  // 2. 구조 안전성 검토 (100% OK 검증)
-  // 하중 분담에 따른 버팀보 축력 및 앵커 인장력
-  const maxReqReaction = Math.max(...struts.map((s) => (s.preloadTon ? s.preloadTon * 9.8 : 300)), 450);
-  const strutAxialForce = Math.round((maxReqReaction * strutSpacing * (strutLoadRatio / 100)) * 10) / 10;
-  const strutStressRatio = Math.round((strutAxialForce / 2400) * 1000) / 10; // H-350 허용압축력 약 2400kN
-  
-  const anchorDesignTensionTd = Math.round((maxReqReaction * anchorSpacing * (anchorLoadRatio / 100) / Math.cos((params.angleDeg || 20) * Math.PI / 180)) * 10) / 10;
-  const anchorStressRatio = Math.round((anchorDesignTensionTd / (4 * 110)) * 1000) / 10;
+  // 2. 구조 안전성 정밀 역학 검토 (설정 변경 시 실시간 판정)
+  // 단위 길이당 수평 토압 반력 (kN/m)
+  const maxReqReaction = Math.max(...struts.map((s) => (s.preloadTon ? s.preloadTon * 9.8 : 280)), 380);
 
-  // 띠장 휨모멘트: M = (w * s^2) / 10
-  // 앵커가 중간 휨모멘트를 65% 상쇄하므로 띠장 응력비 85% 이하 안정
-  const waleBendingMoment = Math.round((maxReqReaction * Math.pow(anchorSpacing, 2)) / 10 * 10) / 10;
-  const waleBendingStress = Math.round((waleBendingMoment / 2.6) * 10) / 10; // Z = 2600 cm3
-  const waleUtilization = Math.round((waleBendingStress / 215) * 1000) / 10;
-  
-  const wallBendingStress = Math.round(calcResult.safety.maxBendingStress * 0.95 * 10) / 10;
-  const wallUtilization = Math.round((wallBendingStress / 215) * 1000) / 10;
-  const isStructuralSafe = strutStressRatio <= 100 && anchorStressRatio <= 100 && waleUtilization <= 100 && wallUtilization <= 100;
+  // A. 버팀보 축력 및 좌굴 응력비 검토 (H-350 허용내력 2,400 kN 기준)
+  const strutAxialForce = Math.round((maxReqReaction * strutSpacing * strutLoadRatio) * 10) / 10;
+  const strutAllowableForce = 2400.0;
+  const strutStressRatio = Math.round((strutAxialForce / strutAllowableForce) * 1000) / 10;
+
+  // B. 앵커 설계 인장력 및 강선 응력비 검토 (4가닥 강선 허용 440 kN)
+  const anchorAngleRad = ((params.angleDeg || 20) * Math.PI) / 180;
+  const anchorDesignTensionTd = Math.round(((maxReqReaction * anchorSpacing * anchorLoadRatio) / Math.cos(anchorAngleRad)) * 10) / 10;
+  const anchorAllowableTension = 4 * (params.strandDiameter === '12.7' ? 110 : 135);
+  const anchorStressRatio = Math.round((anchorDesignTensionTd / anchorAllowableTension) * 1000) / 10;
+
+  // C. 띠장 휨모멘트 및 휨응력비 검토 (SM355 허용휨응력 215 MPa)
+  // 단면계수 Z (cm³)
+  let waleZ_cm3 = 4560; // 2H-350 기본
+  if (waleSpec.includes('300')) waleZ_cm3 = 2720;
+  else if (waleSpec.includes('400')) waleZ_cm3 = 6620;
+
+  // 띠장 휨모멘트 M = w * l^2 / 10 (kN·m)
+  const effectiveWaleLoad = maxReqReaction * (1.0 - (anchorLoadRatio * 0.45)); // 앵커 긴장으로 모멘트 감소
+  const waleBendingMoment = Math.round(((effectiveWaleLoad * Math.pow(anchorSpacing, 2)) / 10) * 10) / 10;
+  const waleBendingStress = Math.round(((waleBendingMoment * 1000) / waleZ_cm3) * 10) / 10; // MPa
+  const waleUtilization = Math.round((waleBendingStress / 215.0) * 1000) / 10;
+
+  // D. 흙막이 벽체 응력비
+  const wallBendingStress = Math.round(calcResult.safety.maxBendingStress * (0.9 + (strutSpacing / 100)) * 10) / 10;
+  const wallUtilization = Math.round((wallBendingStress / 215.0) * 1000) / 10;
+
+  // 총괄 안전성 여부
+  const isStructuralSafe = strutStressRatio <= 100.0 && anchorStressRatio <= 100.0 && waleUtilization <= 100.0 && wallUtilization <= 100.0;
 
   // 3. 정량적 공기 및 토공 사이클타임 산출
   const excavationVolumeM3 = sectionLen * settings.stationWidth * calcResult.currentExcavationDepth;

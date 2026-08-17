@@ -92,7 +92,7 @@ export const CalculationReportModal: React.FC<CalculationReportModalProps> = ({
               1. 기본 설계 조건 및 지반 정수
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 p-3 rounded border border-slate-200 text-[11px]">
-              <div>정거장 굴착폭: <span className="font-mono font-bold text-slate-900">{settings.stationWidth} m</span></div>
+              <div>정거장 제원: <span className="font-mono font-bold text-slate-900">B={settings.stationWidth}m × L={settings.stationLength || 100}m</span></div>
               <div>최종 굴착심도: <span className="font-mono font-bold text-slate-900">{settings.finalExcavationDepth} m</span></div>
               <div>지하수위(GWT): <span className="font-mono font-bold text-slate-900">GL -{settings.groundWaterTable} m</span></div>
               <div>상재하중(q): <span className="font-mono font-bold text-slate-900">{settings.surchargeLoad} kN/m²</span></div>
