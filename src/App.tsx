@@ -53,11 +53,73 @@ export default function App() {
     [selectedPresetId]
   );
 
-  const [settings, setSettings] = useState<ProjectSettings>(currentPreset.settings);
-  const [layers, setLayers] = useState<SoilLayer[]>(currentPreset.layers);
-  const [wall, setWall] = useState<WallSection>(currentPreset.wall);
-  const [struts, setStruts] = useState<StrutTier[]>(currentPreset.struts);
-  const [stages, setStages] = useState<ExcavationStage[]>(currentPreset.stages);
+  // Load persisted engineering data from localStorage on initial boot / refresh
+  const savedInitialData = useMemo(() => {
+    try {
+      const raw = localStorage.getItem('STRUT_ANCHOR_ENGINEERING_DATA');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch (e) {
+      console.warn('Failed to parse STRUT_ANCHOR_ENGINEERING_DATA from localStorage', e);
+    }
+    return null;
+  }, []);
+
+  const [settings, setSettings] = useState<ProjectSettings>(() => {
+    if (savedInitialData?.settings) {
+      return { ...currentPreset.settings, ...savedInitialData.settings };
+    }
+    return currentPreset.settings;
+  });
+
+  const [layers, setLayers] = useState<SoilLayer[]>(() => {
+    if (savedInitialData?.layers && Array.isArray(savedInitialData.layers)) {
+      return savedInitialData.layers;
+    }
+    return currentPreset.layers;
+  });
+
+  const [wall, setWall] = useState<WallSection>(() => {
+    if (savedInitialData?.wall) {
+      return { ...currentPreset.wall, ...savedInitialData.wall };
+    }
+    return currentPreset.wall;
+  });
+
+  const [struts, setStruts] = useState<StrutTier[]>(() => {
+    if (savedInitialData?.struts && Array.isArray(savedInitialData.struts)) {
+      return savedInitialData.struts;
+    }
+    return currentPreset.struts;
+  });
+
+  const [stages, setStages] = useState<ExcavationStage[]>(() => {
+    if (savedInitialData?.stages && Array.isArray(savedInitialData.stages)) {
+      return savedInitialData.stages;
+    }
+    return currentPreset.stages;
+  });
+
+  // Automatically sync to localStorage whenever state changes
+  React.useEffect(() => {
+    try {
+      localStorage.setItem(
+        'STRUT_ANCHOR_ENGINEERING_DATA',
+        JSON.stringify({
+          settings,
+          layers,
+          wall,
+          struts,
+          stages,
+          savedAt: new Date().toISOString(),
+        })
+      );
+    } catch (e) {
+      console.warn('Failed to auto-sync to localStorage', e);
+    }
+  }, [settings, layers, wall, struts, stages]);
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
 
   // Active Right-Side Panel Tab (Default to INPUTS as requested)
