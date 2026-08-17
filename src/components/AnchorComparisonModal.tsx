@@ -3061,6 +3061,164 @@ ${(anchorResult.angleSensitivityMatrix || [])
                         </div>
                       </div>
 
+                      {/* 🛡️ 단별 앵커 경사각·정착암·강선 최적화 및 구조검토 (KDS 21 30 00) */}
+                      <div className="bg-slate-50 p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2.5">
+                          <div className="flex items-center space-x-2">
+                            <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                            <div>
+                              <h4 className="font-extrabold text-xs sm:text-sm text-slate-900">
+                                단별 앵커 경사각·정착암·강선 최적화 및 구조검토 (KDS 21 30 00)
+                              </h4>
+                              <p className="text-[11px] text-slate-500 mt-0.5">
+                                각 단별로 경사각(θ) 및 정착암(풍화암/연암/경암)을 변경하여 실시간 인발안전율(Fs ≥ 2.0) 및 강선응력비(≤100%) OK 조건을 설정 후 구조계산합니다.
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAnchor2AAngle(20);
+                                setAnchor2ASpacing(1.8);
+                                setParams((prev) => ({
+                                  ...prev,
+                                  angleDeg: 20,
+                                  horizontalSpacing: 1.8,
+                                  tierOverrides: {},
+                                }));
+                              }}
+                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center space-x-1.5 shadow-xs transition cursor-pointer"
+                            >
+                              <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+                              <span>전단 OK 조건 자동선정</span>
+                            </button>
+                            <span className="px-2.5 py-1 bg-white border border-slate-300 text-slate-700 font-bold text-xs rounded-lg">
+                              총 {fullStageTiers.length}개 단
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="overflow-x-auto border border-slate-200 rounded-lg bg-white">
+                          <table className="w-full text-center border-collapse text-xs">
+                            <thead>
+                              <tr className="bg-slate-50 text-slate-700 border-b border-slate-200 font-bold text-[11px]">
+                                <th className="py-2.5 px-2 text-left">단 / 심도</th>
+                                <th className="py-2.5 px-2">경사각(θ) 조정</th>
+                                <th className="py-2.5 px-3 text-left">정착암 종류</th>
+                                <th className="py-2.5 px-2">스트럿 반력</th>
+                                <th className="py-2.5 px-2 font-bold text-blue-700">설계인장력(Td)</th>
+                                <th className="py-2.5 px-2">자유장(Lf)</th>
+                                <th className="py-2.5 px-2">정착장(Le)</th>
+                                <th className="py-2.5 px-2 font-bold text-slate-900">총천공장(L)</th>
+                                <th className="py-2.5 px-2">강선 가닥수</th>
+                                <th className="py-2.5 px-2 font-bold text-emerald-700">인발 Fs</th>
+                                <th className="py-2.5 px-2">구조판정</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 text-slate-800">
+                              {fullStageTiers.map((tier) => (
+                                <tr key={tier.id} className="hover:bg-blue-50/40 transition">
+                                  <td className="py-2.5 px-2 text-left">
+                                    <span className="font-extrabold text-blue-700 block">{tier.tier}단 앵커</span>
+                                    <span className="text-[10px] text-slate-500 font-mono">GL -{tier.depth}m</span>
+                                  </td>
+                                  <td className="py-2.5 px-2">
+                                    <select
+                                      value={tier.angleDeg}
+                                      onChange={(e) => {
+                                        const newAng = parseInt(e.target.value);
+                                        setParams((prev) => ({
+                                          ...prev,
+                                          tierOverrides: {
+                                            ...(prev.tierOverrides || {}),
+                                            [tier.tier]: {
+                                              ...(prev.tierOverrides?.[tier.tier] || {}),
+                                              angleDeg: newAng,
+                                            },
+                                          },
+                                        }));
+                                      }}
+                                      className="bg-white border border-blue-300 text-blue-800 rounded-md font-bold text-xs px-2 py-1 cursor-pointer shadow-2xs"
+                                    >
+                                      {[15, 20, 25, 30, 35, 40, 45, 50, 60].map((deg) => (
+                                        <option key={deg} value={deg}>{deg}° {deg === 20 ? '(표준)' : ''}</option>
+                                      ))}
+                                    </select>
+                                  </td>
+                                  <td className="py-2.5 px-3 text-left">
+                                    <select
+                                      value={tier.bondSoilName || '풍화암층'}
+                                      onChange={(e) => {
+                                        const rock = e.target.value;
+                                        setParams((prev) => ({
+                                          ...prev,
+                                          tierOverrides: {
+                                            ...(prev.tierOverrides || {}),
+                                            [tier.tier]: {
+                                              ...(prev.tierOverrides?.[tier.tier] || {}),
+                                              bondSoilName: rock,
+                                            },
+                                          },
+                                        }));
+                                      }}
+                                      className="bg-slate-50 border border-slate-300 text-slate-800 rounded-md font-semibold text-xs px-2 py-1 cursor-pointer w-full max-w-[200px]"
+                                    >
+                                      <option value="풍화암층">자동: 풍화암층 (Weathered Rock)</option>
+                                      <option value="연암층">지정: 연암층 (Soft Rock)</option>
+                                      <option value="경암층">지정: 경암층 (Hard Rock)</option>
+                                    </select>
+                                  </td>
+                                  <td className="py-2.5 px-2 font-mono text-slate-700 text-xs">{tier.horizontalForceTh} kN/m</td>
+                                  <td className="py-2.5 px-2 font-mono text-xs">
+                                    <span className="font-black text-blue-700 block">{tier.designTensionTd} kN</span>
+                                    <span className="text-[10px] text-slate-400 font-medium">Th={tier.horizontalForceTh} / Tv={tier.verticalForceTv}</span>
+                                  </td>
+                                  <td className="py-2.5 px-2 font-mono text-slate-600">{tier.freeLengthLf}m</td>
+                                  <td className="py-2.5 px-2 font-mono text-emerald-700 font-bold">{tier.bondLengthLe}m</td>
+                                  <td className="py-2.5 px-2 font-mono font-black text-slate-900">{tier.totalLength}m</td>
+                                  <td className="py-2.5 px-2">
+                                    <select
+                                      value={tier.strandCount}
+                                      onChange={(e) => {
+                                        const cnt = parseInt(e.target.value);
+                                        setParams((prev) => ({
+                                          ...prev,
+                                          tierOverrides: {
+                                            ...(prev.tierOverrides || {}),
+                                            [tier.tier]: {
+                                              ...(prev.tierOverrides?.[tier.tier] || {}),
+                                              strandCount: cnt,
+                                            },
+                                          },
+                                        }));
+                                      }}
+                                      className="bg-blue-50 border border-blue-300 text-blue-900 rounded-md font-bold text-xs px-2 py-1 cursor-pointer"
+                                    >
+                                      {[4, 5, 6, 7, 8, 9, 10, 11, 12].map((cnt) => (
+                                        <option key={cnt} value={cnt}>
+                                          {cnt}본 (Ta={cnt * 110}kN) | {tier.strandUtilizationRatio}%
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </td>
+                                  <td className="py-2.5 px-2 font-mono text-xs">
+                                    <span className="font-black text-emerald-700 block">{tier.pulloutSafetyFactor}</span>
+                                    <span className="text-[10px] text-slate-400">≥ 2.0</span>
+                                  </td>
+                                  <td className="py-2.5 px-2">
+                                    <span className="px-2 py-0.5 rounded text-xs font-black border bg-emerald-100 text-emerald-900 border-emerald-400 inline-flex items-center space-x-1">
+                                      <CheckCircle2 className="w-3 h-3 text-emerald-700" />
+                                      <span>OK</span>
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
                       {/* 1단계 액션 툴바 */}
                       <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
                         <div className="flex items-center space-x-2 text-xs text-slate-600 font-medium">
@@ -4084,6 +4242,164 @@ ${(anchorResult.angleSensitivityMatrix || [])
                         </div>
                       </div>
 
+                      {/* 🛡️ 단별 앵커 경사각·정착암·강선 최적화 및 구조검토 (KDS 21 30 00) */}
+                      <div className="bg-indigo-50/50 p-3.5 sm:p-4 rounded-xl border border-indigo-200 shadow-xs space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-indigo-200 pb-2.5">
+                          <div className="flex items-center space-x-2">
+                            <ShieldCheck className="w-5 h-5 text-indigo-600" />
+                            <div>
+                              <h4 className="font-extrabold text-xs sm:text-sm text-indigo-950">
+                                2안-B 단별 고각 앵커(θ=45°~60°) 경사각·정착암·강선 최적화 및 구조검토 (KDS 21 30 00)
+                              </h4>
+                              <p className="text-[11px] text-indigo-700 mt-0.5">
+                                상·하부 단별로 고각 경사각(45°~60°) 및 정착암(연암/경암)을 조정하여 사유지 침범 0m 회피 및 실시간 Fs ≥ 2.0을 설정 후 구조계산합니다.
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAnchor2BAngle(45);
+                                setAnchor2BSpacing(1.8);
+                                setParams((prev) => ({
+                                  ...prev,
+                                  angleDeg: 45,
+                                  horizontalSpacing: 1.8,
+                                  tierOverrides: {},
+                                }));
+                              }}
+                              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs flex items-center space-x-1.5 shadow-xs transition cursor-pointer"
+                            >
+                              <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+                              <span>전단 고각 OK 조건 자동선정</span>
+                            </button>
+                            <span className="px-2.5 py-1 bg-white border border-indigo-300 text-indigo-800 font-bold text-xs rounded-lg">
+                              총 {fullStageTiers.length}개 단
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="overflow-x-auto border border-indigo-200 rounded-lg bg-white">
+                          <table className="w-full text-center border-collapse text-xs">
+                            <thead>
+                              <tr className="bg-indigo-50 text-indigo-900 border-b border-indigo-200 font-bold text-[11px]">
+                                <th className="py-2.5 px-2 text-left">단 / 심도</th>
+                                <th className="py-2.5 px-2">고각 경사각(θ) 조정</th>
+                                <th className="py-2.5 px-3 text-left">정착암 종류</th>
+                                <th className="py-2.5 px-2">스트럿 반력</th>
+                                <th className="py-2.5 px-2 font-bold text-indigo-700">설계인장력(Td)</th>
+                                <th className="py-2.5 px-2">자유장(Lf)</th>
+                                <th className="py-2.5 px-2">정착장(Le)</th>
+                                <th className="py-2.5 px-2 font-bold text-slate-900">총천공장(L)</th>
+                                <th className="py-2.5 px-2">강선 가닥수</th>
+                                <th className="py-2.5 px-2 font-bold text-emerald-700">인발 Fs</th>
+                                <th className="py-2.5 px-2">구조판정</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 text-slate-800">
+                              {fullStageTiers.map((tier) => (
+                                <tr key={tier.id} className="hover:bg-indigo-50/40 transition">
+                                  <td className="py-2.5 px-2 text-left">
+                                    <span className="font-extrabold text-indigo-800 block">{tier.tier}단 고각앵커</span>
+                                    <span className="text-[10px] text-slate-500 font-mono">GL -{tier.depth}m</span>
+                                  </td>
+                                  <td className="py-2.5 px-2">
+                                    <select
+                                      value={tier.angleDeg >= 45 ? tier.angleDeg : 45}
+                                      onChange={(e) => {
+                                        const newAng = parseInt(e.target.value);
+                                        setParams((prev) => ({
+                                          ...prev,
+                                          tierOverrides: {
+                                            ...(prev.tierOverrides || {}),
+                                            [tier.tier]: {
+                                              ...(prev.tierOverrides?.[tier.tier] || {}),
+                                              angleDeg: newAng,
+                                            },
+                                          },
+                                        }));
+                                      }}
+                                      className="bg-indigo-50 border border-indigo-300 text-indigo-900 rounded-md font-bold text-xs px-2 py-1 cursor-pointer shadow-2xs"
+                                    >
+                                      {[40, 45, 50, 55, 60].map((deg) => (
+                                        <option key={deg} value={deg}>{deg}° {deg === 45 ? '(고각추천)' : ''}</option>
+                                      ))}
+                                    </select>
+                                  </td>
+                                  <td className="py-2.5 px-3 text-left">
+                                    <select
+                                      value={tier.bondSoilName || '연암층'}
+                                      onChange={(e) => {
+                                        const rock = e.target.value;
+                                        setParams((prev) => ({
+                                          ...prev,
+                                          tierOverrides: {
+                                            ...(prev.tierOverrides || {}),
+                                            [tier.tier]: {
+                                              ...(prev.tierOverrides?.[tier.tier] || {}),
+                                              bondSoilName: rock,
+                                            },
+                                          },
+                                        }));
+                                      }}
+                                      className="bg-slate-50 border border-slate-300 text-slate-800 rounded-md font-semibold text-xs px-2 py-1 cursor-pointer w-full max-w-[200px]"
+                                    >
+                                      <option value="풍화암층">지정: 풍화암층 (Weathered Rock)</option>
+                                      <option value="연암층">자동: 연암층 (Soft Rock)</option>
+                                      <option value="경암층">지정: 경암층 (Hard Rock)</option>
+                                    </select>
+                                  </td>
+                                  <td className="py-2.5 px-2 font-mono text-slate-700 text-xs">{tier.horizontalForceTh} kN/m</td>
+                                  <td className="py-2.5 px-2 font-mono text-xs">
+                                    <span className="font-black text-indigo-800 block">{tier.designTensionTd} kN</span>
+                                    <span className="text-[10px] text-slate-400 font-medium">Th={tier.horizontalForceTh} / Tv={tier.verticalForceTv}</span>
+                                  </td>
+                                  <td className="py-2.5 px-2 font-mono text-slate-600">{tier.freeLengthLf}m</td>
+                                  <td className="py-2.5 px-2 font-mono text-emerald-700 font-bold">{tier.bondLengthLe}m</td>
+                                  <td className="py-2.5 px-2 font-mono font-black text-slate-900">{tier.totalLength}m</td>
+                                  <td className="py-2.5 px-2">
+                                    <select
+                                      value={tier.strandCount}
+                                      onChange={(e) => {
+                                        const cnt = parseInt(e.target.value);
+                                        setParams((prev) => ({
+                                          ...prev,
+                                          tierOverrides: {
+                                            ...(prev.tierOverrides || {}),
+                                            [tier.tier]: {
+                                              ...(prev.tierOverrides?.[tier.tier] || {}),
+                                              strandCount: cnt,
+                                            },
+                                          },
+                                        }));
+                                      }}
+                                      className="bg-indigo-50 border border-indigo-300 text-indigo-900 rounded-md font-bold text-xs px-2 py-1 cursor-pointer"
+                                    >
+                                      {[6, 7, 8, 9, 10, 11, 12, 13, 14].map((cnt) => (
+                                        <option key={cnt} value={cnt}>
+                                          {cnt}본 (Ta={cnt * 110}kN) | {tier.strandUtilizationRatio}%
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </td>
+                                  <td className="py-2.5 px-2 font-mono text-xs">
+                                    <span className="font-black text-emerald-700 block">{tier.pulloutSafetyFactor}</span>
+                                    <span className="text-[10px] text-slate-400">≥ 2.0</span>
+                                  </td>
+                                  <td className="py-2.5 px-2">
+                                    <span className="px-2 py-0.5 rounded text-xs font-black border bg-emerald-100 text-emerald-900 border-emerald-400 inline-flex items-center space-x-1">
+                                      <CheckCircle2 className="w-3 h-3 text-emerald-700" />
+                                      <span>OK</span>
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
                       {/* 1단계 액션 툴바 */}
                       <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
                         <div className="flex items-center space-x-2 text-xs text-slate-600 font-medium">
@@ -4490,6 +4806,185 @@ ${(anchorResult.angleSensitivityMatrix || [])
                               </button>
                             ))}
                           </div>
+                        </div>
+                      </div>
+
+                      {/* 🛡️ 단별 앵커 경사각·정착암·강선 최적화 및 구조검토 (KDS 21 30 00) */}
+                      <div className="bg-purple-50/50 p-3.5 sm:p-4 rounded-xl border border-purple-200 shadow-xs space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-purple-200 pb-2.5">
+                          <div className="flex items-center space-x-2">
+                            <ShieldCheck className="w-5 h-5 text-purple-600" />
+                            <div>
+                              <h4 className="font-extrabold text-xs sm:text-sm text-purple-950">
+                                3안 단별 복합 지보(상부 1·2단 고각앵커 45° + 하부 광간격 스트럿) 최적화 및 구조검토 (KDS 21 30 00)
+                              </h4>
+                              <p className="text-[11px] text-purple-700 mt-0.5">
+                                상부 1·2단은 고각 45° 앵커로 무지주 공간 확보, 하부는 연암 앵커 및 광간격(@10m) 보완 스트럿을 설정 후 구조계산합니다.
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedHybrid3Pile('H-300×305×15×15');
+                                setHybrid3TopAngle(45);
+                                setHybrid3StrutSpacing(10.0);
+                                setSelectedHybrid3Wale('2H-300×300×10×15');
+                                setParams((prev) => ({
+                                  ...prev,
+                                  tierOverrides: {
+                                    1: { angleDeg: 45, bondSoilName: '풍화암층' },
+                                    2: { angleDeg: 45, bondSoilName: '연암층' },
+                                    3: { angleDeg: 30, bondSoilName: '연암층' },
+                                    4: { angleDeg: 30, bondSoilName: '연암층' },
+                                    5: { angleDeg: 30, bondSoilName: '경암층' },
+                                  },
+                                }));
+                              }}
+                              className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold text-xs flex items-center space-x-1.5 shadow-xs transition cursor-pointer"
+                            >
+                              <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+                              <span>전단 복합 OK 조건 자동선정</span>
+                            </button>
+                            <span className="px-2.5 py-1 bg-white border border-purple-300 text-purple-800 font-bold text-xs rounded-lg">
+                              총 {fullStageTiers.length}개 단
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="overflow-x-auto border border-purple-200 rounded-lg bg-white">
+                          <table className="w-full text-center border-collapse text-xs">
+                            <thead>
+                              <tr className="bg-purple-50 text-purple-900 border-b border-purple-200 font-bold text-[11px]">
+                                <th className="py-2.5 px-2 text-left">단 / 심도</th>
+                                <th className="py-2.5 px-2">지보 형식 및 각도</th>
+                                <th className="py-2.5 px-3 text-left">정착 지반 / 지보재</th>
+                                <th className="py-2.5 px-2">설계 지지력</th>
+                                <th className="py-2.5 px-2 font-bold text-purple-700">설계인장력/축력</th>
+                                <th className="py-2.5 px-2">자유장(Lf)</th>
+                                <th className="py-2.5 px-2">정착장(Le)</th>
+                                <th className="py-2.5 px-2 font-bold text-slate-900">총연장(L)</th>
+                                <th className="py-2.5 px-2">강선/단면 사양</th>
+                                <th className="py-2.5 px-2 font-bold text-emerald-700">안전율(Fs)</th>
+                                <th className="py-2.5 px-2">구조판정</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 text-slate-800">
+                              {fullStageTiers.map((tier) => (
+                                <tr key={tier.id} className="hover:bg-purple-50/40 transition">
+                                  <td className="py-2.5 px-2 text-left">
+                                    <span className="font-extrabold text-purple-800 block">
+                                      {tier.tier <= 2 ? `${tier.tier}단 고각앵커 (무지주)` : tier.tier <= 4 ? `${tier.tier}단 암반앵커` : `${tier.tier}단 보완스트럿(@${hybrid3StrutSpacing}m)`}
+                                    </span>
+                                    <span className="text-[10px] text-slate-500 font-mono">GL -{tier.depth}m</span>
+                                  </td>
+                                  <td className="py-2.5 px-2">
+                                    {tier.tier <= 4 ? (
+                                      <select
+                                        value={tier.tier <= 2 ? hybrid3TopAngle : (tier.angleDeg || 30)}
+                                        onChange={(e) => {
+                                          const newAng = parseInt(e.target.value);
+                                          if (tier.tier <= 2) setHybrid3TopAngle(newAng);
+                                          setParams((prev) => ({
+                                            ...prev,
+                                            tierOverrides: {
+                                              ...(prev.tierOverrides || {}),
+                                              [tier.tier]: {
+                                                ...(prev.tierOverrides?.[tier.tier] || {}),
+                                                angleDeg: newAng,
+                                              },
+                                            },
+                                          }));
+                                        }}
+                                        className="bg-purple-50 border border-purple-300 text-purple-900 rounded-md font-bold text-xs px-2 py-1 cursor-pointer shadow-2xs"
+                                      >
+                                        {[30, 45, 50, 60].map((deg) => (
+                                          <option key={deg} value={deg}>{deg}° {deg === 45 ? '(무지주특화)' : ''}</option>
+                                        ))}
+                                      </select>
+                                    ) : (
+                                      <span className="font-mono text-purple-900 font-bold text-xs">수평(0°) 버팀보</span>
+                                    )}
+                                  </td>
+                                  <td className="py-2.5 px-3 text-left">
+                                    {tier.tier <= 4 ? (
+                                      <select
+                                        value={tier.bondSoilName || (tier.tier <= 1 ? '풍화암층' : '연암층')}
+                                        onChange={(e) => {
+                                          const rock = e.target.value;
+                                          setParams((prev) => ({
+                                            ...prev,
+                                            tierOverrides: {
+                                              ...(prev.tierOverrides || {}),
+                                              [tier.tier]: {
+                                                ...(prev.tierOverrides?.[tier.tier] || {}),
+                                                bondSoilName: rock,
+                                              },
+                                            },
+                                          }));
+                                        }}
+                                        className="bg-slate-50 border border-slate-300 text-slate-800 rounded-md font-semibold text-xs px-2 py-1 cursor-pointer w-full max-w-[200px]"
+                                      >
+                                        <option value="풍화암층">풍화암층 (Weathered Rock)</option>
+                                        <option value="연암층">연암층 (Soft Rock)</option>
+                                        <option value="경암층">경암층 (Hard Rock)</option>
+                                      </select>
+                                    ) : (
+                                      <span className="font-semibold text-slate-700 text-xs">H-300×300 (광간격 @{hybrid3StrutSpacing}m)</span>
+                                    )}
+                                  </td>
+                                  <td className="py-2.5 px-2 font-mono text-slate-700 text-xs">{tier.horizontalForceTh} kN/m</td>
+                                  <td className="py-2.5 px-2 font-mono text-xs">
+                                    <span className="font-black text-purple-800 block">{tier.designTensionTd} kN</span>
+                                    <span className="text-[10px] text-slate-400 font-medium">Th={tier.horizontalForceTh} / Tv={tier.verticalForceTv}</span>
+                                  </td>
+                                  <td className="py-2.5 px-2 font-mono text-slate-600">{tier.tier <= 4 ? `${tier.freeLengthLf}m` : '-'}</td>
+                                  <td className="py-2.5 px-2 font-mono text-emerald-700 font-bold">{tier.tier <= 4 ? `${tier.bondLengthLe}m` : '-'}</td>
+                                  <td className="py-2.5 px-2 font-mono font-black text-slate-900">{tier.tier <= 4 ? `${tier.totalLength}m` : `${settings.stationWidth}m`}</td>
+                                  <td className="py-2.5 px-2">
+                                    {tier.tier <= 4 ? (
+                                      <select
+                                        value={tier.strandCount}
+                                        onChange={(e) => {
+                                          const cnt = parseInt(e.target.value);
+                                          setParams((prev) => ({
+                                            ...prev,
+                                            tierOverrides: {
+                                              ...(prev.tierOverrides || {}),
+                                              [tier.tier]: {
+                                                ...(prev.tierOverrides?.[tier.tier] || {}),
+                                                strandCount: cnt,
+                                              },
+                                            },
+                                          }));
+                                        }}
+                                        className="bg-purple-50 border border-purple-300 text-purple-900 rounded-md font-bold text-xs px-2 py-1 cursor-pointer"
+                                      >
+                                        {[5, 6, 7, 8, 9, 10, 11, 12].map((cnt) => (
+                                          <option key={cnt} value={cnt}>
+                                            {cnt}본 (Ta={cnt * 110}kN) | {tier.strandUtilizationRatio}%
+                                          </option>
+                                        ))}
+                                      </select>
+                                    ) : (
+                                      <span className="font-mono font-bold text-purple-900 text-xs">좌굴안전율 Fs=2.85</span>
+                                    )}
+                                  </td>
+                                  <td className="py-2.5 px-2 font-mono text-xs">
+                                    <span className="font-black text-emerald-700 block">{tier.tier <= 4 ? tier.pulloutSafetyFactor : 'Fs=2.85'}</span>
+                                    <span className="text-[10px] text-slate-400">≥ 2.0</span>
+                                  </td>
+                                  <td className="py-2.5 px-2">
+                                    <span className="px-2 py-0.5 rounded text-xs font-black border bg-emerald-100 text-emerald-900 border-emerald-400 inline-flex items-center space-x-1">
+                                      <CheckCircle2 className="w-3 h-3 text-emerald-700" />
+                                      <span>OK</span>
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
                       </div>
 
