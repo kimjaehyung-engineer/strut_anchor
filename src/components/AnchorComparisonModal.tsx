@@ -87,9 +87,142 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
   const [copied, setCopied] = useState<boolean>(false);
   const [includeInterferenceCost, setIncludeInterferenceCost] = useState<boolean>(true);
 
-    // 1안 전구간 버팀보 공정 단계별 시뮬레이션 및 역학해석 데이터 (Step 0 ~ Step 10, 정거장 굴착심도 H 및 5단 심도/선하중 100% 동적 연동)
+  const [localWall, setLocalWall] = useState<WallSection>(
+    wall || {
+      type: 'H_PILE_TIMBER',
+      sectionModulusZ: 1530,
+      allowableStress: 140,
+      spacing: 1.8,
+      specName: 'H-300×305×15×15',
+      embedmentDepth: 4.5,
+      totalLength: 22.0,
+    }
+  );
+
+  useEffect(() => {
+    if (wall) setLocalWall(wall);
+  }, [wall]);
+
+  const handleUpdateWall = (newWall: WallSection) => {
+    setLocalWall(newWall);
+    if (onUpdateWall) onUpdateWall(newWall);
+  };
+
+  const [localStruts, setLocalStruts] = useState<StrutTier[]>(
+    struts && struts.length > 0
+      ? struts
+      : [
+          { tier: 1, depth: 2.0, specName: 'H-300×300×10×15', horizontalSpacing: 4.0, preload: 30 },
+          { tier: 2, depth: 6.5, specName: 'H-300×300×10×15', horizontalSpacing: 4.0, preload: 35 },
+          { tier: 3, depth: 11.0, specName: 'H-300×300×10×15', horizontalSpacing: 4.0, preload: 40 },
+          { tier: 4, depth: 15.5, specName: 'H-300×300×10×15', horizontalSpacing: 4.0, preload: 45 },
+          { tier: 5, depth: 19.5, specName: 'H-300×300×10×15', horizontalSpacing: 4.0, preload: 50 },
+        ]
+  );
+
+  useEffect(() => {
+    if (struts && struts.length > 0) setLocalStruts(struts);
+  }, [struts]);
+
+  const handleUpdateStruts = (newStruts: StrutTier[]) => {
+    setLocalStruts(newStruts);
+    if (onUpdateStruts) onUpdateStruts(newStruts);
+  };
+
+  // 1안 버팀보 수평 간격(@m) 및 수직 5단 설치 심도/선하중 사용자 임의 정의 상태
+  const [strutHorizontalSpacing, setStrutHorizontalSpacing] = useState<number>(4.0);
+
+  // 굴착깊이(H)에 최적화된 5단 버팀보 심도 계산 함수
+  const getOptimalDepthsForH = (H: number) => {
+    const s1 = H > 25 ? 3.0 : 2.0;
+    const s5 = Math.max(s1 + 4.0, H - 2.5);
+    const interval = (s5 - s1) / 4.0;
+    return [
+      Number(s1.toFixed(1)),
+      Number((s1 + interval).toFixed(1)),
+      Number((s1 + interval * 2).toFixed(1)),
+      Number((s1 + interval * 3).toFixed(1)),
+      Number(s5.toFixed(1)),
+    ];
+  };
+
+  const [customStrutDepths, setCustomStrutDepths] = useState<number[]>(() =>
+    getOptimalDepthsForH(settings?.finalExcavationDepth || 22.0)
+  );
+  const [customStrutPreloads, setCustomStrutPreloads] = useState<number[]>([30, 35, 40, 45, 50]);
+  const [selectedWaleSpec, setSelectedWaleSpec] = useState<string>('1H-300×300×10×15');
+  const [selectedKingPostSpec, setSelectedKingPostSpec] = useState<string>('H-300×300×10×15');
+
+  // 저장된 정거장 굴착심도(settings.finalExcavationDepth)가 변경되면 5단 심도 자동 최적 재배치
+  useEffect(() => {
+    const H = settings?.finalExcavationDepth || 22.0;
+    const autoDepths = getOptimalDepthsForH(H);
+    setCustomStrutDepths(autoDepths);
+  }, [settings?.finalExcavationDepth]);
+
+  const handleUpdateTierDepth = (tierIdx: number, newDepth: number) => {
+    const H = settings?.finalExcavationDepth || 22.0;
+    const updatedDepths = [...customStrutDepths];
+    updatedDepths[tierIdx] = Math.max(0.5, Math.min(H, newDepth));
+    setCustomStrutDepths(updatedDepths);
+
+    const updatedStruts = localStruts.map((s, idx) =>
+      idx === tierIdx ? { ...s, depth: updatedDepths[tierIdx] } : s
+    );
+    handleUpdateStruts(updatedStruts);
+  };
+
+  const handleUpdateTierPreload = (tierIdx: number, newPreload: number) => {
+    const updatedPreloads = [...customStrutPreloads];
+    updatedPreloads[tierIdx] = Math.max(0, newPreload);
+    setCustomStrutPreloads(updatedPreloads);
+
+    const updatedStruts = localStruts.map((s, idx) =>
+      idx === tierIdx ? { ...s, preload: updatedPreloads[tierIdx] } : s
+    );
+    handleUpdateStruts(updatedStruts);
+  };
+
+  const handleResetStrutLayout = () => {
+    setStrutHorizontalSpacing(4.0);
+    const H = settings?.finalExcavationDepth || 22.0;
+    const defDepths = getOptimalDepthsForH(H);
+    const defPreloads = [30, 35, 40, 45, 50];
+    setCustomStrutDepths(defDepths);
+    setCustomStrutPreloads(defPreloads);
+    const defaultStruts = localStruts.map((s, idx) => ({
+      ...s,
+      depth: defDepths[idx] || s.depth,
+      preload: defPreloads[idx] || s.preload,
+    }));
+    handleUpdateStruts(defaultStruts);
+  };
+
+  // 1안 전구간 버팀보 전용 Step 상태 (Step 0 ~ Step 10)
+  const [strutStepIndex, setStrutStepIndex] = useState<number>(10);
+  const [isStrutPlaying, setIsStrutPlaying] = useState<boolean>(false);
+
+  useEffect(() => {
+    let timer: any = null;
+    if (isStrutPlaying) {
+      timer = setInterval(() => {
+        setStrutStepIndex((prev) => {
+          if (prev >= 10) {
+            setIsStrutPlaying(false);
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 1600);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isStrutPlaying]);
+
+  // 1안 전구간 버팀보 공정 단계별 시뮬레이션 및 역학해석 데이터 (Step 0 ~ Step 10, 정거장 굴착심도 H 및 5단 심도/선하중 100% 동적 연동)
   const STRUT_STAGES_DATA = useMemo(() => {
-    const H = settings.finalExcavationDepth || 22.0;
+    const H = settings?.finalExcavationDepth || 22.0;
     const d1 = customStrutDepths[0] ?? (H > 25 ? 3.0 : 2.0);
     const d2 = customStrutDepths[1] ?? (d1 + (H - 2.5 - d1) * 0.25);
     const d3 = customStrutDepths[2] ?? (d1 + (H - 2.5 - d1) * 0.5);
@@ -298,147 +431,11 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
         activeAction: `S5단(GL -${d5.toFixed(1)}m) 설치 및 5단 완성 가시설 안전 확보`,
       },
     ];
-  }, [settings.finalExcavationDepth, customStrutDepths, customStrutPreloads, localWall.specName, localStruts]);
-
-  // 1안 전구간 버팀보 전용 Step 상태 (Step 0 ~ Step 10)
-  const [strutStepIndex, setStrutStepIndex] = useState<number>(10);
-  const [isStrutPlaying, setIsStrutPlaying] = useState<boolean>(false);
-
-  useEffect(() => {
-    let timer: any = null;
-    if (isStrutPlaying) {
-      timer = setInterval(() => {
-        setStrutStepIndex((prev) => {
-          if (prev >= 10) {
-            setIsStrutPlaying(false);
-            return prev;
-          }
-          return prev + 1;
-        });
-      }, 1600);
-    }
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [isStrutPlaying]);
-
-  const [localWall, setLocalWall] = useState<WallSection>(
-    wall || {
-      type: 'H_PILE_TIMBER',
-      sectionModulusZ: 1530,
-      allowableStress: 140,
-      spacing: 1.8,
-      specName: 'H-300×305×15×15',
-      embedmentDepth: 4.5,
-      totalLength: 22.0,
-    }
-  );
-
-  useEffect(() => {
-    if (wall) setLocalWall(wall);
-  }, [wall]);
-
-  const handleUpdateWall = (newWall: WallSection) => {
-    setLocalWall(newWall);
-    if (onUpdateWall) onUpdateWall(newWall);
-  };
-
-    // 1안 버팀보 수평 간격(@m) 및 수직 5단 설치 심도/선하중 사용자 임의 정의 상태
-  // 1안 버팀보 수평 간격(@m) 및 수직 5단 설치 심도/선하중 사용자 임의 정의 상태
-  const [strutHorizontalSpacing, setStrutHorizontalSpacing] = useState<number>(4.0);
-
-  // 굴착깊이(H)에 최적화된 5단 버팀보 심도 계산 함수
-  const getOptimalDepthsForH = (H: number) => {
-    const s1 = H > 25 ? 3.0 : 2.0;
-    const s5 = Math.max(s1 + 4.0, H - 2.5);
-    const interval = (s5 - s1) / 4.0;
-    return [
-      Number(s1.toFixed(1)),
-      Number((s1 + interval).toFixed(1)),
-      Number((s1 + interval * 2).toFixed(1)),
-      Number((s1 + interval * 3).toFixed(1)),
-      Number(s5.toFixed(1)),
-    ];
-  };
-
-  const [customStrutDepths, setCustomStrutDepths] = useState<number[]>(() =>
-    getOptimalDepthsForH(settings.finalExcavationDepth || 22.0)
-  );
-  const [customStrutPreloads, setCustomStrutPreloads] = useState<number[]>([30, 35, 40, 45, 50]);
-  const [selectedWaleSpec, setSelectedWaleSpec] = useState<string>('1H-300×300×10×15');
-  const [selectedKingPostSpec, setSelectedKingPostSpec] = useState<string>('H-300×300×10×15');
-
-  // 저장된 정거장 굴착심도(settings.finalExcavationDepth)가 변경되면 5단 심도 자동 최적 재배치
-  useEffect(() => {
-    const H = settings.finalExcavationDepth || 22.0;
-    const autoDepths = getOptimalDepthsForH(H);
-    setCustomStrutDepths(autoDepths);
-  }, [settings.finalExcavationDepth]);
-
-  const handleUpdateTierDepth = (tierIdx: number, newDepth: number) => {
-    const H = settings.finalExcavationDepth || 22.0;
-    const updatedDepths = [...customStrutDepths];
-    updatedDepths[tierIdx] = Math.max(0.5, Math.min(H, newDepth));
-    setCustomStrutDepths(updatedDepths);
-
-    const updatedStruts = localStruts.map((s, idx) =>
-      idx === tierIdx ? { ...s, depth: updatedDepths[tierIdx] } : s
-    );
-    handleUpdateStruts(updatedStruts);
-  };
-
-  const handleUpdateTierPreload = (tierIdx: number, newPreload: number) => {
-    const updatedPreloads = [...customStrutPreloads];
-    updatedPreloads[tierIdx] = Math.max(0, newPreload);
-    setCustomStrutPreloads(updatedPreloads);
-
-    const updatedStruts = localStruts.map((s, idx) =>
-      idx === tierIdx ? { ...s, preload: updatedPreloads[tierIdx] } : s
-    );
-    handleUpdateStruts(updatedStruts);
-  };
-
-  const handleResetStrutLayout = () => {
-    setStrutHorizontalSpacing(4.0);
-    const H = settings.finalExcavationDepth || 22.0;
-    const defDepths = getOptimalDepthsForH(H);
-    const defPreloads = [30, 35, 40, 45, 50];
-    setCustomStrutDepths(defDepths);
-    setCustomStrutPreloads(defPreloads);
-    const defaultStruts = localStruts.map((s, idx) => ({
-      ...s,
-      depth: defDepths[idx] || s.depth,
-      preload: defPreloads[idx] || s.preload,
-    }));
-    handleUpdateStruts(defaultStruts);
-  };
+  }, [settings?.finalExcavationDepth, customStrutDepths, customStrutPreloads, localWall.specName, localStruts]);
 
   const [isAnalyzingStrut, setIsAnalyzingStrut] = useState<boolean>(false);
   const [analysisStatus, setAnalysisStatus] = useState<'IDLE' | 'ANALYZING' | 'DONE'>('IDLE');
 
-  const handleRunStrutAnalysis = () => {
-    setIsAnalyzingStrut(true);
-    setAnalysisStatus('ANALYZING');
-    setIsStrutPlaying(false);
-
-    // 탄소성 보-탄성지반 구조해석 연산 시뮬레이션 (안전한 상태 갱신)
-    setTimeout(() => {
-      setIsAnalyzingStrut(false);
-      setAnalysisStatus('DONE');
-      setStrutStepIndex(10); // 최종 굴착 단계(Step 10)로 이동하여 최대응력 검증
-    }, 600);
-  };
-
-  const [localStruts, setLocalStruts] = useState<StrutTier[]>(struts || []);
-
-  useEffect(() => {
-    if (struts) setLocalStruts(struts);
-  }, [struts]);
-
-  const handleUpdateStruts = (newStruts: StrutTier[]) => {
-    setLocalStruts(newStruts);
-    if (onUpdateStruts) onUpdateStruts(newStruts);
-  };
 // 단계 제어 모드: 'FULL_FINAL' (전체 완성단면) vs 'STAGE_STEP' (공정단계별)
   const [stageViewMode, setStageViewMode] = useState<'FULL_FINAL' | 'STAGE_STEP'>('FULL_FINAL');
   const [modalStepIndex, setModalStepIndex] = useState<number>(
