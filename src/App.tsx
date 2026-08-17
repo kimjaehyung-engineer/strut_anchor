@@ -156,7 +156,7 @@ export default function App() {
           {/* 3-Alternative Comparison & Comprehensive Report Button */}
           <button
             onClick={() => {
-              setAnchorModalTab('REPORT');
+              setAnchorModalTab('1_STRUT');
               setIsAnchorModalOpen(true);
             }}
             className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded border border-blue-400/40 flex items-center gap-1.5 transition shadow-sm cursor-pointer whitespace-nowrap shrink-0"
@@ -309,7 +309,7 @@ export default function App() {
             </button>
             <button
               onClick={() => {
-                setAnchorModalTab('REPORT');
+                setAnchorModalTab('1_STRUT');
                 setIsAnchorModalOpen(true);
               }}
               className="flex-1 py-2.5 rounded-lg flex items-center justify-center gap-2 transition cursor-pointer bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold shadow-xs"

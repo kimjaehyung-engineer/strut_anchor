@@ -398,6 +398,17 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
   // 모달이 열릴 때 stepIndex 동기화
   useEffect(() => {
     if (isOpen) {
+      if (initialTab) {
+        if (initialTab === 'REPORT' || initialTab === '2A_STANDARD') {
+          setActiveTab('2A_STANDARD');
+        } else if (initialTab === 'COMPARISON') {
+          setActiveTab('COMPARISON');
+        } else {
+          setActiveTab(initialTab as any);
+        }
+      } else {
+        setActiveTab('1_STRUT');
+      }
       if (currentStepIndex > 0) {
         setModalStepIndex(currentStepIndex);
         setStageViewMode('STAGE_STEP');
@@ -406,7 +417,7 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
         setModalStepIndex(stages.length - 1);
       }
     }
-  }, [isOpen, currentStepIndex, stages.length]);
+  }, [isOpen, initialTab, currentStepIndex, stages.length]);
 
   // 자동 재생 애니메이션
   useEffect(() => {
