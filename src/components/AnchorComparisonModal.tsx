@@ -1171,15 +1171,80 @@ ${(anchorResult.angleSensitivityMatrix || [])
                       </div>
 
                       {/* 1안 시공 단계 엔지니어링 실시간 해설 */}
-                      <div className="bg-amber-50/90 border border-amber-200 p-2.5 rounded-lg text-[11px] text-amber-950">
-                        <div className="font-bold flex items-center space-x-1 text-amber-900 mb-1">
-                          <Clock className="w-3.5 h-3.5 text-amber-700" />
-                          <span>Step {currStrutStage.step} 실시간 시공 엔지니어링 해설:</span>
+                      <div className="bg-amber-50/90 border border-amber-200 p-2.5 sm:p-3 rounded-lg text-xs text-amber-950 shadow-2xs">
+                        <div className="font-bold flex items-center space-x-1.5 text-amber-900 mb-1">
+                          <Clock className="w-4 h-4 text-amber-700 shrink-0" />
+                          <span className="font-extrabold text-xs sm:text-sm">Step {currStrutStage.step} 실시간 시공 엔지니어링 해설:</span>
                         </div>
-                        <p className="leading-relaxed text-slate-700">{currStrutStage.workSummary}</p>
-                        <p className="text-[10.5px] text-amber-800 font-mono mt-1">
+                        <p className="leading-relaxed text-slate-800 text-xs">{currStrutStage.workSummary}</p>
+                        <p className="text-xs text-amber-900 font-mono mt-1 font-semibold">
                           ⚡ 벽체 응력: <strong>{currStrutStage.wallStress}</strong> | 버팀보 축력: <strong>{currStrutStage.strutForce}</strong> | 지반변위: <strong>{currStrutStage.disp}</strong>
                         </p>
+                      </div>
+
+                      {/* 1안 비용 및 공기 정량적 산정 근거 카드 (신규 추가) */}
+                      <div className="bg-white border-2 border-amber-300 rounded-xl p-3 sm:p-3.5 shadow-xs space-y-2.5">
+                        <div className="flex items-center justify-between border-b border-amber-200 pb-1.5">
+                          <div className="flex items-center space-x-1.5 text-amber-950 font-black text-xs sm:text-sm">
+                            <Coins className="w-4 h-4 text-amber-700" />
+                            <span>1안 버팀보 공사비 & 공기(Schedule) 정량적 산정 근거</span>
+                          </div>
+                          <span className="text-[10.5px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-300">
+                            총 8.85억원 / 180일
+                          </span>
+                        </div>
+
+                        {/* 비용 산정 세부 내역 */}
+                        <div className="space-y-1.5 text-xs text-slate-700">
+                          <div className="font-bold text-slate-900 text-[11px] flex items-center justify-between bg-slate-50 p-1.5 rounded border border-slate-200">
+                            <span>① 직접공사비 내역 (총 5억 4,927만원)</span>
+                            <span className="font-mono text-amber-800 font-extrabold">단가 기준</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-1 text-[11px] font-medium pl-1">
+                            <div>· 버팀보 강재(450T): <span className="font-mono font-bold text-slate-900">1.71억원</span> (38만/T)</div>
+                            <div>· 중간말뚝(2열 48본): <span className="font-mono font-bold text-slate-900">1.27억원</span> (265만/본)</div>
+                            <div>· 1H-300 띠장/브레이싱(94T): <span className="font-mono font-bold text-slate-900">0.39억원</span></div>
+                            <div>· 복공판 및 지지보(80본): <span className="font-mono font-bold text-slate-900">2.12억원</span></div>
+                          </div>
+                        </div>
+
+                        {/* 토공 공기 산정 산출식 */}
+                        <div className="space-y-1.5 text-xs text-slate-700 border-t border-slate-100 pt-2">
+                          <div className="font-bold text-slate-900 text-[11px] flex items-center justify-between bg-amber-50/60 p-1.5 rounded border border-amber-200">
+                            <span>② 토공 굴착 및 가시설 총공기 산정식</span>
+                            <span className="font-mono text-rose-700 font-extrabold">총 180일 (기준)</span>
+                          </div>
+                          <div className="space-y-1 text-[11px] pl-1">
+                            <div className="flex justify-between">
+                              <span className="text-slate-600">· 총 토공 굴착량:</span>
+                              <span className="font-mono font-bold text-slate-900">40,000 m³ (22m × 20m × 90m)</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-600">· 굴착 장비 및 제약:</span>
+                              <span className="font-bold text-rose-700">0.4m³ 소형 백호 (버팀보 숲 4m 격자 간섭)</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-600">· 토공 사이클 / 일 반출량:</span>
+                              <span className="font-mono font-bold text-slate-900">42초/회 ➔ 320 m³/일</span>
+                            </div>
+                            <div className="flex justify-between bg-amber-100/70 p-1 rounded font-bold text-amber-950">
+                              <span>· 굴착 소요일수 산정:</span>
+                              <span className="font-mono text-rose-800">40,000m³ ÷ 320m³/일 = 125 일</span>
+                            </div>
+                            <div className="flex justify-between text-slate-600">
+                              <span>· 가시설 해체 및 간섭 공기:</span>
+                              <span className="font-mono font-bold text-slate-800">+ 55 일 (총 180일 소요)</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* LCC 간접비 및 경제성 요약 */}
+                        <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 text-[10.5px] text-slate-700 space-y-1">
+                          <div className="font-bold text-slate-900">③ LCC 총생애주기비용 합산 (8.85억원)</div>
+                          <p className="leading-snug">
+                            직접비(5.49억) + 버팀보 장비손료/효율저하(+0.97억) + 공기 장기화(180일) 현장간접비(+2.38억)
+                          </p>
+                        </div>
                       </div>
                     </div>
                   );
