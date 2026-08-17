@@ -2430,25 +2430,34 @@ ${(anchorResult.angleSensitivityMatrix || [])
                               </thead>
                               <tbody className="divide-y divide-slate-200 text-slate-800">
                                 {STRUT_STAGES_DATA.map((row) => {
-                                  const isSelected = strutStepIndex === row.step;
-                                  const rowSpacingRatio = (strutHorizontalSpacing || 4.0) / 4.0;
-                                  
-                                  // 행별 동적 역학 연산 (수평간격 및 심도 반영)
-                                  const rowWallStress = (parseFloat(row.wallStress) * Math.sqrt(rowSpacingRatio)).toFixed(1);
-                                  const rowWallRatio = (parseFloat(rowWallStress) / 140).toFixed(2);
-                                  const rowDisp = (parseFloat(row.disp) * Math.sqrt(rowSpacingRatio)).toFixed(1);
-                                  
-                                  const rForceMatch = row.strutForce.match(/([0-9.]+)\s*(tonf|t)/);
-                                  const rForceNum = rForceMatch ? parseFloat(rForceMatch[1]) : (row.step > 0 ? (28.0 + row.step * 2.2) : 0);
-                                  const rowStrutForce = row.step === 0 ? '-' : `${(rForceNum * rowSpacingRatio).toFixed(1)} tonf`;
-                                  
-                                  const rowWaleRatio = (parseFloat(row.waleRatio) * Math.pow(rowSpacingRatio, 1.3)).toFixed(2);
-                                  const rowSafe = parseFloat(rowWallStress) <= 140 && parseFloat(rowWaleRatio) <= 1.0;
+                                    const isSelected = strutStepIndex === row.step;
+                                    const rowSpacingRatio = (strutHorizontalSpacing || 4.0) / 4.0;
+                                    
+                                    // 행별 동적 역학 연산 (수평간격 및 심도 반영)
+                                    const rowWallStress = (parseFloat(row.wallStress) * Math.sqrt(rowSpacingRatio)).toFixed(1);
+                                    const rowWallRatio = (parseFloat(rowWallStress) / 140).toFixed(2);
+                                    const rowDisp = (parseFloat(row.disp) * Math.sqrt(rowSpacingRatio)).toFixed(1);
+                                    
+                                    const isWaleInstalled = row.step >= 3;
+                                    const rForceMatch = row.strutForce.match(/([0-9.]+)\s*(tonf|t)/);
+                                    const rForceNum = rForceMatch ? parseFloat(rForceMatch[1]) : (row.step >= 3 ? (28.0 + row.step * 2.2) : 0);
+                                    const rowStrutForce = row.step < 3 
+                                      ? (row.step === 2 ? '복공 주형보 지지' : '-') 
+                                      : `${(rForceNum * rowSpacingRatio).toFixed(1)} tonf`;
+                                    
+                                    const parsedWale = parseFloat(row.waleRatio);
+                                    const rowWaleRatio = isWaleInstalled && !isNaN(parsedWale)
+                                      ? (parsedWale * Math.pow(rowSpacingRatio, 1.3)).toFixed(2)
+                                      : '-';
+                                    
+                                    const isWaleRatioSafe = rowWaleRatio === '-' || parseFloat(rowWaleRatio) <= 1.0;
+                                    const isWallRatioSafe = parseFloat(rowWallStress) <= 140;
+                                    const rowSafe = isWallRatioSafe && isWaleRatioSafe;
 
-                                  return (
-                                    <tr
-                                      key={row.step}
-                                      onClick={() => {
+                                    return (
+                                      <tr
+                                        key={row.step}
+                                        onClick={() => {
                                         setIsStrutPlaying(false);
                                         setStrutStepIndex(row.step);
                                       }}
