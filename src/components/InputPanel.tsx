@@ -55,6 +55,7 @@ interface InputPanelProps {
   onUpdateWall: (wall: WallSection) => void;
   struts: StrutTier[];
   onUpdateStruts: (struts: StrutTier[]) => void;
+  onOpenAnchorComparison?: () => void;
 }
 
 export const InputPanel: React.FC<InputPanelProps> = ({
@@ -66,7 +67,24 @@ export const InputPanel: React.FC<InputPanelProps> = ({
   onUpdateWall,
   struts,
   onUpdateStruts,
+  onOpenAnchorComparison,
 }) => {
+  const [saveStatus, setSaveStatus] = useState<'IDLE' | 'SAVED'>('IDLE');
+
+  const handleSaveAllSettings = () => {
+    try {
+      localStorage.setItem(
+        'STRUT_ANCHOR_ENGINEERING_DATA',
+        JSON.stringify({ settings, layers, wall, struts, savedAt: new Date().toISOString() })
+      );
+      setSaveStatus('SAVED');
+      setTimeout(() => {
+        setSaveStatus('IDLE');
+      }, 4500);
+    } catch (e) {
+      console.error(e);
+    }
+  };
   const [activeTab, setActiveTab] = useState<'PROJECT' | 'UTILITIES' | 'SOIL' | 'SPECS'>('PROJECT');
   const [isVisualGuideOpen, setIsVisualGuideOpen] = useState<boolean>(false);
   const [selectedGuideMember, setSelectedGuideMember] = useState<string>('OVERVIEW');

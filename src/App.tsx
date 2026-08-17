@@ -354,6 +354,10 @@ export default function App() {
                 onUpdateWall={setWall}
                 struts={struts}
                 onUpdateStruts={setStruts}
+                onOpenAnchorComparison={() => {
+                  setAnchorModalTab('1_STRUT');
+                  setIsAnchorModalOpen(true);
+                }}
               />
             </div>
           )}
