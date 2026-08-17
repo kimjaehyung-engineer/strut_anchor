@@ -1782,8 +1782,22 @@ ${(anchorResult.angleSensitivityMatrix || [])
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-slate-900 flex items-center space-x-1.5">
-                      <Anchor className="w-4 h-4 text-blue-600" />
-                      <span>2D 그라운드 앵커 배면 정착 단면도</span>
+                      {activeTab === '3_HYBRID' || activeTab === 'HYBRID' ? (
+                        <>
+                          <Layers className="w-4 h-4 text-purple-600" />
+                          <span className="text-purple-950">2D 광간격 버팀보 + 앵커 복합 지보(Hybrid) 단면도</span>
+                        </>
+                      ) : activeTab === '2B_HIGH_ANGLE' || activeTab === '2B_STEEP' ? (
+                        <>
+                          <Sparkles className="w-4 h-4 text-indigo-600" />
+                          <span className="text-indigo-950">2D 고각·급경사 앵커(θ=45°~60°) 배면 정착 단면도</span>
+                        </>
+                      ) : (
+                        <>
+                          <Anchor className="w-4 h-4 text-blue-600" />
+                          <span>2D 그라운드 앵커 배면 정착 단면도</span>
+                        </>
+                      )}
                     </span>
                     <span className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-mono">
                       {stageViewMode === 'FULL_FINAL' ? '최종 완성단면' : `Step ${activeStage.step}: GL -${currentExcavationDepth}m`}
@@ -1882,10 +1896,49 @@ ${(anchorResult.angleSensitivityMatrix || [])
                         strokeDasharray="3 3"
                       />
 
-                      {/* 5. Anchors (Both Left & Right Symmetrical Drawing) */}
+                      {/* 5. Anchors & Strut (3안 복합 지보: 상부 1·2단 고각앵커 + 중부 3·4단 암반앵커 + 하부 5단 광간격 버팀보) */}
                       {displayedTiers.map((tier) => {
                         const anchorHeadY = getY(tier.depth);
-                        const thetaRad = (tier.angleDeg * Math.PI) / 180;
+                        const isHybrid = activeTab === '3_HYBRID' || activeTab === 'HYBRID';
+                        const isHybridBottomStrut = isHybrid && tier.tier === 5;
+
+                        // 3안의 5단: 하부 광간격 보완 스트럿(버팀보) 수평 가설 렌더링
+                        if (isHybridBottomStrut) {
+                          return (
+                            <g key={`hybrid-strut-${tier.tier}`}>
+                              {/* 수평 H형강 버팀보 빔 (H-300) */}
+                              <rect
+                                x={leftWallX}
+                                y={anchorHeadY - 4}
+                                width={plotW}
+                                height={8}
+                                fill="#d97706"
+                                stroke="#78350f"
+                                strokeWidth="1"
+                                rx={1}
+                              />
+                              {/* 좌/우측 유압잭 및 지압판 */}
+                              <rect x={leftWallX} y={anchorHeadY - 6} width={5} height={12} fill="#b45309" />
+                              <rect x={rightWallX - 5} y={anchorHeadY - 6} width={5} height={12} fill="#b45309" />
+                              <circle cx={leftWallX + plotW / 2} cy={anchorHeadY} r="4" fill="#f59e0b" stroke="#78350f" strokeWidth="1" />
+                              {/* 텍스트 라벨 */}
+                              <text
+                                x={leftWallX + plotW / 2}
+                                y={anchorHeadY - 8}
+                                fill="#92400e"
+                                fontSize="9"
+                                fontWeight="black"
+                                textAnchor="middle"
+                              >
+                                S5 하부 보완 버팀보 (H-300 @{hybrid3StrutSpacing}m 광간격)
+                              </text>
+                            </g>
+                          );
+                        }
+
+                        // 앵커 경사각 (3안 상부 1·2단: 45° 고각 자동 적용)
+                        const effAngle = isHybrid && tier.tier <= 2 ? hybrid3TopAngle : tier.angleDeg;
+                        const thetaRad = (effAngle * Math.PI) / 180;
                         const scaleFactor = plotH / maxDepth;
                         const freeLenPx = tier.freeLengthLf * scaleFactor;
                         const bondLenPx = tier.bondLengthLe * scaleFactor;
@@ -1902,26 +1955,30 @@ ${(anchorResult.angleSensitivityMatrix || [])
                         const rightBondEndX = rightWallX + (freeLenPx + bondLenPx) * Math.cos(thetaRad);
                         const rightBondEndY = anchorHeadY + (freeLenPx + bondLenPx) * Math.sin(thetaRad);
 
+                        const anchorLabel = isHybrid && tier.tier <= 2
+                          ? `A${tier.tier} (고각${effAngle}° 무지주)`
+                          : `A${tier.tier} (${tier.designLoad}kN)`;
+
                         return (
                           <g key={`anchor-drawing-${tier.tier}`}>
                             {/* ─── Left Side Anchor ─── */}
                             {/* Free Length (Blue dashed line) */}
-                            <line x1={leftWallX} y1={anchorHeadY} x2={leftFreeEndX} y2={leftFreeEndY} stroke="#0284c7" strokeWidth="2.5" strokeDasharray="3 2" />
+                            <line x1={leftWallX} y1={anchorHeadY} x2={leftFreeEndX} y2={leftFreeEndY} stroke={isHybrid && tier.tier <= 2 ? "#7c3aed" : "#0284c7"} strokeWidth="2.5" strokeDasharray="3 2" />
                             {/* Bond Length (Emerald Green / Grout body) */}
                             <line x1={leftFreeEndX} y1={leftFreeEndY} x2={leftBondEndX} y2={leftBondEndY} stroke="#059669" strokeWidth="6" strokeLinecap="round" />
-                            <circle cx={leftWallX} cy={anchorHeadY} r="3.5" fill="#1e40af" stroke="#ffffff" strokeWidth="1" />
-                            <text x={leftWallX + 6} y={anchorHeadY + 3} fill="#1e40af" fontSize="8" fontWeight="bold">
-                              A{tier.tier} ({tier.designLoad}kN)
+                            <circle cx={leftWallX} cy={anchorHeadY} r="3.5" fill={isHybrid && tier.tier <= 2 ? "#6d28d9" : "#1e40af"} stroke="#ffffff" strokeWidth="1" />
+                            <text x={leftWallX + 6} y={anchorHeadY + 3} fill={isHybrid && tier.tier <= 2 ? "#6d28d9" : "#1e40af"} fontSize="8" fontWeight="bold">
+                              {anchorLabel}
                             </text>
 
                             {/* ─── Right Side Anchor (Symmetrical) ─── */}
                             {/* Free Length (Blue dashed line) */}
-                            <line x1={rightWallX} y1={anchorHeadY} x2={rightFreeEndX} y2={rightFreeEndY} stroke="#0284c7" strokeWidth="2.5" strokeDasharray="3 2" />
+                            <line x1={rightWallX} y1={anchorHeadY} x2={rightFreeEndX} y2={rightFreeEndY} stroke={isHybrid && tier.tier <= 2 ? "#7c3aed" : "#0284c7"} strokeWidth="2.5" strokeDasharray="3 2" />
                             {/* Bond Length (Emerald Green / Grout body) */}
                             <line x1={rightFreeEndX} y1={rightFreeEndY} x2={rightBondEndX} y2={rightBondEndY} stroke="#059669" strokeWidth="6" strokeLinecap="round" />
-                            <circle cx={rightWallX} cy={anchorHeadY} r="3.5" fill="#1e40af" stroke="#ffffff" strokeWidth="1" />
-                            <text x={rightWallX - 6} y={anchorHeadY + 3} fill="#1e40af" fontSize="8" fontWeight="bold" textAnchor="end">
-                              A{tier.tier} ({tier.designLoad}kN)
+                            <circle cx={rightWallX} cy={anchorHeadY} r="3.5" fill={isHybrid && tier.tier <= 2 ? "#6d28d9" : "#1e40af"} stroke="#ffffff" strokeWidth="1" />
+                            <text x={rightWallX - 6} y={anchorHeadY + 3} fill={isHybrid && tier.tier <= 2 ? "#6d28d9" : "#1e40af"} fontSize="8" fontWeight="bold" textAnchor="end">
+                              {anchorLabel}
                             </text>
                           </g>
                         );
@@ -1929,7 +1986,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                     </svg>
                   </div>
 
-                  {/* Anchor Legend */}
+                  {/* Anchor & Strut Legend */}
                   <div className="flex flex-wrap items-center justify-between gap-1 text-[10px] text-slate-500 bg-slate-50 p-2 rounded-lg border border-slate-200">
                     <div className="flex items-center space-x-1">
                       <div className="w-3 h-0.5 bg-sky-600" />
@@ -1943,6 +2000,12 @@ ${(anchorResult.angleSensitivityMatrix || [])
                       <div className="w-2 h-2 bg-blue-600 rounded-full" />
                       <span>앵커헤드</span>
                     </div>
+                    {(activeTab === '3_HYBRID' || activeTab === 'HYBRID') && (
+                      <div className="flex items-center space-x-1">
+                        <div className="w-3 h-1.5 bg-amber-500 rounded-xs border border-amber-700" />
+                        <span className="font-bold text-amber-800">5단 보완 버팀보(S5)</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="bg-blue-50/90 border border-blue-200 p-2.5 rounded-lg text-[11px] text-blue-950">
