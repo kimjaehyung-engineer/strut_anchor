@@ -171,6 +171,7 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
   const [selectedKingPostSpec, setSelectedKingPostSpec] = useState<string>(
     savedModalData?.selectedKingPostSpec || 'H-300×300×10×15'
   );
+  const [drawingViewMode, setDrawingViewMode] = useState<'SECTION' | 'PLAN'>('SECTION');
 
   // Auto-sync modal changes to localStorage
   useEffect(() => {
