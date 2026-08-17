@@ -73,14 +73,39 @@ export const InputPanel: React.FC<InputPanelProps> = ({
 
   const handleSaveAllSettings = () => {
     try {
+      const syncedSettings: ProjectSettings = {
+        ...settings,
+        stationLength: settings.stationLength || 100,
+        stationWidth: settings.stationWidth || 20,
+        finalExcavationDepth: settings.finalExcavationDepth || 35.5,
+        storyCount: settings.storyCount || 4,
+        deckWidth: (settings.stationWidth || 20) + 2.0,
+        excavationWidth: (settings.stationWidth || 20) + 1.5,
+      };
+
+      const syncedWall: WallSection = {
+        ...wall,
+        totalLength: (syncedSettings.finalExcavationDepth || 22) + 6.0,
+      };
+
+      onUpdateSettings(syncedSettings);
+      onUpdateWall(syncedWall);
+
       localStorage.setItem(
         'STRUT_ANCHOR_ENGINEERING_DATA',
-        JSON.stringify({ settings, layers, wall, struts, savedAt: new Date().toISOString() })
+        JSON.stringify({
+          settings: syncedSettings,
+          layers,
+          wall: syncedWall,
+          struts,
+          savedAt: new Date().toISOString(),
+        })
       );
+
       setSaveStatus('SAVED');
       setTimeout(() => {
         setSaveStatus('IDLE');
-      }, 4500);
+      }, 5000);
     } catch (e) {
       console.error(e);
     }
@@ -287,6 +312,65 @@ export const InputPanel: React.FC<InputPanelProps> = ({
 
             {/* Right Column: All Input Parameter Controls (나머지는 오른쪽) */}
             <div className="lg:col-span-6 space-y-3.5">
+              {/* 💾 [상단] 제원 설정 저장 및 1·2·3안 정거장 정보 일괄 적용 버튼 */}
+              <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-700 p-3 sm:p-3.5 rounded-xl text-white shadow-md flex flex-wrap items-center justify-between gap-2.5 border border-blue-400/40">
+                <div className="flex items-center space-x-2.5">
+                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-xs">
+                    <Sparkles className="w-5 h-5 text-yellow-300" />
+                  </div>
+                  <div>
+                    <h4 className="font-black text-xs sm:text-sm leading-tight text-white flex items-center gap-1.5">
+                      <span>정거장 제원 설정 저장 & 1·2·3안 자동 연동</span>
+                      <span className="px-1.5 py-0.2 bg-yellow-400 text-slate-950 font-black text-[10px] rounded">저장 필수</span>
+                    </h4>
+                    <p className="text-[11px] text-blue-100 font-medium mt-0.5">
+                      폭 B={settings.stationWidth}m, 연장 L={settings.stationLength ?? 100}m, 심도 H={settings.finalExcavationDepth}m가 1·2·3안에 즉시 입력됩니다.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={handleSaveAllSettings}
+                    className="px-4 py-2 bg-yellow-400 hover:bg-yellow-300 active:scale-95 text-slate-950 rounded-lg font-black text-xs sm:text-sm flex items-center space-x-1.5 shadow-md transition cursor-pointer border border-yellow-200"
+                  >
+                    <span>💾 제원 저장 (1·2·3안 일괄 적용)</span>
+                  </button>
+                  {onOpenAnchorComparison && (
+                    <button
+                      type="button"
+                      onClick={onOpenAnchorComparison}
+                      className="px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-bold text-xs flex items-center space-x-1 border border-white/30 transition cursor-pointer"
+                    >
+                      <Anchor className="w-3.5 h-3.5 text-sky-300" />
+                      <span>1·2·3안 리포트</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {saveStatus === 'SAVED' && (
+                <div className="bg-emerald-50 border-2 border-emerald-400 p-3 rounded-xl flex flex-wrap items-center justify-between gap-2 text-xs text-emerald-950 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-5 h-5 bg-emerald-600 text-white rounded-full flex items-center justify-center font-black text-xs">✓</div>
+                    <div>
+                      <strong>제원 저장 완료!</strong> 정거장 폭 <strong>B={settings.stationWidth}m</strong>, 연장 <strong>L={settings.stationLength ?? 100}m</strong>, 굴착심도 <strong>H={settings.finalExcavationDepth}m</strong> (지하 {settings.storyCount ?? 2}층) 정보가 <strong>1안(버팀보) · 2안(어스앵커) · 3안(복합공법)</strong>에 실시간 입력치로 일괄 반영되었습니다.
+                    </div>
+                  </div>
+                  {onOpenAnchorComparison && (
+                    <button
+                      type="button"
+                      onClick={onOpenAnchorComparison}
+                      className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-black text-xs cursor-pointer shadow-2xs"
+                    >
+                      👉 1·2·3안 공법비교 리포트 바로보기
+                    </button>
+                  )}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-slate-500 font-medium mb-1">프로젝트명</label>
