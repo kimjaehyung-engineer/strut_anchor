@@ -23,6 +23,7 @@ import { CalculationReportModal } from './components/CalculationReportModal';
 import { AiEngineeringAdvisor } from './components/AiEngineeringAdvisor';
 import { ReinforcementModal } from './components/ReinforcementModal';
 import { AnchorComparisonModal } from './components/AnchorComparisonModal';
+import { FinalAnalysisPptModal } from './components/FinalAnalysisPptModal';
 import {
   Compass,
   FileText,
@@ -37,6 +38,7 @@ import {
   TrendingDown,
   Building2,
   Sparkles,
+  Award,
   CheckCircle2,
   Cpu,
   Zap,
@@ -215,18 +217,15 @@ export default function App() {
 
           <div className="h-4 w-px bg-slate-700 hidden sm:block mx-0.5" />
 
-          {/* 3-Alternative Comparison & Comprehensive Report Button */}
+          {/* Final 3-Alternative Analysis (1-Page PPT Presentation) Button */}
           <button
-            onClick={() => {
-              setAnchorModalTab('1_STRUT');
-              setIsAnchorModalOpen(true);
-            }}
-            className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded border border-blue-400/40 flex items-center gap-1.5 transition shadow-sm cursor-pointer whitespace-nowrap shrink-0"
-            title="1안(스트럿) vs 2안(앵커/고각앵커) vs 3안(복합공법) 공법비교 & 종합 기술검토 리포트"
+            onClick={() => setIsFinalAnalysisOpen(true)}
+            className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black rounded border border-purple-400/40 flex items-center gap-1.5 transition shadow-md cursor-pointer whitespace-nowrap shrink-0"
+            title="3개안을 비교하는 1장 슬라이드 PPT 최종 종합분석 보고서"
           >
-            <Anchor className="w-3.5 h-3.5 text-sky-200 shrink-0" />
-            <span>3대 대안 비교·리포트</span>
-            <ChevronRight className="w-3.5 h-3.5 text-blue-200" />
+            <Award className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+            <span>최종 분석</span>
+            <ChevronRight className="w-3.5 h-3.5 text-purple-200" />
           </button>
 
           {/* Planning Guide Button */}
@@ -491,6 +490,17 @@ export default function App() {
         onClose={() => setIsReinforcementOpen(false)}
         planResult={reinforcementPlan}
         onApplyPlan={handleApplyReinforcementPlan}
+      />
+
+      {/* 1-Page PPT Final Analysis Presentation Modal */}
+      <FinalAnalysisPptModal
+        isOpen={isFinalAnalysisOpen}
+        onClose={() => setIsFinalAnalysisOpen(false)}
+        settings={settings}
+        onOpenDetailedReport={() => {
+          setIsFinalAnalysisOpen(false);
+          setIsAnchorModalOpen(true);
+        }}
       />
 
       {/* Ground Anchor Comparison & Quantity Take-off Modal */}
