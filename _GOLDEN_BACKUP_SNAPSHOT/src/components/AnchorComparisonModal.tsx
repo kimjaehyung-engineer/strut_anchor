@@ -325,6 +325,8 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
   const [strutHorizontalSpacing, setStrutHorizontalSpacing] = useState<number>(4.0);
   const [customStrutDepths, setCustomStrutDepths] = useState<number[]>([2.0, 6.5, 11.0, 15.5, 19.5]);
   const [customStrutPreloads, setCustomStrutPreloads] = useState<number[]>([30, 35, 40, 45, 50]);
+  const [selectedWaleSpec, setSelectedWaleSpec] = useState<string>('1H-300×300×10×15');
+  const [selectedKingPostSpec, setSelectedKingPostSpec] = useState<string>('H-300×300×10×15');
 
   const handleUpdateTierDepth = (tierIdx: number, newDepth: number) => {
     const updatedDepths = [...customStrutDepths];
@@ -1888,7 +1890,9 @@ ${(anchorResult.angleSensitivityMatrix || [])
                             <div className="bg-slate-50/80 p-3 rounded-lg border border-slate-200 space-y-2.5">
                               <div className="font-bold text-slate-800 flex items-center justify-between text-xs sm:text-sm">
                                 <span>③ 띠장(Wale) 규격</span>
-                                <span className="text-amber-800 font-mono text-xs font-black">1H-300×300</span>
+                                <span className="text-amber-800 font-mono text-xs font-black">
+                                  {selectedWaleSpec.split('×')[0]}
+                                </span>
                               </div>
                               <div className="grid grid-cols-2 gap-1.5">
                                 {[
@@ -1896,26 +1900,32 @@ ${(anchorResult.angleSensitivityMatrix || [])
                                   { label: '1H-350', spec: '1H-350×350×12×19' },
                                   { label: '2H-300', spec: '2H-300×300×10×15' },
                                   { label: '2H-350', spec: '2H-350×350×12×19' },
-                                ].map((item, wIdx) => (
-                                  <button
-                                    key={item.spec}
-                                    type="button"
-                                    className={`px-2.5 py-2 rounded text-xs sm:text-sm font-bold border transition cursor-pointer text-left ${
-                                      wIdx === 0
-                                        ? 'bg-amber-600 text-white border-amber-600 shadow-xs font-black'
-                                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                                    }`}
-                                  >
-                                    {item.label}
-                                  </button>
-                                ))}
+                                ].map((item) => {
+                                  const isSelected = selectedWaleSpec === item.spec;
+                                  return (
+                                    <button
+                                      key={item.spec}
+                                      type="button"
+                                      onClick={() => setSelectedWaleSpec(item.spec)}
+                                      className={`px-2.5 py-2 rounded text-xs sm:text-sm font-bold border transition cursor-pointer text-left ${
+                                        isSelected
+                                          ? 'bg-amber-600 text-white border-amber-600 shadow-xs font-black'
+                                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                                      }`}
+                                    >
+                                      {item.label}
+                                    </button>
+                                  );
+                                })}
                               </div>
                             </div>
 
                             <div className="bg-slate-50/80 p-3 rounded-lg border border-slate-200 space-y-2.5">
                               <div className="font-bold text-slate-800 flex items-center justify-between text-xs sm:text-sm">
                                 <span>④ 가설 중간말뚝</span>
-                                <span className="text-rose-700 font-mono text-xs font-black">48본 (2열 배치)</span>
+                                <span className="text-rose-700 font-mono text-xs font-black">
+                                  {selectedKingPostSpec.split('×')[0]} 48본
+                                </span>
                               </div>
                               <div className="grid grid-cols-2 gap-1.5">
                                 {[
@@ -1923,19 +1933,23 @@ ${(anchorResult.angleSensitivityMatrix || [])
                                   { label: 'H-350', spec: 'H-350×350×12×19' },
                                   { label: '배치: 2열 @4m', spec: '2열 배치' },
                                   { label: '천공경: Φ500', spec: 'Φ500 케이싱' },
-                                ].map((item, pIdx) => (
-                                  <button
-                                    key={item.label}
-                                    type="button"
-                                    className={`px-2.5 py-2 rounded text-xs sm:text-sm font-bold border transition cursor-pointer text-left ${
-                                      pIdx === 0
-                                        ? 'bg-amber-600 text-white border-amber-600 shadow-xs font-black'
-                                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                                    }`}
-                                  >
-                                    {item.label}
-                                  </button>
-                                ))}
+                                ].map((item) => {
+                                  const isSelected = selectedKingPostSpec === item.spec;
+                                  return (
+                                    <button
+                                      key={item.label}
+                                      type="button"
+                                      onClick={() => setSelectedKingPostSpec(item.spec)}
+                                      className={`px-2.5 py-2 rounded text-xs sm:text-sm font-bold border transition cursor-pointer text-left ${
+                                        isSelected
+                                          ? 'bg-amber-600 text-white border-amber-600 shadow-xs font-black'
+                                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                                      }`}
+                                    >
+                                      {item.label}
+                                    </button>
+                                  );
+                                })}
                               </div>
                             </div>
                           </div>
