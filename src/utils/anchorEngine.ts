@@ -443,7 +443,15 @@ export function calculateGroundAnchorSystem(
   const excavationVolumeM3 = Math.round(params.sectionLength * settings.stationWidth * settings.finalExcavationDepth);
   const strutWaleSteelTon = Math.round(((params.sectionLength * sidesMultiplier * struts.length * 94) / 1000) * 10) / 10;
   const strutBodySteelTon = Math.max(0, Math.round((totalStrutSteelTon - strutWaleSteelTon) * 10) / 10);
-  const centerPostCount = (settings.centerPost?.count ?? 1) * Math.ceil(params.sectionLength / (settings.centerPost?.spacing || 6.0));
+  
+  // 중간말뚝(Center Post, H-300x300, L=24.5m) 종방향 간격 및 수량 산정
+  // 1안(스트럿): 전구간 버팀보 지지용 @3.5m 간격 (30본)
+  // 2안A, 2안B, 3안(앵커/복합): 복공 주형보 지지용 @5.0m 광간격 (21본)
+  const centerPostUnitPrice = 3900000; // 390만원/본 (강재손료 150만 + 천공·소켓시공 205만 + 브레이싱·두부캡 35만)
+  const strutCenterPostCount = Math.ceil(params.sectionLength / 3.5) + 1; // 30본
+  const anchorCenterPostCount = Math.ceil(params.sectionLength / 5.0) + 1; // 21본
+  const strutCenterPostAmount = strutCenterPostCount * centerPostUnitPrice;
+  const anchorCenterPostAmount = anchorCenterPostCount * centerPostUnitPrice;
 
   // 9-1. 복공 주형보(Deck Girder) 및 도로 복공판(Deck Plate) 산출
   // 도로 개착구간 표준: 굴착폭 B = settings.stationWidth, 공사연장 L = params.sectionLength
@@ -475,15 +483,14 @@ export function calculateGroundAnchorSystem(
   const strutInstallAmount = Math.round(strutBodySteelTon * 320000); // 버팀보 제작·설치·해체 (320,000원/Ton)
   const strutWaleInstallAmount = Math.round(strutWaleSteelTon * 260000); // 1H 띠장 설치·해체 (260,000원/Ton)
   const strutPrestressAmount = Math.round(totalStrutCount * 180000); // 유압잭 선행하중 가압 (180,000원/개소)
-  const centerPostAmount = Math.round(centerPostCount * 2200000); // 중간말뚝 및 가새 (2,200,000원/본)
   const strutInterferenceAmount = Math.round(excavationVolumeM3 * 2200); // 버팀보 간섭에 따른 굴착/골조 능률저하 할증비 (2,200원/m³)
 
   const strutDirectTotal =
-    strutRentalAmount +
     strutInstallAmount +
+    strutRentalAmount +
     strutWaleInstallAmount +
     strutPrestressAmount +
-    centerPostAmount +
+    strutCenterPostAmount +
     deckTotalAmount;
   const strutTotalWithInterference = strutDirectTotal + strutInterferenceAmount;
 
@@ -545,12 +552,12 @@ export function calculateGroundAnchorSystem(
       note: '초기 토압 선하중 재하 및 스크류잭 고정',
     },
     centerPostCost: {
-      name: '가설 중간말뚝(Center Post) 및 브레이싱',
+      name: '가설 중간말뚝(Center Post H-300) 및 브레이싱',
       unit: '본',
-      quantity: centerPostCount,
-      unitPrice: 2200000,
-      amount: centerPostAmount,
-      note: '중간 기둥 천공·항타 및 수평/대각 가새',
+      quantity: strutCenterPostCount,
+      unitPrice: centerPostUnitPrice,
+      amount: strutCenterPostAmount,
+      note: `종방향 @3.5m 간격 (${strutCenterPostCount}본) - 버팀보 1~5단 및 주형보 지지`,
     },
     excavationEfficiencyLoss: {
       name: '버팀보 간섭에 따른 굴착·골조 능률 저하비용',
@@ -608,6 +615,14 @@ export function calculateGroundAnchorSystem(
       unitPrice: 42000,
       amount: deckPlateInstallAmount,
       note: '미끄럼 방지 무늬 복공판, 연장 100m 전폭 복공',
+    },
+    centerPostCost: {
+      name: '가설 중간말뚝(Center Post H-300) 및 브레이싱',
+      unit: '본',
+      quantity: anchorCenterPostCount,
+      unitPrice: centerPostUnitPrice,
+      amount: anchorCenterPostAmount,
+      note: `종방향 @5.0m 간격 (${anchorCenterPostCount}본) - 복공 주형보 지지용`,
     },
     anchorDrilling: {
       name: '앵커 천공 (토사/암반 가압천공 D=115~135mm)',
@@ -829,7 +844,9 @@ export function calculateGroundAnchorSystem(
     const headAmt = Math.round(totalAnchorCount * 145000);
     const waleAmt = Math.round(waleTotalSteelTon * 260000);
     const testAmt = Math.round(totalAnchorCount * 42000);
-    const directTot = drilAmt + strndAmt + grtAmt + headAmt + waleAmt + testAmt + deckTotalAmount;
+    // 고각 앵커(45° 이상) 전용 강선 삽입 및 유압 긴장 장비비 (개소당 800,000원)
+    const highAngleEquipAmt = ang >= 45 ? Math.round(totalAnchorCount * 800000) : 0;
+    const directTot = drilAmt + strndAmt + grtAmt + headAmt + waleAmt + testAmt + deckTotalAmount + anchorCenterPostAmount + highAngleEquipAmt;
     const netTot = Math.max(0, directTot - anchorEfficiencySavings);
 
     const diff = strutTotalWithInterference - netTot;
@@ -981,12 +998,19 @@ export function calculateHybridSystem(
   const durationSavingsDays = 180 - totalProjectDurationDays; // 약 59일 단축
 
   // 4. 공사비 산출 (직접비 + 간섭/공기 절감액)
-  const strutDirectCost = Math.round(strutTotalSteelTon * 650000 + centerPostCount * 2200000);
+  const strutDirectCost = Math.round(strutTotalSteelTon * 650000 + centerPostCount * 3900000);
+
+  // 상부 고각 앵커(45°) 전용 강선 삽입 및 유압 긴장 장비비 (상부 2개 단 적용 시 개소당 800,000원)
+  const highAngleTierRatio = Math.min(2, struts.length) / Math.max(1, struts.length);
+  const highAngleAnchorCount = Math.round(totalAnchorCount * highAngleTierRatio);
+  const highAngleEquipCost = Math.round(highAngleAnchorCount * 800000); // 80만원/공
+
   const anchorDirectCost = Math.round(
     totalDrillingLength * 38000 +
     totalStrandWeightTon * 3300000 +
     totalAnchorCount * 145000 +
-    totalAnchorCount * 42000
+    totalAnchorCount * 42000 +
+    highAngleEquipCost
   );
   const deckTotalCost = costComparison.strutCost.deckGirderInstall
     ? (costComparison.strutCost.deckGirderInstall.amount + (costComparison.strutCost.deckGirderRental?.amount || 0) + (costComparison.strutCost.deckPlateInstall?.amount || 0))

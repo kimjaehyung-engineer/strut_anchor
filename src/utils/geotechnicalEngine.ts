@@ -11,6 +11,8 @@ import {
   WallSection,
 } from '../types';
 
+export type { CalculationResult };
+
 export function getSoilAtDepth(layers: SoilLayer[], depth: number): SoilLayer {
   for (const layer of layers) {
     if (depth >= layer.depthTop && depth <= layer.depthBottom) {
@@ -470,15 +472,15 @@ export function calculateExcavationAnalysis(
   // 5. Wall stress and displacement safety
   const maxBendingMoment = Math.max(...points.map((p) => p.bendingMoment));
   
-  // Dynamic Wall Section Modulus & Allowable Stress based on wall.specName
+  // Dynamic Wall Section Modulus & Allowable Stress based on wall name/spec
   const getDynamicWallProps = (spec: string, origZ: number, origFb: number) => {
     const w = spec || '';
-    if (w.includes('CIP') || wall.type === 'cip') return { Z: 4900, fb: 160 };
+    if (w.includes('CIP') || wall.type === 'CIP' || wall.type === 'DIAPHRAGM_WALL') return { Z: 4900, fb: 160 };
     if (w.includes('350')) return { Z: 2280, fb: 210 };
     if (w.includes('305')) return { Z: 1670, fb: 210 };
     return { Z: origZ && origZ > 1000 ? origZ : 1360, fb: origFb || 210 };
   };
-  const dynamicWallProps = getDynamicWallProps(wall.specName, wall.sectionModulusZ, wall.allowableBendingStress);
+  const dynamicWallProps = getDynamicWallProps(wall.name || '', wall.sectionModulusZ, wall.allowableBendingStress);
 
   // Per pile or per meter wall section modulus:
   const momentPerPile = maxBendingMoment * wall.pileSpacing; // kN·m

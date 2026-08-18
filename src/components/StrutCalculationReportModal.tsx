@@ -1,14 +1,13 @@
 import React from 'react';
 import { Printer, Copy, X, FileText, Check } from 'lucide-react';
-import { ProjectSettings, RetainingWallSpec, StrutSpec } from '../types';
-import { CalculationResult } from '../utils/geotechnicalEngine';
+import { ProjectSettings, WallSection, StrutTier, CalculationResult } from '../types';
 
 interface StrutCalculationReportModalProps {
   isOpen: boolean;
   onClose: () => void;
   settings: ProjectSettings;
-  wall: RetainingWallSpec;
-  struts: StrutSpec[];
+  wall: WallSection;
+  struts: StrutTier[];
   calcResult: CalculationResult;
 }
 
@@ -24,8 +23,9 @@ export const StrutCalculationReportModal: React.FC<StrutCalculationReportModalPr
 
   if (!isOpen) return null;
 
-  const currentWallZ = wall.sectionModulusZ || (wall.specName.includes('350') ? 2280 : wall.specName.includes('305') ? 1670 : wall.specName.includes('CIP') ? 4900 : 1360);
-  const currentWallFb = wall.allowableBendingStress || (wall.specName.includes('CIP') ? 160 : 210);
+  const wallName = (wall as any).name || (wall as any).specName || '';
+  const currentWallZ = wall.sectionModulusZ || (wallName.includes('350') ? 2280 : wallName.includes('305') ? 1670 : wallName.includes('CIP') ? 4900 : 1360);
+  const currentWallFb = wall.allowableBendingStress || (wallName.includes('CIP') ? 160 : 210);
 
   const strutA = struts[0]?.crossSectionAreaA || (struts[0]?.specName?.includes('609') ? 261.7 : struts[0]?.specName?.includes('350') ? 171.9 : struts[0]?.specName?.includes('305') ? 134.8 : 118.4);
   const strutI = struts[0]?.momentOfInertiaI || (struts[0]?.specName?.includes('609') ? 116000 : struts[0]?.specName?.includes('350') ? 39800 : struts[0]?.specName?.includes('305') ? 25400 : 20400);

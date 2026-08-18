@@ -250,13 +250,13 @@ export const InputPanel: React.FC<InputPanelProps> = ({
   return (
     <div className="bg-white border border-slate-200 rounded-lg shadow-xs overflow-hidden flex flex-col flex-1">
       {/* Tab Navigation */}
-      <div className="bg-slate-100 px-3 py-2 border-b border-slate-200 flex items-center space-x-1.5 overflow-x-auto">
+      <div className="bg-slate-100/90 px-3 py-2 border-b border-slate-200 flex items-center space-x-1.5 overflow-x-auto">
         <button
           onClick={() => setActiveTab('PROJECT')}
-          className={`px-3.5 py-2 rounded text-xs font-semibold flex items-center space-x-1.5 transition cursor-pointer shrink-0 ${
+          className={`px-3.5 py-2 rounded-lg text-xs flex items-center space-x-1.5 transition cursor-pointer shrink-0 ${
             activeTab === 'PROJECT'
-              ? 'bg-blue-600 text-white shadow-xs font-bold'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              ? 'bg-blue-600 text-white shadow-sm font-bold ring-2 ring-blue-400/40 opacity-100'
+              : 'bg-white text-slate-500 hover:text-slate-800 hover:bg-slate-50 border border-slate-200/80 font-medium opacity-65 hover:opacity-90'
           }`}
         >
           <Settings2 className="w-3.5 h-3.5" />
@@ -264,10 +264,10 @@ export const InputPanel: React.FC<InputPanelProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('UTILITIES')}
-          className={`px-3.5 py-2 rounded text-xs font-semibold flex items-center space-x-1.5 transition cursor-pointer shrink-0 ${
+          className={`px-3.5 py-2 rounded-lg text-xs flex items-center space-x-1.5 transition cursor-pointer shrink-0 ${
             activeTab === 'UTILITIES'
-              ? 'bg-amber-600 text-white shadow-xs font-bold'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              ? 'bg-amber-600 text-white shadow-sm font-bold ring-2 ring-amber-400/40 opacity-100'
+              : 'bg-white text-slate-500 hover:text-slate-800 hover:bg-slate-50 border border-slate-200/80 font-medium opacity-65 hover:opacity-90'
           }`}
         >
           <PackageCheck className="w-3.5 h-3.5" />
@@ -275,10 +275,10 @@ export const InputPanel: React.FC<InputPanelProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('SOIL')}
-          className={`px-3.5 py-2 rounded text-xs font-semibold flex items-center space-x-1.5 transition cursor-pointer shrink-0 ${
+          className={`px-3.5 py-2 rounded-lg text-xs flex items-center space-x-1.5 transition cursor-pointer shrink-0 ${
             activeTab === 'SOIL'
-              ? 'bg-emerald-600 text-white shadow-xs font-bold'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              ? 'bg-emerald-600 text-white shadow-sm font-bold ring-2 ring-emerald-400/40 opacity-100'
+              : 'bg-white text-slate-500 hover:text-slate-800 hover:bg-slate-50 border border-slate-200/80 font-medium opacity-65 hover:opacity-90'
           }`}
         >
           <Layers className="w-3.5 h-3.5" />
@@ -286,13 +286,13 @@ export const InputPanel: React.FC<InputPanelProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('SPECS')}
-          className={`px-3.5 py-2 rounded text-xs font-semibold flex items-center space-x-1.5 transition cursor-pointer shrink-0 ${
+          className={`px-3.5 py-2 rounded-lg text-xs flex items-center space-x-1.5 transition cursor-pointer shrink-0 ${
             activeTab === 'SPECS'
-              ? 'bg-indigo-600 text-white shadow-xs font-bold'
-              : 'text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100/80 border border-indigo-200'
+              ? 'bg-indigo-600 text-white shadow-sm font-bold ring-2 ring-indigo-400/40 opacity-100'
+              : 'bg-white text-slate-500 hover:text-slate-800 hover:bg-slate-50 border border-slate-200/80 font-medium opacity-65 hover:opacity-90'
           }`}
         >
-          <Shield className="w-3.5 h-3.5 text-current" />
+          <Shield className="w-3.5 h-3.5" />
           <span>4. 가시설 자재 도감</span>
         </button>
       </div>
@@ -344,7 +344,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
                       className="px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-bold text-xs flex items-center space-x-1 border border-white/30 transition cursor-pointer"
                     >
                       <Anchor className="w-3.5 h-3.5 text-sky-300" />
-                      <span>1·2·3안 리포트</span>
+                      <span>1·2·3안 공법비교</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   )}
@@ -365,7 +365,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
                       onClick={onOpenAnchorComparison}
                       className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-black text-xs cursor-pointer shadow-2xs"
                     >
-                      👉 1·2·3안 공법비교 리포트 바로보기
+                      👉 1·2·3안 공법비교 바로보기
                     </button>
                   )}
                 </div>
@@ -864,7 +864,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
               <span className="text-slate-700 flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-blue-600 shrink-0" />
                 <span>
-                  1안(전구간 버팀보), 2안(어스앵커), 3안(광간격 복합공법)의 단별 지보공 설계는 <strong>[🎯 1·2·3안 공법비교 리포트]</strong>에서 독립적으로 최적화됩니다.
+                  1안(전구간 버팀보), 2안(어스앵커), 3안(광간격 복합공법)의 단별 지보공 설계는 <strong>[🎯 1·2·3안 공법비교]</strong>에서 독립적으로 최적화됩니다.
                 </span>
               </span>
             </div>

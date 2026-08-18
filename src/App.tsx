@@ -20,10 +20,10 @@ import { SafetyCheckMatrix } from './components/SafetyCheckMatrix';
 import { InputPanel } from './components/InputPanel';
 import { PlanningGuideModal } from './components/PlanningGuideModal';
 import { CalculationReportModal } from './components/CalculationReportModal';
-import { AiEngineeringAdvisor } from './components/AiEngineeringAdvisor';
 import { ReinforcementModal } from './components/ReinforcementModal';
 import { AnchorComparisonModal } from './components/AnchorComparisonModal';
 import { FinalAnalysisPptModal } from './components/FinalAnalysisPptModal';
+import { StructureConstructionImpactModal } from './components/StructureConstructionImpactModal';
 import {
   Compass,
   FileText,
@@ -31,7 +31,6 @@ import {
   Shield,
   Activity,
   Sliders,
-  Bot,
   HelpCircle,
   FolderOpen,
   ChevronRight,
@@ -125,14 +124,17 @@ export default function App() {
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
 
   // Active Right-Side Panel Tab (Default to INPUTS as requested)
-  const [rightTab, setRightTab] = useState<'INPUTS' | 'SAFETY' | 'AI_ADVISOR'>('INPUTS');
+  const [rightTab, setRightTab] = useState<'INPUTS' | 'COMPARISON' | 'SAFETY'>('INPUTS');
 
   // Modals
   const [isGuideOpen, setIsGuideOpen] = useState<boolean>(false);
   const [isReportOpen, setIsReportOpen] = useState<boolean>(false);
   const [isReinforcementOpen, setIsReinforcementOpen] = useState<boolean>(false);
   const [isAnchorModalOpen, setIsAnchorModalOpen] = useState<boolean>(false);
-  const [anchorModalTab, setAnchorModalTab] = useState<'REPORT' | 'STRUT_ONLY' | 'SENSITIVITY' | 'DESIGN' | 'HYBRID' | 'COST' | 'BOQ' | 'STAGES'>('REPORT');
+  const [isFinalAnalysisOpen, setIsFinalAnalysisOpen] = useState<boolean>(false);
+  const [isStructureImpactOpen, setIsStructureImpactOpen] = useState<boolean>(false);
+  const [anchorModalTab, setAnchorModalTab] = useState<string>('1_STRUT');
+  const [comparisonKey, setComparisonKey] = useState<number>(0);
   const [reinforcementPlan, setReinforcementPlan] = useState<ReinforcementPlanResult | null>(null);
 
   // Switch preset handler
@@ -172,7 +174,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-100 text-slate-800 font-sans flex flex-col selection:bg-blue-600 selection:text-white antialiased">
       {/* High-Contrast Professional Polish Header */}
-      <header className="min-h-14 py-2 sm:py-0 bg-slate-900 text-white flex flex-wrap items-center justify-between px-3 sm:px-4 lg:px-6 shrink-0 border-b border-slate-700 sticky top-0 z-40 shadow-md gap-2">
+      <header className="no-print print:hidden min-h-14 py-2 sm:py-0 bg-slate-900 text-white flex flex-wrap items-center justify-between px-3 sm:px-4 lg:px-6 shrink-0 border-b border-slate-700 sticky top-0 z-40 shadow-md gap-2">
         {/* Left: DX Badge & Title */}
         <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
           <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-bold text-sm tracking-wider text-white shadow-sm shrink-0">
@@ -195,28 +197,6 @@ export default function App() {
 
         {/* Center/Right: Status & Controls Toolbar */}
         <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 lg:gap-2.5 text-xs font-medium shrink-0">
-          {/* Presets Selector Dropdown */}
-          <div className="relative flex items-center bg-slate-800 rounded border border-slate-700 px-2 py-1.5 text-xs text-slate-200 hover:border-slate-600 transition shrink-0 max-w-[190px] sm:max-w-[240px] md:max-w-[280px]">
-            <FolderOpen className="w-3.5 h-3.5 text-blue-400 mr-1.5 shrink-0" />
-            <select
-              value={selectedPresetId}
-              onChange={(e) => {
-                const p = PRESET_PROJECTS.find((item) => item.id === e.target.value);
-                if (p) handleSelectPreset(p);
-              }}
-              aria-label="대표 표준단면 프리셋 선택"
-              className="bg-transparent text-slate-200 font-medium focus:outline-none cursor-pointer text-xs truncate w-full"
-            >
-              {PRESET_PROJECTS.map((p) => (
-                <option key={p.id} value={p.id} className="bg-slate-900 text-slate-200">
-                  {p.title}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="h-4 w-px bg-slate-700 hidden sm:block mx-0.5" />
-
           {/* Final 3-Alternative Analysis (1-Page PPT Presentation) Button */}
           <button
             onClick={() => setIsFinalAnalysisOpen(true)}
@@ -226,6 +206,16 @@ export default function App() {
             <Award className="w-3.5 h-3.5 text-amber-300 shrink-0" />
             <span>최종 분석</span>
             <ChevronRight className="w-3.5 h-3.5 text-purple-200" />
+          </button>
+
+          {/* Permanent Structure Impact Analysis Button */}
+          <button
+            onClick={() => setIsStructureImpactOpen(true)}
+            className="px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold rounded border border-emerald-400/40 flex items-center gap-1.5 transition shadow-sm cursor-pointer whitespace-nowrap shrink-0"
+            title="본체 구조물 축조 시 가시설 간섭(벽체 2단타설·중간말뚝 절단·슬래브 재지보) 공기/비용 정밀 분석"
+          >
+            <Building2 className="w-3.5 h-3.5 text-emerald-200 shrink-0" />
+            <span>구조물 축조 영향</span>
           </button>
 
           {/* Planning Guide Button */}
@@ -252,7 +242,7 @@ export default function App() {
       </header>
 
       {/* Main Workspace (Full Width 100% & Full Height) */}
-      <main className="flex-1 w-full px-3 sm:px-4 lg:px-6 py-3.5 flex flex-col space-y-3.5">
+      <main className="no-print print:hidden flex-1 w-full px-3 sm:px-4 lg:px-6 py-3.5 flex flex-col space-y-3.5">
         {/* 5-Stage Engineering Pipeline Banner */}
         <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-xs flex flex-wrap items-center justify-between gap-2.5">
           <div className="flex items-center space-x-2">
@@ -282,7 +272,7 @@ export default function App() {
                   setIsAnchorModalOpen(true);
                 }}
                 className="px-2.5 py-1 bg-slate-100 hover:bg-indigo-100 text-slate-700 hover:text-indigo-900 rounded-md font-medium transition cursor-pointer border border-transparent hover:border-indigo-300"
-                title="2안 앵커 및 지장물 회피 고각앵커(45°~60°) 구조설계"
+                title="2안 앵커 및 지장물 회피 고각앵커(45°~70°) 구조설계"
               >
                 3단계: 2안 앵커/고각
               </button>
@@ -306,63 +296,22 @@ export default function App() {
                 className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md font-bold border border-indigo-200 transition cursor-pointer"
                 title="3개 대안 종합 기술검토 및 공법비교 보고서"
               >
-                5단계: 종합비교 리포트
+                5단계: 종합 공법비교
               </button>
             </div>
           </div>
-
-          <button
-            onClick={() => {
-              setAnchorModalTab('REPORT');
-              setIsAnchorModalOpen(true);
-            }}
-            className="px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm flex items-center gap-1.5 transition cursor-pointer"
-          >
-            <span>가시설 3대 대안 설계 & 비교평가 시작</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
         </div>
 
         {/* Main Full-Width Inputs & Configuration Layout */}
         <div className="w-full space-y-3.5">
-          {/* Prominent Quick Launch Banner for 1,2,3 Alternative Comparison */}
-          <div className="bg-gradient-to-r from-indigo-900 via-blue-900 to-slate-900 p-4 rounded-xl text-white flex flex-wrap items-center justify-between shadow-md border border-blue-700/50 gap-3">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/30 border border-blue-400/50 flex items-center justify-center text-sky-300 shadow-sm">
-                <Anchor className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="font-bold text-sm sm:text-base flex items-center gap-2">
-                  <span>1안(스트럿) vs 2안(앵커) vs 3안(복합공법) 가시설 3대 대안 공법비교 리포트</span>
-                  <span className="px-2 py-0.5 bg-amber-400 text-slate-950 font-extrabold text-[10px] rounded-full">
-                    원클릭 조회
-                  </span>
-                </div>
-                <p className="text-xs text-blue-200 mt-0.5">
-                  1안(전구간 버팀보 8.85억/180일) 대비 2안(어스앵커 6.25억/120일) 및 3안(광간격 복합공법 6.40억~6.78억/112~121일) LCC 경제성·공기단축·지장물 회피 종합 비교
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                setAnchorModalTab('REPORT');
-                setIsAnchorModalOpen(true);
-              }}
-              className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-400 hover:to-indigo-400 text-white rounded-lg text-xs sm:text-sm font-bold transition shadow-md flex items-center space-x-1.5 shrink-0 cursor-pointer"
-            >
-              <span>🎯 1·2·3안 공법비교 리포트 열기</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-
           {/* Panel Tabs Switcher */}
-          <div className="bg-white p-1.5 rounded-xl border border-slate-200 flex items-center gap-1.5 text-xs font-semibold shadow-xs">
+          <div className="bg-slate-100/80 p-1.5 rounded-xl border border-slate-200 flex items-center gap-1.5 text-xs font-semibold shadow-xs">
             <button
               onClick={() => setRightTab('INPUTS')}
-              className={`flex-1 py-2.5 rounded-lg flex items-center justify-center gap-2 transition cursor-pointer ${
+              className={`flex-1 py-2.5 px-3 rounded-lg flex items-center justify-center gap-2 transition cursor-pointer ${
                 rightTab === 'INPUTS'
-                  ? 'bg-blue-600 text-white shadow-xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  ? 'bg-blue-600 text-white shadow-sm font-bold ring-2 ring-blue-400/40 opacity-100'
+                  : 'bg-white text-slate-500 hover:text-slate-800 hover:bg-slate-50 border border-slate-200/80 font-medium opacity-65 hover:opacity-90'
               }`}
             >
               <Sliders className="w-4 h-4" />
@@ -371,35 +320,29 @@ export default function App() {
             <button
               onClick={() => {
                 setAnchorModalTab('1_STRUT');
-                setIsAnchorModalOpen(true);
+                setComparisonKey((k) => k + 1);
+                setRightTab('COMPARISON');
               }}
-              className="flex-1 py-2.5 rounded-lg flex items-center justify-center gap-2 transition cursor-pointer bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold shadow-xs"
-              title="1안(버팀보) vs 2안(앵커) vs 3안(복합공법) 3대 대안 공법비교 및 종합 리포트 열기"
+              className={`flex-1 py-2.5 px-3 rounded-lg flex items-center justify-center gap-2 transition cursor-pointer ${
+                rightTab === 'COMPARISON'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold shadow-sm ring-2 ring-purple-400/50 opacity-100'
+                  : 'bg-white text-purple-700/80 hover:text-purple-900 hover:bg-purple-50/50 border border-purple-200/70 font-medium opacity-65 hover:opacity-90'
+              }`}
+              title="1안(버팀보) vs 2안(앵커) vs 3안(복합공법) 3대 대안 공법비교 및 종합 리포트 지금 창에서 바로 보기"
             >
-              <Anchor className="w-4 h-4 text-sky-200" />
-              <span>🎯 2. 가시설 1·2·3안 공법비교 리포트</span>
+              <Anchor className="w-4 h-4" />
+              <span>🎯 2. 가시설 1·2·3안 공법비교</span>
             </button>
             <button
               onClick={() => setRightTab('SAFETY')}
-              className={`flex-1 py-2.5 rounded-lg flex items-center justify-center gap-2 transition cursor-pointer ${
+              className={`flex-1 py-2.5 px-3 rounded-lg flex items-center justify-center gap-2 transition cursor-pointer ${
                 rightTab === 'SAFETY'
-                  ? 'bg-emerald-600 text-white shadow-xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  ? 'bg-emerald-600 text-white shadow-sm font-bold ring-2 ring-emerald-400/40 opacity-100'
+                  : 'bg-white text-slate-500 hover:text-slate-800 hover:bg-slate-50 border border-slate-200/80 font-medium opacity-65 hover:opacity-90'
               }`}
             >
               <Shield className="w-4 h-4" />
               <span>3. KDS 안정성 검토</span>
-            </button>
-            <button
-              onClick={() => setRightTab('AI_ADVISOR')}
-              className={`flex-1 py-2.5 rounded-lg flex items-center justify-center gap-2 transition cursor-pointer ${
-                rightTab === 'AI_ADVISOR'
-                  ? 'bg-indigo-600 text-white shadow-xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-              }`}
-            >
-              <Bot className="w-4 h-4" />
-              <span>4. AI 공학 자문</span>
             </button>
           </div>
 
@@ -417,13 +360,37 @@ export default function App() {
                 onUpdateStruts={setStruts}
                 onOpenAnchorComparison={() => {
                   setAnchorModalTab('1_STRUT');
-                  setIsAnchorModalOpen(true);
+                  setComparisonKey((k) => k + 1);
+                  setRightTab('COMPARISON');
                 }}
               />
             </div>
           )}
 
-          {/* Tab 2: Safety Matrix */}
+          {/* Tab 2: Full-Width Comparison Report Inline View (Current Window) */}
+          {rightTab === 'COMPARISON' && (
+            <div className="w-full flex-1 flex flex-col min-h-[85vh]">
+              <AnchorComparisonModal
+                key={comparisonKey}
+                isOpen={true}
+                isInline={true}
+                onClose={() => setRightTab('INPUTS')}
+                settings={settings}
+                layers={layers}
+                wall={wall}
+                struts={struts}
+                stages={stages}
+                currentStepIndex={currentStepIndex}
+                onSelectStep={(idx) => setCurrentStepIndex(idx)}
+                onUpdateWall={setWall}
+                onUpdateStruts={setStruts}
+                calcResult={calcResult}
+                initialTab="1_STRUT"
+              />
+            </div>
+          )}
+
+          {/* Tab 3: Safety Matrix */}
           {rightTab === 'SAFETY' && (
             <div className="w-full bg-white rounded-xl border border-slate-200 shadow-xs p-4">
               <SafetyCheckMatrix
@@ -432,21 +399,10 @@ export default function App() {
                 struts={struts}
                 onUpdateStruts={setStruts}
                 onOpenReinforcement={handleTriggerReinforcement}
-                onOpenAnchorComparison={() => setIsAnchorModalOpen(true)}
-              />
-            </div>
-          )}
-
-          {/* Tab 3: AI Advisor */}
-          {rightTab === 'AI_ADVISOR' && (
-            <div className="w-full bg-white rounded-xl border border-slate-200 shadow-xs p-4">
-              <AiEngineeringAdvisor
-                settings={settings}
-                layers={layers}
-                wall={wall}
-                struts={struts}
-                currentStage={currentStage}
-                calcResult={calcResult}
+                onOpenAnchorComparison={() => {
+                  setAnchorModalTab('1_STRUT');
+                  setRightTab('COMPARISON');
+                }}
               />
             </div>
           )}
@@ -497,9 +453,14 @@ export default function App() {
         isOpen={isFinalAnalysisOpen}
         onClose={() => setIsFinalAnalysisOpen(false)}
         settings={settings}
+        layers={layers}
+        wall={wall}
+        struts={struts}
+        stages={stages}
+        calcResult={calcResult}
         onOpenDetailedReport={() => {
           setIsFinalAnalysisOpen(false);
-          setIsAnchorModalOpen(true);
+          setRightTab('COMPARISON');
         }}
       />
 
@@ -518,6 +479,13 @@ export default function App() {
         onUpdateStruts={setStruts}
         calcResult={calcResult}
         initialTab={anchorModalTab}
+      />
+
+      {/* Permanent Structure Construction Interference Impact Modal */}
+      <StructureConstructionImpactModal
+        isOpen={isStructureImpactOpen}
+        onClose={() => setIsStructureImpactOpen(false)}
+        settings={settings}
       />
     </div>
   );

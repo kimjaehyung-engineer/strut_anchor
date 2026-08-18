@@ -331,6 +331,7 @@ export interface AnchorCostBreakdown {
   deckGirderInstall?: CostItem; // 복공 주형보 제작·설치 및 해체
   deckGirderRental?: CostItem; // 복공 주형보 강재 손료 및 임대료
   deckPlateInstall?: CostItem; // 도로 복공판(2.0×0.75m) 가설 및 손료
+  centerPostCost?: CostItem; // 가설 중간말뚝(Center Post H-300) 및 브레이싱 (주형보 지지용)
   anchorDrilling: CostItem; // 앵커 천공 (토사/암반 가압)
   pcStrandSupplyInstall: CostItem; // PC강선 자재 및 조립·삽입
   groutInjection: CostItem; // 시멘트 그라우트 재료 및 가압주입
