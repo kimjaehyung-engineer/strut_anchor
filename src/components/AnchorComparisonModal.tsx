@@ -3744,152 +3744,258 @@ ${(anchorResult.angleSensitivityMatrix || [])
                           </span>
                         </div>
 
-                        {/* ① 직접공사비 세부 내역 및 품셈 단가 산출표 */}
-                        <div className="space-y-1.5 text-xs text-slate-800">
-                          <div className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center justify-between bg-amber-50 p-2 rounded-lg border border-amber-200">
-                            <span className="flex items-center gap-1.5">
-                              <span className="w-2 h-3.5 bg-amber-600 rounded-2xs" />
-                              <span>① 직접공사비 산정 내역 (총 5억 4,927만원)</span>
-                            </span>
-                            <span className="font-mono text-amber-900 font-bold text-xs">건설공사 표준시장단가 & 품셈 기준</span>
-                          </div>
+                        {/* ① 직접공사비 세부 내역 및 품셈 단가 산출표 (H 심도 및 프로젝트 조건 100% 실시간 연동) */}
+                        {(() => {
+                          const H = settings?.finalExcavationDepth || 22.0;
+                          const stationLen = settings?.stationLength || 100;
+                          const stationW = settings?.stationWidth || 20;
+                          const sp = strutHorizontalSpacing || 4.0;
+                          const nTiers = customStrutDepths.length || 5;
 
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-left border border-slate-200 rounded-lg text-xs">
-                              <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
-                                <tr>
-                                  <th className="p-1.5">공종 및 규격</th>
-                                  <th className="p-1.5 text-center">수량/단위</th>
-                                  <th className="p-1.5 text-right">적용 단가</th>
-                                  <th className="p-1.5 text-right">금액(원)</th>
-                                  <th className="p-1.5">산출 기준 및 세부 사유</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-200 font-medium">
-                                <tr className="hover:bg-slate-50">
-                                  <td className="p-1.5 font-bold text-slate-900">수평 버팀보 강재</td>
-                                  <td className="p-1.5 text-center font-mono font-bold">450.0 Ton</td>
-                                  <td className="p-1.5 text-right font-mono">380,000 원/T</td>
-                                  <td className="p-1.5 text-right font-mono font-black text-rose-700">171,000,000</td>
-                                  <td className="p-1.5 text-[11px] text-slate-600">H-300×300 (@4.0m, 5단) 설치(22.5만)+해체(15.5만)</td>
-                                </tr>
-                                <tr className="hover:bg-slate-50">
-                                  <td className="p-1.5 font-bold text-slate-900">가설 중간말뚝 2열</td>
-                                  <td className="p-1.5 text-center font-mono font-bold">48 본 (1,056m)</td>
-                                  <td className="p-1.5 text-right font-mono">2,650,000 원/본</td>
-                                  <td className="p-1.5 text-right font-mono font-black text-rose-700">127,200,000</td>
-                                  <td className="p-1.5 text-[11px] text-slate-600">H-300 L=22m, Φ500 오거천공+케이싱압입+모르타르 주입</td>
-                                </tr>
-                                <tr className="hover:bg-slate-50">
-                                  <td className="p-1.5 font-bold text-slate-900">1H-300 띠장·가새</td>
-                                  <td className="p-1.5 text-center font-mono font-bold">94.0 Ton</td>
-                                  <td className="p-1.5 text-right font-mono">420,000 원/T</td>
-                                  <td className="p-1.5 text-right font-mono font-black text-rose-700">39,480,000</td>
-                                  <td className="p-1.5 text-[11px] text-slate-600">띠장, 수평/수직 브레이싱, 유압잭 받침 플레이트 일체</td>
-                                </tr>
-                                <tr className="hover:bg-slate-50">
-                                  <td className="p-1.5 font-bold text-slate-900">복공판 및 주형보</td>
-                                  <td className="p-1.5 text-center font-mono font-bold">80 본 / 1,800m²</td>
-                                  <td className="p-1.5 text-right font-mono">117,550 원/m²</td>
-                                  <td className="p-1.5 text-right font-mono font-black text-rose-700">211,590,000</td>
-                                  <td className="p-1.5 text-[11px] text-slate-600">상부 주형보(H-400) 80본 + 미끄럼방지 복공판(2m×0.75m)</td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
+                          // 1. 버팀보 본체 강재 산출
+                          const strutsPerTier = Math.ceil(stationLen / sp);
+                          const totalStrutCount = strutsPerTier * nTiers;
+                          const totalStrutLen = totalStrutCount * stationW;
+                          const unitWeight = (localStruts[0]?.specName?.includes('350') ? 137 : 94) / 1000; // Ton/m
+                          const strutTons = Number((totalStrutLen * unitWeight).toFixed(1));
+                          const strutCost = Math.round(strutTons * 380000); // 380,000원/T
 
-                        {/* [신규] 표준품셈 노무품 및 장비 일위대가 세부 산출 근거 (상세 박스) */}
-                        <div className="bg-amber-50/70 border border-amber-300 p-3 rounded-lg space-y-2 text-xs">
-                          <div className="font-extrabold text-amber-950 flex items-center justify-between text-xs sm:text-sm border-b border-amber-200 pb-1">
-                            <span className="flex items-center gap-1.5">
-                              <ShieldCheck className="w-4 h-4 text-amber-700" />
-                              <span>국토교통부 건설공사 표준품셈 기반 노무품 & 단가 산출 근거</span>
-                            </span>
-                            <span className="font-mono text-[11px] font-bold text-amber-900">2026 국토부 품셈 제3장 가설공사</span>
-                          </div>
+                          // 2. 가설 중간말뚝 2열 (King Post)
+                          const kingPostCount = Math.ceil(stationLen / 4.0) * (stationW >= 16 ? 2 : 1);
+                          const kingPostLen = Number((kingPostCount * (H + 2.5)).toFixed(1));
+                          const kingPostCost = Math.round(kingPostCount * 2650000); // 2,650,000원/본
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-slate-700 text-xs">
-                            <div className="bg-white p-2 rounded border border-amber-200 space-y-1">
-                              <div className="font-bold text-slate-900 flex justify-between text-[11px]">
-                                <span>[버팀보 설치·해체 품셈 (38만원/T)]</span>
-                                <span className="text-amber-800 font-mono font-bold">Ton당 산출</span>
+                          // 3. 1H-300 띠장 및 가새
+                          const waleTotalLen = stationLen * 2 * nTiers;
+                          const waleTons = Number((waleTotalLen * 0.094 * 1.15).toFixed(1));
+                          const waleCost = Math.round(waleTons * 420000); // 420,000원/T
+
+                          // 4. 복공판 및 주형보
+                          const deckArea = stationLen * stationW;
+                          const deckBeams = Math.ceil(stationLen / 2.0) * 2;
+                          const deckCost = Math.round(deckArea * 117550); // 117,550원/m2
+
+                          // 5. 엄지말뚝 및 토류벽 가설
+                          const soldierPiles = Math.ceil(stationLen / 1.8) * 2;
+                          const soldierPileCost = Math.round(soldierPiles * 850000); // 850,000원/본
+
+                          // 직접비 합계
+                          const subTotal = strutCost + kingPostCost + waleCost + deckCost + soldierPileCost;
+                          const subTotalManwon = Math.round(subTotal / 10000);
+
+                          // 토공 굴착 체적 및 공기 산출
+                          const totalExcVol = Math.round(stationLen * stationW * H);
+                          const dailyQd = 320; // m3/일 (0.4m3 소형 백호 3대, 4m 격자 버팀보 숲 간섭)
+                          const earthworkDays = Math.ceil(totalExcVol / dailyQd);
+                          const dismantleDays = Math.ceil(nTiers * 4 + 20);
+                          const totalStrutDays = earthworkDays + dismantleDays;
+                          const indirectCostManwon = Math.round(totalStrutDays * 132.5); // 일당 132.5만원
+                          const lossCostManwon = Math.round(subTotalManwon * 0.018); // 장비 효율 저하 손료
+                          const totalLccManwon = subTotalManwon + lossCostManwon + indirectCostManwon;
+
+                          return (
+                            <div className="space-y-3">
+                              {/* ① 직접공사비 산정 내역 */}
+                              <div className="space-y-1.5 text-xs text-slate-800">
+                                <div className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center justify-between bg-amber-50 p-2.5 rounded-lg border border-amber-200">
+                                  <span className="flex items-center gap-1.5">
+                                    <span className="w-2 h-3.5 bg-amber-600 rounded-2xs" />
+                                    <span>① 직접공사비 산정 내역 (총 {(subTotal / 100000000).toFixed(2)}억원, {subTotalManwon.toLocaleString()}만원)</span>
+                                  </span>
+                                  <span className="font-mono text-amber-900 font-bold text-xs bg-white px-2 py-0.5 rounded border border-amber-300">
+                                    건설공사 표준시장단가 & 품셈 기준
+                                  </span>
+                                </div>
+
+                                <div className="overflow-x-auto border border-slate-200 rounded-lg shadow-2xs">
+                                  <table className="w-full text-left border-collapse text-xs bg-white">
+                                    <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                                      <tr>
+                                        <th className="p-2">공종 및 규격</th>
+                                        <th className="p-2 text-center">수량 / 단위</th>
+                                        <th className="p-2 text-right">적용 단가</th>
+                                        <th className="p-2 text-right">금액(원)</th>
+                                        <th className="p-2">산출 기준 및 세부 사유</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-200 font-medium">
+                                      <tr className="hover:bg-slate-50">
+                                        <td className="p-2 font-bold text-slate-900">수평 버팀보 강재</td>
+                                        <td className="p-2 text-center font-mono font-bold text-slate-800">
+                                          {strutTons} Ton ({totalStrutCount}본)
+                                        </td>
+                                        <td className="p-2 text-right font-mono">380,000 원/T</td>
+                                        <td className="p-2 text-right font-mono font-black text-rose-700">
+                                          {strutCost.toLocaleString()}
+                                        </td>
+                                        <td className="p-2 text-[11px] text-slate-600">
+                                          {localStruts[0]?.specName || 'H-300×300'} (@{sp}m, {nTiers}단) 설치(22.5만)+해체(15.5만)
+                                        </td>
+                                      </tr>
+                                      <tr className="hover:bg-slate-50">
+                                        <td className="p-2 font-bold text-slate-900">가설 중간말뚝 (2열)</td>
+                                        <td className="p-2 text-center font-mono font-bold text-slate-800">
+                                          {kingPostCount} 본 ({kingPostLen}m)
+                                        </td>
+                                        <td className="p-2 text-right font-mono">2,650,000 원/본</td>
+                                        <td className="p-2 text-right font-mono font-black text-rose-700">
+                                          {kingPostCost.toLocaleString()}
+                                        </td>
+                                        <td className="p-2 text-[11px] text-slate-600">
+                                          H-300 L={H+2.5}m, Φ500 오거천공+케이싱압입+모르타르 주입
+                                        </td>
+                                      </tr>
+                                      <tr className="hover:bg-slate-50">
+                                        <td className="p-2 font-bold text-slate-900">1H-300 띠장·가새</td>
+                                        <td className="p-2 text-center font-mono font-bold text-slate-800">
+                                          {waleTons} Ton ({waleTotalLen.toLocaleString()}m)
+                                        </td>
+                                        <td className="p-2 text-right font-mono">420,000 원/T</td>
+                                        <td className="p-2 text-right font-mono font-black text-rose-700">
+                                          {waleCost.toLocaleString()}
+                                        </td>
+                                        <td className="p-2 text-[11px] text-slate-600">
+                                          띠장, 수평/수직 브레이싱, 유압잭 받침 플레이트 일체
+                                        </td>
+                                      </tr>
+                                      <tr className="hover:bg-slate-50">
+                                        <td className="p-2 font-bold text-slate-900">복공판 및 주형보</td>
+                                        <td className="p-2 text-center font-mono font-bold text-slate-800">
+                                          {deckBeams} 본 / {deckArea.toLocaleString()}m²
+                                        </td>
+                                        <td className="p-2 text-right font-mono">117,550 원/m²</td>
+                                        <td className="p-2 text-right font-mono font-black text-rose-700">
+                                          {deckCost.toLocaleString()}
+                                        </td>
+                                        <td className="p-2 text-[11px] text-slate-600">
+                                          상부 주형보(H-400) + 미끄럼방지 복공판(2m×0.75m)
+                                        </td>
+                                      </tr>
+                                      <tr className="hover:bg-slate-50">
+                                        <td className="p-2 font-bold text-slate-900">엄지말뚝 가설 (H-300)</td>
+                                        <td className="p-2 text-center font-mono font-bold text-slate-800">
+                                          {soldierPiles} 본
+                                        </td>
+                                        <td className="p-2 text-right font-mono">850,000 원/본</td>
+                                        <td className="p-2 text-right font-mono font-black text-rose-700">
+                                          {soldierPileCost.toLocaleString()}
+                                        </td>
+                                        <td className="p-2 text-[11px] text-slate-600">
+                                          외곽 토류벽 엄지말뚝 천공 및 항타 (양측 100m @1.8m)
+                                        </td>
+                                      </tr>
+                                      <tr className="bg-amber-100/90 font-black text-amber-950 text-xs">
+                                        <td colSpan={3} className="p-2 text-left">
+                                          직접공사비 합계 (순공사비 소계)
+                                        </td>
+                                        <td className="p-2 text-right font-mono text-amber-950 text-sm">
+                                          {subTotal.toLocaleString()} 원
+                                        </td>
+                                        <td className="p-2 font-mono text-amber-900">
+                                          약 {subTotalManwon.toLocaleString()} 만원
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                </div>
                               </div>
-                              <ul className="text-[11px] space-y-0.5 text-slate-600 list-disc list-inside">
-                                <li><strong>설치품(22.5만원/T)</strong>: 비계공 0.32인 + 용접공 0.18인 + 보통인부 0.45인 + 크레인(25T) 0.15hr</li>
-                                <li><strong>해체품(15.5만원/T)</strong>: 비계공 0.22인 + 절단공 0.14인 + 보통인부 0.35인 + 크레인 0.12hr</li>
-                                <li><strong>가산율</strong>: 지하 심도 15m 이상 할증 15% 및 야간작업 배제 기준</li>
-                              </ul>
-                            </div>
 
-                            <div className="bg-white p-2 rounded border border-amber-200 space-y-1">
-                              <div className="font-bold text-slate-900 flex justify-between text-[11px]">
-                                <span>[중간말뚝 천공·건입 품셈 (265만원/본)]</span>
-                                <span className="text-amber-800 font-mono font-bold">본당(22m) 산출</span>
+                              {/* [품셈 근거 상세 박스] */}
+                              <div className="bg-amber-50/70 border border-amber-300 p-3 rounded-lg space-y-2 text-xs">
+                                <div className="font-extrabold text-amber-950 flex items-center justify-between text-xs sm:text-sm border-b border-amber-200 pb-1">
+                                  <span className="flex items-center gap-1.5">
+                                    <ShieldCheck className="w-4 h-4 text-amber-700" />
+                                    <span>국토교통부 건설공사 표준품셈 기반 노무품 & 단가 산출 근거</span>
+                                  </span>
+                                  <span className="font-mono text-[11px] font-bold text-amber-900">2026 국토부 품셈 제3장 가설공사</span>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-slate-700 text-xs">
+                                  <div className="bg-white p-2 rounded border border-amber-200 space-y-1">
+                                    <div className="font-bold text-slate-900 flex justify-between text-[11px]">
+                                      <span>[버팀보 설치·해체 품셈 (38만원/T)]</span>
+                                      <span className="text-amber-800 font-mono font-bold">Ton당 산출</span>
+                                    </div>
+                                    <ul className="text-[11px] space-y-0.5 text-slate-600 list-disc list-inside">
+                                      <li><strong>설치품(22.5만원/T)</strong>: 비계공 0.32인 + 용접공 0.18인 + 보통인부 0.45인 + 크레인(25T) 0.15hr</li>
+                                      <li><strong>해체품(15.5만원/T)</strong>: 비계공 0.22인 + 절단공 0.14인 + 보통인부 0.35인 + 크레인 0.12hr</li>
+                                      <li><strong>가산율</strong>: 지하 심도 15m 이상 할증 15% 및 야간작업 배제 기준</li>
+                                    </ul>
+                                  </div>
+
+                                  <div className="bg-white p-2 rounded border border-amber-200 space-y-1">
+                                    <div className="font-bold text-slate-900 flex justify-between text-[11px]">
+                                      <span>[중간말뚝 천공·건입 품셈 (265만원/본)]</span>
+                                      <span className="text-amber-800 font-mono font-bold">본당({H+2.5}m) 산출</span>
+                                    </div>
+                                    <ul className="text-[11px] space-y-0.5 text-slate-600 list-disc list-inside">
+                                      <li><strong>오거 천공(6.5만원/m)</strong>: Φ500 크롤라오거 운전사 0.04인 + 비계공 0.03인 + 케이싱손료</li>
+                                      <li><strong>H-형강 건입(3.5만원/m)</strong>: 크레인(50T) 0.02hr + 플랜트 배합 모르타르 주입</li>
+                                      <li><strong>두부정리 및 고정(2.05만원/m)</strong>: 두부커팅 0.5hr + 앵글용접 고정 일체</li>
+                                    </ul>
+                                  </div>
+                                </div>
                               </div>
-                              <ul className="text-[11px] space-y-0.5 text-slate-600 list-disc list-inside">
-                                <li><strong>오거 천공(6.5만원/m)</strong>: Φ500 크롤라오거 운전사 0.04인 + 비계공 0.03인 + 케이싱손료</li>
-                                <li><strong>H-형강 건입(3.5만원/m)</strong>: 크레인(50T) 0.02hr + 플랜트 배합 모르타르 주입</li>
-                                <li><strong>두부정리 및 고정(2.05만원/m)</strong>: 두부커팅 0.5hr + 앵글용접 고정 일체</li>
-                              </ul>
-                            </div>
-                          </div>
-                        </div>
 
-                        {/* ② 토공 공기(Schedule) 사이클타임 표준 품셈 산정식 */}
-                        <div className="space-y-2 text-xs text-slate-800 border-t border-slate-200 pt-2.5">
-                          <div className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center justify-between bg-amber-50 p-2 rounded-lg border border-amber-200">
-                            <span className="flex items-center gap-1.5">
-                              <span className="w-2 h-3.5 bg-amber-600 rounded-2xs" />
-                              <span>② 토공 굴착 사이클타임 및 총공기 정밀 산정식</span>
-                            </span>
-                            <span className="font-mono text-rose-700 font-bold text-xs">총 180일 (토공 125일 + 해체 55일)</span>
-                          </div>
+                              {/* ② 토공 공기(Schedule) 사이클타임 산정식 */}
+                              <div className="space-y-2 text-xs text-slate-800 border-t border-slate-200 pt-2.5">
+                                <div className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center justify-between bg-amber-50 p-2 rounded-lg border border-amber-200">
+                                  <span className="flex items-center gap-1.5">
+                                    <span className="w-2 h-3.5 bg-amber-600 rounded-2xs" />
+                                    <span>② 토공 굴착 사이클타임 및 총공기 정밀 산정식</span>
+                                  </span>
+                                  <span className="font-mono text-rose-700 font-bold text-xs">
+                                    총 {totalStrutDays}일 (토공 {earthworkDays}일 + 해체 {dismantleDays}일)
+                                  </span>
+                                </div>
 
-                          <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 space-y-1.5 text-xs">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-slate-700">
-                              <div>· <strong>총 토공 굴착 체적(V)</strong>: <span className="font-mono font-bold text-slate-900">90m × 20m × 22.0m = 39,600 ≈ 40,000 m³</span></div>
-                              <div>· <strong>투입 장비 규격</strong>: <span className="font-bold text-rose-700">0.4m³ 소형 백호 (4m×4m 버팀보 숲 간섭)</span></div>
-                              <div>· <strong>1회 사이클타임(Cm)</strong>: <span className="font-mono font-bold text-rose-700">42 초</span> (굴착 18s + 선회120° 14s + 적재 10s)</div>
-                              <div>· <strong>작업 효율 계수(E)</strong>: <span className="font-mono font-bold text-slate-900">0.55</span> (버팀보·중간말뚝 48본 장애 제약)</div>
-                            </div>
+                                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 space-y-1.5 text-xs">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-slate-700">
+                                    <div>· <strong>총 토공 굴착 체적(V)</strong>: <span className="font-mono font-bold text-slate-900">{stationLen}m × {stationW}m × {H}m = {totalExcVol.toLocaleString()} m³</span></div>
+                                    <div>· <strong>투입 장비 규격</strong>: <span className="font-bold text-rose-700">0.4m³ 소형 백호 (4m×4m 버팀보 숲 간섭)</span></div>
+                                    <div>· <strong>1회 사이클타임(Cm)</strong>: <span className="font-mono font-bold text-rose-700">42 초</span> (굴착 18s + 선회 14s + 적재 10s)</div>
+                                    <div>· <strong>작업 효율 계수(E)</strong>: <span className="font-mono font-bold text-slate-900">0.55</span> (버팀보·중간말뚝 {kingPostCount}본 장애 제약)</div>
+                                  </div>
 
-                            {/* 공학 수식 블록 */}
-                            <div className="bg-white p-2 rounded border border-amber-300 font-mono text-[11px] text-amber-950 space-y-1">
-                              <div><strong>[시간당 굴착량 Qh]</strong> = (3,600 × q × K × E) ÷ Cm = (3,600 × 0.4 × 0.9 × 0.55) ÷ 42 = <strong>16.97 m³/hr</strong></div>
-                              <div><strong>[일일 토사 반출량 Qd]</strong> = 16.97 m³/hr × 8hr/일 × 0.85 × 3대 = <strong>320 m³/일</strong></div>
-                              <div><strong>[토공 굴착 소요 공기 Te]</strong> = 40,000 m³ ÷ 320 m³/일 = <strong className="text-rose-700 text-xs">125 일</strong></div>
-                              <div><strong>[가시설 해체/간섭 공기 Td]</strong> = 단계별 버팀보 해체 및 복공판 개폐 간섭 = <strong className="text-rose-700 text-xs">+55 일</strong></div>
-                            </div>
+                                  <div className="bg-white p-2 rounded border border-amber-300 font-mono text-[11px] text-amber-950 space-y-1">
+                                    <div><strong>[시간당 굴착량 Qh]</strong> = (3,600 × 0.4 × 0.9 × 0.55) ÷ 42초 = <strong>16.97 m³/hr</strong></div>
+                                    <div><strong>[일일 토사 반출량 Qd]</strong> = 16.97 m³/hr × 8hr/일 × 0.85 × 3대 = <strong>320 m³/일</strong></div>
+                                    <div><strong>[토공 굴착 소요 공기 Te]</strong> = {totalExcVol.toLocaleString()} m³ ÷ 320 m³/일 = <strong className="text-rose-700 text-xs">{earthworkDays} 일</strong></div>
+                                    <div><strong>[가시설 해체/간섭 공기 Td]</strong> = {nTiers}단 버팀보 해체 및 복공판 개폐 = <strong className="text-rose-700 text-xs">+{dismantleDays} 일</strong></div>
+                                  </div>
 
-                            <div className="flex justify-between items-center bg-amber-100/90 p-2 rounded font-extrabold text-amber-950 text-xs">
-                              <span>∴ 1안 전구간 버팀보 가시설 총 공기 (Te + Td):</span>
-                              <span className="font-mono text-rose-800 text-sm">125일 + 55일 = 180 일 (기준 공기)</span>
-                            </div>
-                          </div>
-                        </div>
+                                  <div className="flex justify-between items-center bg-amber-100/90 p-2 rounded font-extrabold text-amber-950 text-xs">
+                                    <span>∴ 1안 전구간 버팀보 가시설 총 공기 (Te + Td):</span>
+                                    <span className="font-mono text-rose-800 text-sm">{earthworkDays}일 + {dismantleDays}일 = {totalStrutDays} 일 (기준 공기)</span>
+                                  </div>
+                                </div>
+                              </div>
 
-                        {/* ③ LCC 총생애주기비용 (8.85억원) 산출 구조 */}
-                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs text-slate-700 space-y-1.5">
-                          <div className="font-extrabold text-slate-900 flex items-center justify-between">
-                            <span>③ LCC 총생애주기비용 산출 구조 (총 8억 8,457만원)</span>
-                            <span className="font-mono font-bold text-rose-700">8.85 억원</span>
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-1.5 text-[11px]">
-                            <div className="bg-white p-1.5 rounded border border-slate-200">
-                              <span className="text-slate-500 font-bold block">1. 직접공사비</span>
-                              <span className="font-mono font-bold text-slate-900">5억 4,927만원</span>
+                              {/* ③ LCC 총생애주기비용 산출 구조 */}
+                              <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs text-slate-700 space-y-1.5">
+                                <div className="font-extrabold text-slate-900 flex items-center justify-between">
+                                  <span>③ LCC 총생애주기비용 산출 구조 (총 {(totalLccManwon / 10000).toFixed(2)}억원)</span>
+                                  <span className="font-mono font-bold text-rose-700">{(totalLccManwon / 10000).toFixed(2)} 억원</span>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-1.5 text-[11px]">
+                                  <div className="bg-white p-1.5 rounded border border-slate-200">
+                                    <span className="text-slate-500 font-bold block">1. 직접공사비</span>
+                                    <span className="font-mono font-bold text-slate-900">{subTotalManwon.toLocaleString()} 만원</span>
+                                  </div>
+                                  <div className="bg-white p-1.5 rounded border border-slate-200">
+                                    <span className="text-slate-500 font-bold block">2. 장비효율저하 손료</span>
+                                    <span className="font-mono font-bold text-rose-700">+{lossCostManwon.toLocaleString()} 만원</span>
+                                  </div>
+                                  <div className="bg-white p-1.5 rounded border border-amber-300 bg-amber-50/50">
+                                    <span className="text-amber-800 font-bold block">3. {totalStrutDays}일 현장간접비</span>
+                                    <span className="font-mono font-bold text-amber-950">+{indirectCostManwon.toLocaleString()} 만원</span>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                            <div className="bg-white p-1.5 rounded border border-slate-200">
-                              <span className="text-slate-500 font-bold block">2. 장비효율저하 손료</span>
-                              <span className="font-mono font-bold text-rose-700">+ 9,680만원</span> (소형임대)
-                            </div>
-                            <div className="bg-white p-1.5 rounded border border-slate-200">
-                              <span className="text-slate-500 font-bold block">3. 180일 현장간접비</span>
-                              <span className="font-mono font-bold text-rose-700">+ 2억 3,850만원</span> (일132.5만)
-                            </div>
-                          </div>
-                        </div>
+                          );
+                        })()}
+
                       </div>
                     </div>
                   );
