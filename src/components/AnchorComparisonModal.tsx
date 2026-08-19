@@ -2486,7 +2486,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
             const strutPAll = (localStruts[0]?.specName?.includes('400') ? 310 : (localStruts[0]?.specName?.includes('600') ? 310 : (localStruts[0]?.specName?.includes('350') ? 235 : 185)));
             const waleZ = (selectedWaleSpec.includes('2H-350') ? 4560 : (selectedWaleSpec.includes('2H-300') ? 2720 : (selectedWaleSpec.includes('1H-350') ? 2280 : 1360)));
             const waleZRatio = 1360 / waleZ;
-
+            const spacingRatio = (strutHorizontalSpacing || 4.0) / 4.0;
             const rawWallStressNum = parseFloat(currStrutStage.wallStress) || 0;
             const dynWallStressVal = rawWallStressNum.toFixed(1);
             const ratioMatch = currStrutStage.wallStress.match(/\(([0-9.]+)\)/);
