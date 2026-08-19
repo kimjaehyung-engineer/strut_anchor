@@ -2487,10 +2487,11 @@ ${(anchorResult.angleSensitivityMatrix || [])
             const waleZ = (selectedWaleSpec.includes('2H-350') ? 4560 : (selectedWaleSpec.includes('2H-300') ? 2720 : (selectedWaleSpec.includes('1H-350') ? 2280 : 1360)));
             const waleZRatio = 1360 / waleZ;
 
-            const spacingRatio = (strutHorizontalSpacing || 4.0) / 4.0;
-            const dynWallStressVal = (parseFloat(currStrutStage.wallStress) * Math.sqrt(spacingRatio) * wallZRatio).toFixed(1);
-            const dynWallRatioVal = (parseFloat(dynWallStressVal) / 140).toFixed(2);
-            const isWallSafe = parseFloat(dynWallStressVal) <= 140;
+            const rawWallStressNum = parseFloat(currStrutStage.wallStress) || 0;
+            const dynWallStressVal = rawWallStressNum.toFixed(1);
+            const ratioMatch = currStrutStage.wallStress.match(/\(([0-9.]+)\)/);
+            const dynWallRatioVal = ratioMatch ? ratioMatch[1] : (rawWallStressNum / 140).toFixed(2);
+            const isWallSafe = currStrutStage.status.includes('OK') || rawWallStressNum <= 140;
 
             const rForceMatch = currStrutStage.strutForce.match(/([0-9.]+)\s*(tonf|t)/);
             const rForceNum = rForceMatch ? parseFloat(rForceMatch[1]) : (strutStepIndex >= 2 ? (26.0 + strutStepIndex * 2.4) : 0);
