@@ -3744,7 +3744,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                           </span>
                         </div>
 
-                        {/* ① 직접공사비 세부 내역 및 품셈 단가 산출표 (H 심도 및 프로젝트 조건 100% 실시간 연동) */}
+                        {/* ① 직접공사비 세부 내역 및 품셈 단가 산출표 (심도 H 연동 m당 품셈 및 실질 가설공사비 100% 정밀 반영) */}
                         {(() => {
                           const H = settings?.finalExcavationDepth || 22.0;
                           const stationLen = settings?.stationLength || 100;
@@ -3752,35 +3752,40 @@ ${(anchorResult.angleSensitivityMatrix || [])
                           const sp = strutHorizontalSpacing || 4.0;
                           const nTiers = customStrutDepths.length || 5;
 
-                          // 1. 버팀보 본체 강재 산출
+                          // 1. 버팀보 본체 강재 산출 (자재손료 + 가설/해체 노무비 53만원/Ton)
                           const strutsPerTier = Math.ceil(stationLen / sp);
                           const totalStrutCount = strutsPerTier * nTiers;
                           const totalStrutLen = totalStrutCount * stationW;
                           const unitWeight = (localStruts[0]?.specName?.includes('350') ? 137 : 94) / 1000; // Ton/m
                           const strutTons = Number((totalStrutLen * unitWeight).toFixed(1));
-                          const strutCost = Math.round(strutTons * 380000); // 380,000원/T
+                          const strutCost = Math.round(strutTons * 530000); // 530,000원/T (손료 15만 + 설치 22.5만 + 해체 15.5만)
 
-                          // 2. 가설 중간말뚝 2열 (King Post)
+                          // 2. 가설 중간말뚝 2열 (King Post, 심도 L = H + 2.5m 연암근입, m당 12.5만원)
                           const kingPostCount = Math.ceil(stationLen / 4.0) * (stationW >= 16 ? 2 : 1);
-                          const kingPostLen = Number((kingPostCount * (H + 2.5)).toFixed(1));
-                          const kingPostCost = Math.round(kingPostCount * 2650000); // 2,650,000원/본
+                          const singleKingPostLen = Number((H + 2.5).toFixed(1));
+                          const kingPostTotalLen = Number((kingPostCount * singleKingPostLen).toFixed(1));
+                          const kingPostCost = Math.round(kingPostTotalLen * 125000); // m당 125,000원 (Φ500오거천공 6.5만 + H-300손료/건입 4.5만 + 모르타르 1.5만)
 
-                          // 3. 1H-300 띠장 및 가새
+                          // 3. 1H-300 띠장 및 가새 (강재손료 + 설치 48만원/Ton)
                           const waleTotalLen = stationLen * 2 * nTiers;
                           const waleTons = Number((waleTotalLen * 0.094 * 1.15).toFixed(1));
-                          const waleCost = Math.round(waleTons * 420000); // 420,000원/T
+                          const waleCost = Math.round(waleTons * 480000); // 480,000원/T
 
-                          // 4. 복공판 및 주형보
+                          // 4. 복공판 및 주형보 (H-400 주형보 + 2m×0.75m 복공판)
                           const deckArea = stationLen * stationW;
                           const deckBeams = Math.ceil(stationLen / 2.0) * 2;
                           const deckCost = Math.round(deckArea * 117550); // 117,550원/m2
 
-                          // 5. 엄지말뚝 및 토류벽 가설
+                          // 5. 엄지말뚝 가설 (심도 L = H + 2.5m, m당 10.5만원)
                           const soldierPiles = Math.ceil(stationLen / 1.8) * 2;
-                          const soldierPileCost = Math.round(soldierPiles * 850000); // 850,000원/본
+                          const soldierPileTotalLen = Number((soldierPiles * singleKingPostLen).toFixed(1));
+                          const soldierPileCost = Math.round(soldierPileTotalLen * 105000); // m당 105,000원 (천공 5.5만 + H-300손료/근입 5.0만)
+
+                          // 6. 버팀보 유압잭 선하중(Pre-stress) 가압 및 조인트 부속품
+                          const preStressCost = Math.round(totalStrutCount * 350000); // 본당 350,000원 (300T급 유압잭 가압 + 코너 피스)
 
                           // 직접비 합계
-                          const subTotal = strutCost + kingPostCost + waleCost + deckCost + soldierPileCost;
+                          const subTotal = strutCost + kingPostCost + waleCost + deckCost + soldierPileCost + preStressCost;
                           const subTotalManwon = Math.round(subTotal / 10000);
 
                           // 토공 굴착 체적 및 공기 산출
@@ -3790,7 +3795,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                           const dismantleDays = Math.ceil(nTiers * 4 + 20);
                           const totalStrutDays = earthworkDays + dismantleDays;
                           const indirectCostManwon = Math.round(totalStrutDays * 132.5); // 일당 132.5만원
-                          const lossCostManwon = Math.round(subTotalManwon * 0.018); // 장비 효율 저하 손료
+                          const lossCostManwon = Math.round(subTotalManwon * 0.025); // 장비 효율 저하 손료 (2.5%)
                           const totalLccManwon = subTotalManwon + lossCostManwon + indirectCostManwon;
 
                           return (
@@ -3803,7 +3808,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                                     <span>① 직접공사비 산정 내역 (총 {(subTotal / 100000000).toFixed(2)}억원, {subTotalManwon.toLocaleString()}만원)</span>
                                   </span>
                                   <span className="font-mono text-amber-900 font-bold text-xs bg-white px-2 py-0.5 rounded border border-amber-300">
-                                    건설공사 표준시장단가 & 품셈 기준
+                                    대심도 심도(H={H}m) m당 품셈 정밀반영
                                   </span>
                                 </div>
 
@@ -3820,42 +3825,42 @@ ${(anchorResult.angleSensitivityMatrix || [])
                                     </thead>
                                     <tbody className="divide-y divide-slate-200 font-medium">
                                       <tr className="hover:bg-slate-50">
-                                        <td className="p-2 font-bold text-slate-900">수평 버팀보 강재</td>
+                                        <td className="p-2 font-bold text-slate-900">수평 버팀보 본체</td>
                                         <td className="p-2 text-center font-mono font-bold text-slate-800">
                                           {strutTons} Ton ({totalStrutCount}본)
                                         </td>
-                                        <td className="p-2 text-right font-mono">380,000 원/T</td>
+                                        <td className="p-2 text-right font-mono">530,000 원/T</td>
                                         <td className="p-2 text-right font-mono font-black text-rose-700">
                                           {strutCost.toLocaleString()}
                                         </td>
                                         <td className="p-2 text-[11px] text-slate-600">
-                                          {localStruts[0]?.specName || 'H-300×300'} (@{sp}m, {nTiers}단) 설치(22.5만)+해체(15.5만)
+                                          {localStruts[0]?.specName || 'H-300×300'} (손료 15만 + 설치 22.5만 + 해체 15.5만)
                                         </td>
                                       </tr>
                                       <tr className="hover:bg-slate-50">
-                                        <td className="p-2 font-bold text-slate-900">가설 중간말뚝 (2열)</td>
+                                        <td className="p-2 font-bold text-slate-900">가설 중간말뚝 (King Post 2열)</td>
                                         <td className="p-2 text-center font-mono font-bold text-slate-800">
-                                          {kingPostCount} 본 ({kingPostLen}m)
+                                          {kingPostCount} 본 ({kingPostTotalLen.toLocaleString()}m)
                                         </td>
-                                        <td className="p-2 text-right font-mono">2,650,000 원/본</td>
+                                        <td className="p-2 text-right font-mono">125,000 원/m</td>
                                         <td className="p-2 text-right font-mono font-black text-rose-700">
                                           {kingPostCost.toLocaleString()}
                                         </td>
                                         <td className="p-2 text-[11px] text-slate-600">
-                                          H-300 L={H+2.5}m, Φ500 오거천공+케이싱압입+모르타르 주입
+                                          H-300 L={singleKingPostLen}m (Φ500 오거천공 6.5만 + H형강 4.5만 + 주입 1.5만)
                                         </td>
                                       </tr>
                                       <tr className="hover:bg-slate-50">
-                                        <td className="p-2 font-bold text-slate-900">1H-300 띠장·가새</td>
+                                        <td className="p-2 font-bold text-slate-900">1H-300 띠장 및 가새</td>
                                         <td className="p-2 text-center font-mono font-bold text-slate-800">
                                           {waleTons} Ton ({waleTotalLen.toLocaleString()}m)
                                         </td>
-                                        <td className="p-2 text-right font-mono">420,000 원/T</td>
+                                        <td className="p-2 text-right font-mono">480,000 원/T</td>
                                         <td className="p-2 text-right font-mono font-black text-rose-700">
                                           {waleCost.toLocaleString()}
                                         </td>
                                         <td className="p-2 text-[11px] text-slate-600">
-                                          띠장, 수평/수직 브레이싱, 유압잭 받침 플레이트 일체
+                                          띠장 손료 및 브레이싱 가새, 연결 플레이트 일체
                                         </td>
                                       </tr>
                                       <tr className="hover:bg-slate-50">
@@ -3872,16 +3877,29 @@ ${(anchorResult.angleSensitivityMatrix || [])
                                         </td>
                                       </tr>
                                       <tr className="hover:bg-slate-50">
-                                        <td className="p-2 font-bold text-slate-900">엄지말뚝 가설 (H-300)</td>
+                                        <td className="p-2 font-bold text-slate-900">외곽 엄지말뚝 (H-300)</td>
                                         <td className="p-2 text-center font-mono font-bold text-slate-800">
-                                          {soldierPiles} 본
+                                          {soldierPiles} 본 ({soldierPileTotalLen.toLocaleString()}m)
                                         </td>
-                                        <td className="p-2 text-right font-mono">850,000 원/본</td>
+                                        <td className="p-2 text-right font-mono">105,000 원/m</td>
                                         <td className="p-2 text-right font-mono font-black text-rose-700">
                                           {soldierPileCost.toLocaleString()}
                                         </td>
                                         <td className="p-2 text-[11px] text-slate-600">
-                                          외곽 토류벽 엄지말뚝 천공 및 항타 (양측 100m @1.8m)
+                                          L={singleKingPostLen}m 토류벽 엄지말뚝 천공(5.5만) + 근입/손료(5.0만)
+                                        </td>
+                                      </tr>
+                                      <tr className="hover:bg-slate-50">
+                                        <td className="p-2 font-bold text-slate-900">버팀보 선하중 가압(유압잭)</td>
+                                        <td className="p-2 text-center font-mono font-bold text-slate-800">
+                                          {totalStrutCount} 개소
+                                        </td>
+                                        <td className="p-2 text-right font-mono">350,000 원/본</td>
+                                        <td className="p-2 text-right font-mono font-black text-rose-700">
+                                          {preStressCost.toLocaleString()}
+                                        </td>
+                                        <td className="p-2 text-[11px] text-slate-600">
+                                          300T급 유압잭 프리스트레스 가압 및 코너 피스 조인트
                                         </td>
                                       </tr>
                                       <tr className="bg-amber-100/90 font-black text-amber-950 text-xs">
@@ -3913,25 +3931,25 @@ ${(anchorResult.angleSensitivityMatrix || [])
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-slate-700 text-xs">
                                   <div className="bg-white p-2 rounded border border-amber-200 space-y-1">
                                     <div className="font-bold text-slate-900 flex justify-between text-[11px]">
-                                      <span>[버팀보 설치·해체 품셈 (38만원/T)]</span>
+                                      <span>[버팀보 설치·해체·손료 품셈 (53만원/T)]</span>
                                       <span className="text-amber-800 font-mono font-bold">Ton당 산출</span>
                                     </div>
                                     <ul className="text-[11px] space-y-0.5 text-slate-600 list-disc list-inside">
+                                      <li><strong>자재손료(15만원/T)</strong>: H형강 6개월 가설재 감가상각 및 손료</li>
                                       <li><strong>설치품(22.5만원/T)</strong>: 비계공 0.32인 + 용접공 0.18인 + 보통인부 0.45인 + 크레인(25T) 0.15hr</li>
                                       <li><strong>해체품(15.5만원/T)</strong>: 비계공 0.22인 + 절단공 0.14인 + 보통인부 0.35인 + 크레인 0.12hr</li>
-                                      <li><strong>가산율</strong>: 지하 심도 15m 이상 할증 15% 및 야간작업 배제 기준</li>
                                     </ul>
                                   </div>
 
                                   <div className="bg-white p-2 rounded border border-amber-200 space-y-1">
                                     <div className="font-bold text-slate-900 flex justify-between text-[11px]">
-                                      <span>[중간말뚝 천공·건입 품셈 (265만원/본)]</span>
-                                      <span className="text-amber-800 font-mono font-bold">본당({H+2.5}m) 산출</span>
+                                      <span>[중간말뚝 대심도 오거천공·건입 품셈 (12.5만원/m)]</span>
+                                      <span className="text-amber-800 font-mono font-bold">m당 실천공 산출</span>
                                     </div>
                                     <ul className="text-[11px] space-y-0.5 text-slate-600 list-disc list-inside">
                                       <li><strong>오거 천공(6.5만원/m)</strong>: Φ500 크롤라오거 운전사 0.04인 + 비계공 0.03인 + 케이싱손료</li>
-                                      <li><strong>H-형강 건입(3.5만원/m)</strong>: 크레인(50T) 0.02hr + 플랜트 배합 모르타르 주입</li>
-                                      <li><strong>두부정리 및 고정(2.05만원/m)</strong>: 두부커팅 0.5hr + 앵글용접 고정 일체</li>
+                                      <li><strong>H-형강 건입(4.5만원/m)</strong>: 크레인(50T) 0.02hr + H형강 손료 및 근입</li>
+                                      <li><strong>모르타르 주입(1.5만원/m)</strong>: 플랜트 배합 모르타르 주입 및 두부정리</li>
                                     </ul>
                                   </div>
                                 </div>
@@ -3995,8 +4013,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                             </div>
                           );
                         })()}
-
-                      </div>
+</div>
                     </div>
                   );
                 })()
