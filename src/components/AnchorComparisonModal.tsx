@@ -4512,23 +4512,25 @@ ${(anchorResult.angleSensitivityMatrix || [])
                         const nTiers = Math.max(5, Math.ceil(H / 2.2));
                         const anchorsPerTier = Math.ceil(stationLen / 1.8) * 2;
                         const totalAnchors = anchorsPerTier * nTiers;
-                        const avgLen = Number((13.0 + 6.5).toFixed(1)); // 19.5m
+                        const avgLen = 19.5; // 표준 20도 앵커 천공장 (자유장 13m + 정착장 6.5m)
                         const totalDrillLen = Math.round(totalAnchors * avgLen);
 
-                        const drillCost = Math.round(totalDrillLen * 48000);
-                        const strandCost = Math.round(totalAnchors * 185000);
-                        const jackCost = Math.round(totalAnchors * 82000);
+                        // 2안-A 표준 직접비 (원 단위)
+                        const drillCost = Math.round(totalDrillLen * 48000); // 48,000원/m
+                        const strandCost = Math.round(totalAnchors * 185000); // 185,000원/공
+                        const jackCost = Math.round(totalAnchors * 82000); // 82,000원/공
                         const waleTotalLen = stationLen * 2 * nTiers;
-                        const waleCost = Math.round(waleTotalLen * 85000);
+                        const waleCost = Math.round(waleTotalLen * 85000); // 85,000원/m (2H-300)
                         const soldierPiles = Math.ceil(stationLen / 1.8) * 2;
-                        const soldierPileCost = Math.round(soldierPiles * 850000);
+                        const singlePileLen = Number((H + 2.5).toFixed(1));
+                        const soldierPileCost = Math.round(soldierPiles * singlePileLen * 105000); // 105,000원/m
                         const dismantleCost = Math.round(totalAnchors * 35000);
 
                         const subTotal = drillCost + strandCost + jackCost + waleCost + soldierPileCost + dismantleCost;
                         const subTotalManwon = Math.round(subTotal / 10000);
 
                         const totalExcVol = Math.round(stationLen * stationW * H);
-                        const dailyQd = 826; // m3/일 (0.8m3 중형 백호 2대 무지주 공간)
+                        const dailyQd = 826; // m3/일 (0.8m3 중형 백호 2대)
                         const earthworkDays = Math.ceil(totalExcVol / dailyQd);
                         const anchorDays = Math.ceil(nTiers * 4);
                         const totalDays = earthworkDays + anchorDays + 25;
@@ -4542,7 +4544,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                               <div className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center justify-between bg-sky-50 p-2.5 rounded-lg border border-sky-200">
                                 <span className="flex items-center gap-1.5">
                                   <span className="w-2 h-3.5 bg-sky-600 rounded-2xs" />
-                                  <span>① 직접공사비 세부 산출 내역 (2안-A: 표준 어스앵커 20° - 실시간 연동)</span>
+                                  <span>① 직접공사비 세부 산출 내역 (2안-A: 표준 어스앵커 20°)</span>
                                 </span>
                                 <span className="font-mono text-sky-950 font-black text-xs sm:text-sm bg-white px-2.5 py-1 rounded border border-sky-300 shadow-2xs">
                                   총 {(subTotal / 100000000).toFixed(2)}억원 ({subTotalManwon.toLocaleString()}만원)
@@ -4585,9 +4587,9 @@ ${(anchorResult.angleSensitivityMatrix || [])
                                       <td className="py-1.5 px-2 text-right font-mono font-bold text-slate-900">{Math.round(waleCost / 10000).toLocaleString()}</td>
                                     </tr>
                                     <tr>
-                                      <td className="py-1.5 px-2 text-left font-bold text-slate-800">5. 엄지말뚝 가설 (H-300)</td>
-                                      <td className="py-1.5 px-1 font-mono text-left pl-2">외곽 토류벽 / {soldierPiles}본</td>
-                                      <td className="py-1.5 px-1 font-mono">850,000 /본</td>
+                                      <td className="py-1.5 px-2 text-left font-bold text-slate-800">5. 외곽 엄지말뚝 가설 (H-300)</td>
+                                      <td className="py-1.5 px-1 font-mono text-left pl-2">L={singlePileLen}m / {soldierPiles}본</td>
+                                      <td className="py-1.5 px-1 font-mono">105,000 /m</td>
                                       <td className="py-1.5 px-2 text-right font-mono font-bold text-slate-900">{Math.round(soldierPileCost / 10000).toLocaleString()}</td>
                                     </tr>
                                     <tr>
@@ -4612,7 +4614,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                                   <Clock className="w-3.5 h-3.5 text-sky-600" />
                                   <span>② 토공 굴착 사이클타임 및 총공기 정밀 산정식</span>
                                 </span>
-                                <span className="font-mono text-sky-900 font-bold">총 {totalDays}일 (1안 버팀보 대비 55일 단축)</span>
+                                <span className="font-mono text-sky-900 font-bold">총 {totalDays}일 (1안 버팀보 대비 60일 단축)</span>
                               </div>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] bg-white p-2.5 rounded border border-slate-200 font-mono">
                                 <div>• 총 토공 굴착 체적 (V): <span className="font-bold text-slate-800">{totalExcVol.toLocaleString()} m³</span></div>
@@ -4637,7 +4639,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                               </div>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-1.5 text-[11px]">
                                 <div className="bg-white p-1.5 rounded border border-slate-200">
-                                  <span className="text-slate-500 font-bold block">1. 직접공사비</span>
+                                  <span className="text-slate-500 font-bold block">1. 가설 직접공사비</span>
                                   <span className="font-mono font-bold text-slate-900">{subTotalManwon.toLocaleString()} 만원</span>
                                 </div>
                                 <div className="bg-white p-1.5 rounded border border-slate-200">
@@ -4664,26 +4666,28 @@ ${(anchorResult.angleSensitivityMatrix || [])
                         const stationLen = settings?.stationLength || 100;
                         const stationW = settings?.stationWidth || 20;
                         const nTiers = Math.max(5, Math.ceil(H / 2.2));
-                        const highTiers = 2; // 상부 2단 고각
-                        const stdTiers = nTiers - highTiers;
+                        const highTiers = 2; // 상부 2단 고각 (45도)
+                        const stdTiers = nTiers - highTiers; // 중하부 표준 앵커 (20도)
                         const anchorsPerTier = Math.ceil(stationLen / 1.8) * 2;
                         const highAnchors = anchorsPerTier * highTiers;
                         const stdAnchors = anchorsPerTier * stdTiers;
                         const totalAnchors = highAnchors + stdAnchors;
 
-                        const highDrillLen = Math.round(highAnchors * 24.5);
-                        const stdDrillLen = Math.round(stdAnchors * 19.5);
+                        const highDrillLen = Math.round(highAnchors * 24.5); // 고각 천공장 24.5m
+                        const stdDrillLen = Math.round(stdAnchors * 19.5); // 일반 앵커 천공장 19.5m
                         const totalDrillLen = highDrillLen + stdDrillLen;
 
-                        const highDrillCost = Math.round(highDrillLen * 54000); // 54,000원/m
-                        const stdDrillCost = Math.round(stdDrillLen * 48000);
-                        const strandCost = Math.round(totalAnchors * 210000); // 210,000원/공
-                        const highBracketCost = Math.round(highAnchors * 450000); // 450,000원/공
+                        // 2안-B 고각 전용 직접비 (고각 특수단가 적용으로 2안-A보다 직접비 상승이 정상)
+                        const highDrillCost = Math.round(highDrillLen * 54000); // 54,000원/m (고각 특수천공)
+                        const stdDrillCost = Math.round(stdDrillLen * 48000); // 48,000원/m
+                        const strandCost = Math.round(totalAnchors * 210000); // 210,000원/공 (고하중 강선)
+                        const highBracketCost = Math.round(highAnchors * 450000); // 450,000원/공 (고각 특수 경사지압 브래킷)
                         const stdJackCost = Math.round(stdAnchors * 82000);
                         const waleTotalLen = stationLen * 2 * nTiers;
-                        const waleCost = Math.round(waleTotalLen * 110000); // 2H-350 보강
+                        const waleCost = Math.round(waleTotalLen * 110000); // 110,000원/m (2H-350 Tv 연직하중 보강)
                         const soldierPiles = Math.ceil(stationLen / 1.8) * 2;
-                        const soldierPileCost = Math.round(soldierPiles * 920000);
+                        const singlePileLen = Number((H + 2.5).toFixed(1));
+                        const soldierPileCost = Math.round(soldierPiles * singlePileLen * 120000); // 120,000원/m (연직하중 지지 엄지말뚝 보강)
                         const dismantleCost = Math.round(totalAnchors * 35000);
 
                         const subTotal = highDrillCost + stdDrillCost + strandCost + highBracketCost + stdJackCost + waleCost + soldierPileCost + dismantleCost;
@@ -4695,7 +4699,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                         const anchorDays = Math.ceil(nTiers * 4.5);
                         const totalDays = earthworkDays + anchorDays + 30;
                         const indirectCostManwon = Math.round(totalDays * 132.5);
-                        const totalLccManwon = subTotalManwon + indirectCostManwon; // 사유지 0m 회피로 보상비 0원!
+                        const totalLccManwon = subTotalManwon + indirectCostManwon; // 사유지 0m 완전 회피로 보상비 0원!
 
                         return (
                           <div className="space-y-3">
@@ -4703,7 +4707,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                               <div className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center justify-between bg-indigo-50 p-2.5 rounded-lg border border-indigo-200">
                                 <span className="flex items-center gap-1.5">
                                   <span className="w-2 h-3.5 bg-indigo-600 rounded-2xs" />
-                                  <span>① 직접공사비 세부 산출 내역 (2안-B: 고각 어스앵커 45°~70° - 실시간 연동)</span>
+                                  <span>① 직접공사비 세부 산출 내역 (2안-B: 고각 어스앵커 45°~70°)</span>
                                 </span>
                                 <span className="font-mono text-indigo-950 font-black text-xs sm:text-sm bg-white px-2.5 py-1 rounded border border-indigo-300 shadow-2xs">
                                   총 {(subTotal / 100000000).toFixed(2)}억원 ({subTotalManwon.toLocaleString()}만원)
@@ -4723,13 +4727,13 @@ ${(anchorResult.angleSensitivityMatrix || [])
                                   <tbody className="divide-y divide-slate-100 text-slate-600">
                                     <tr>
                                       <td className="py-1.5 px-2 text-left font-bold text-slate-800">1. 고각 특수 천공 및 그라우팅</td>
-                                      <td className="py-1.5 px-1 font-mono text-left pl-2">암반 수직관입 / {highDrillLen.toLocaleString()}m</td>
+                                      <td className="py-1.5 px-1 font-mono text-left pl-2">상부 2단 고각 / {highDrillLen.toLocaleString()}m</td>
                                       <td className="py-1.5 px-1 font-mono">54,000 /m</td>
                                       <td className="py-1.5 px-2 text-right font-mono font-bold text-slate-900">{Math.round(highDrillCost / 10000).toLocaleString()}</td>
                                     </tr>
                                     <tr>
                                       <td className="py-1.5 px-2 text-left font-bold text-slate-800">2. 일반 암반 앵커 천공</td>
-                                      <td className="py-1.5 px-1 font-mono text-left pl-2">하부 20° 앵커 / {stdDrillLen.toLocaleString()}m</td>
+                                      <td className="py-1.5 px-1 font-mono text-left pl-2">중하부 20° 앵커 / {stdDrillLen.toLocaleString()}m</td>
                                       <td className="py-1.5 px-1 font-mono">48,000 /m</td>
                                       <td className="py-1.5 px-2 text-right font-mono font-bold text-slate-900">{Math.round(stdDrillCost / 10000).toLocaleString()}</td>
                                     </tr>
@@ -4746,16 +4750,22 @@ ${(anchorResult.angleSensitivityMatrix || [])
                                       <td className="py-1.5 px-2 text-right font-mono font-black text-indigo-900">{Math.round(highBracketCost / 10000).toLocaleString()}</td>
                                     </tr>
                                     <tr>
-                                      <td className="py-1.5 px-2 text-left font-bold text-slate-800">5. 2H-350 띠장 및 파일 보강</td>
+                                      <td className="py-1.5 px-2 text-left font-bold text-slate-800">5. 2H-350 띠장 보강</td>
                                       <td className="py-1.5 px-1 font-mono text-left pl-2">Tv 연직하중 지지 / {waleTotalLen.toLocaleString()}m</td>
                                       <td className="py-1.5 px-1 font-mono">110,000 /m</td>
                                       <td className="py-1.5 px-2 text-right font-mono font-bold text-slate-900">{Math.round(waleCost / 10000).toLocaleString()}</td>
                                     </tr>
                                     <tr>
-                                      <td className="py-1.5 px-2 text-left font-bold text-slate-800">6. 엄지말뚝 가설 (H-350)</td>
-                                      <td className="py-1.5 px-1 font-mono text-left pl-2">토류벽 보강 / {soldierPiles}본</td>
-                                      <td className="py-1.5 px-1 font-mono">920,000 /본</td>
+                                      <td className="py-1.5 px-2 text-left font-bold text-slate-800">6. 외곽 엄지말뚝 보강 (H-350)</td>
+                                      <td className="py-1.5 px-1 font-mono text-left pl-2">L={singlePileLen}m / {soldierPiles}본</td>
+                                      <td className="py-1.5 px-1 font-mono">120,000 /m</td>
                                       <td className="py-1.5 px-2 text-right font-mono font-bold text-slate-900">{Math.round(soldierPileCost / 10000).toLocaleString()}</td>
+                                    </tr>
+                                    <tr>
+                                      <td className="py-1.5 px-2 text-left font-bold text-slate-800">7. 앵커 두부인장 해체/제거</td>
+                                      <td className="py-1.5 px-1 font-mono text-left pl-2">제거형 강선 인발 / {totalAnchors}공</td>
+                                      <td className="py-1.5 px-1 font-mono">35,000 /공</td>
+                                      <td className="py-1.5 px-2 text-right font-mono font-bold text-slate-900">{Math.round(dismantleCost / 10000).toLocaleString()}</td>
                                     </tr>
                                     <tr className="bg-indigo-100/90 font-black text-indigo-950 text-xs">
                                       <td colSpan={3} className="py-2 px-2 text-left">직접공사비 소계 (순공사비)</td>
@@ -4798,7 +4808,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                               </div>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-1.5 text-[11px]">
                                 <div className="bg-white p-1.5 rounded border border-slate-200">
-                                  <span className="text-slate-500 font-bold block">1. 직접공사비</span>
+                                  <span className="text-slate-500 font-bold block">1. 가설 직접공사비</span>
                                   <span className="font-mono font-bold text-slate-900">{subTotalManwon.toLocaleString()} 만원</span>
                                 </div>
                                 <div className="bg-white p-1.5 rounded border border-slate-200">
@@ -9029,7 +9039,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
   const stationLen = settings?.stationLength || 100;
   const stationW = settings?.stationWidth || 20;
 
-  // 1안 계산치
+  // 1안 계산치 (전구간 버팀보)
   const strutSp = strutHorizontalSpacing || 4.0;
   const strutNTiers = customStrutDepths.length || 5;
   const strutsPerTier1 = Math.ceil(stationLen / strutSp);
@@ -9038,7 +9048,8 @@ ${(anchorResult.angleSensitivityMatrix || [])
   const strutTons1 = Number((totalStrutLen1 * 0.094).toFixed(1));
   const strutCost1 = Math.round(strutTons1 * 530000);
   const kingPostCount1 = Math.ceil(stationLen / 4.0) * (stationW >= 16 ? 2 : 1);
-  const kingPostLen1 = Number((kingPostCount1 * (H + 2.5)).toFixed(1));
+  const singlePileLen = Number((H + 2.5).toFixed(1));
+  const kingPostLen1 = Number((kingPostCount1 * singlePileLen).toFixed(1));
   const kingPostCost1 = Math.round(kingPostLen1 * 125000);
   const waleLen1 = stationLen * 2 * strutNTiers;
   const waleTons1 = Number((waleLen1 * 0.094 * 1.15).toFixed(1));
@@ -9046,32 +9057,48 @@ ${(anchorResult.angleSensitivityMatrix || [])
   const deckArea1 = stationLen * stationW;
   const deckCost1 = Math.round(deckArea1 * 117550);
   const soldierPiles1 = Math.ceil(stationLen / 1.8) * 2;
-  const soldierPileLen1 = Number((soldierPiles1 * (H + 2.5)).toFixed(1));
+  const soldierPileLen1 = Number((soldierPiles1 * singlePileLen).toFixed(1));
   const soldierPileCost1 = Math.round(soldierPileLen1 * 105000);
   const preStressCost1 = Math.round(totalStrutCount1 * 350000);
   const totalCost1 = strutCost1 + kingPostCost1 + waleCost1 + deckCost1 + soldierPileCost1 + preStressCost1;
   const cost1Manwon = Math.round(totalCost1 / 10000);
   const lcc1Manwon = Math.round((totalCost1 + (totalCost1 * 0.025) + (180 * 1325000)) / 10000);
 
-  // 2안-A 계산치 (20° 앵커)
+  // 2안-A 계산치 (표준 20° 앵커: 직접비 11.8억, 사유지보상 4.5억 가산으로 LCC 18.0억)
   const anchorNTiers2A = Math.max(5, Math.ceil(H / 2.2));
   const anchorsPerTier2A = Math.ceil(stationLen / 1.8) * 2;
   const totalAnchors2A = anchorsPerTier2A * anchorNTiers2A;
   const totalDrillLen2A = Math.round(totalAnchors2A * 19.5);
-  const cost2AManwon = Math.round((totalDrillLen2A * 48000 + totalAnchors2A * 185000 + totalAnchors2A * 82000 + (stationLen * 2 * anchorNTiers2A) * 85000 + soldierPiles1 * 850000 + totalAnchors2A * 35000) / 10000);
-  const landComp2AManwon = Math.round(totalAnchors2A * 45);
+  const drillCost2A = Math.round(totalDrillLen2A * 48000);
+  const strandCost2A = Math.round(totalAnchors2A * 185000);
+  const jackCost2A = Math.round(totalAnchors2A * 82000);
+  const waleCost2A = Math.round((stationLen * 2 * anchorNTiers2A) * 85000);
+  const pileCost2A = Math.round(soldierPileLen1 * 105000);
+  const dismantle2A = Math.round(totalAnchors2A * 35000);
+  const totalCost2A = drillCost2A + strandCost2A + jackCost2A + waleCost2A + pileCost2A + dismantle2A;
+  const cost2AManwon = Math.round(totalCost2A / 10000);
+  const landComp2AManwon = Math.round(totalAnchors2A * 45); // 사유지 20.4m 침범 보상비
   const lcc2AManwon = Math.round(cost2AManwon + (120 * 132.5) + landComp2AManwon);
 
-  // 2안-B 계산치 (고각 45° 앵커)
+  // 2안-B 계산치 (고각 45° 앵커: 특수단가로 직접비 13.4억으로 상승, 그러나 사유지 0m로 LCC 15.1억)
   const highAnchors2B = anchorsPerTier2A * 2;
   const stdAnchors2B = anchorsPerTier2A * (anchorNTiers2A - 2);
   const totalAnchors2B = highAnchors2B + stdAnchors2B;
   const highDrillLen2B = Math.round(highAnchors2B * 24.5);
   const stdDrillLen2B = Math.round(stdAnchors2B * 19.5);
-  const cost2BManwon = Math.round((highDrillLen2B * 54000 + stdDrillLen2B * 48000 + totalAnchors2B * 210000 + highAnchors2B * 450000 + stdAnchors2B * 82000 + (stationLen * 2 * anchorNTiers2A) * 110000 + soldierPiles1 * 920000 + totalAnchors2B * 35000) / 10000);
-  const lcc2BManwon = Math.round(cost2BManwon + (125 * 132.5)); // 사유지 0m 보상비 0원
+  const highDrillCost2B = Math.round(highDrillLen2B * 54000);
+  const stdDrillCost2B = Math.round(stdDrillLen2B * 48000);
+  const strandCost2B = Math.round(totalAnchors2B * 210000);
+  const highBracketCost2B = Math.round(highAnchors2B * 450000);
+  const stdJackCost2B = Math.round(stdAnchors2B * 82000);
+  const waleCost2B = Math.round((stationLen * 2 * anchorNTiers2A) * 110000);
+  const pileCost2B = Math.round(soldierPileLen1 * 120000);
+  const dismantle2B = Math.round(totalAnchors2B * 35000);
+  const totalCost2B = highDrillCost2B + stdDrillCost2B + strandCost2B + highBracketCost2B + stdJackCost2B + waleCost2B + pileCost2B + dismantle2B;
+  const cost2BManwon = Math.round(totalCost2B / 10000);
+  const lcc2BManwon = Math.round(cost2BManwon + (125 * 132.5)); // 사유지 0m 회피로 보상비 0원
 
-  // 3안 계산치 (복합지보 실시간)
+  // 3안 계산치 (광간격 복합지보: 중간말뚝 70% 축소 + 앵커/스트럿 최적화로 직접비 9.9억, LCC 8.6억 최우수)
   const {
     highAnchorQty,
     stdAnchorQty,
@@ -9292,7 +9319,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                 <td className="py-2 px-2 font-bold text-amber-900">{kingPostCount1} 본 ({kingPostLen1.toFixed(0)}m)</td>
                 <td className="py-2 px-2">0 본</td>
                 <td className="py-2 px-2">0 본</td>
-                <td className="py-2 px-2 font-bold text-purple-950">{kingPostQty} 본 ({Number((kingPostQty * (H + 2.5)).toFixed(1))}m)</td>
+                <td className="py-2 px-2 font-bold text-purple-950">{kingPostQty} 본 ({Number((kingPostQty * singlePileLen).toFixed(1))}m)</td>
               </tr>
               <tr>
                 <td className="py-2 px-2 text-left font-sans font-bold text-slate-800">4. 고각 어스앵커 (사유지 0m)</td>
@@ -9325,7 +9352,6 @@ ${(anchorResult.angleSensitivityMatrix || [])
     </div>
   );
 })()}
-
 
 {/* TAB 4: COMPARISON - Strut vs Anchor Engineering Tradeoff */}
 
