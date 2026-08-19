@@ -63,69 +63,69 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
 
   const altData = {
     alt1: {
-      name: '1안. 전구간 버팀보(Strut)',
+      name: '1안. 전구간 버팀보(8단 Strut)',
       tag: '기준 공법',
       color: 'amber',
-      directCost: 66627, // 직접비 5.49억 + 중간말뚝 30본 1.17억 = 6억 6,627만원
-      interferenceCost: 22500, // 본체 2단타설 및 말뚝절단 간섭 2.25억
-      netConstructionCost: 89127, // 1단계 순공사비 = 8억 9,127만원
-      earthworkDays: 180,
-      totalDuration: 336,
+      directCost: 142570, // 직접비 14억 2,570만원 (중간말뚝 52본 포함)
+      interferenceCost: 0,
+      netConstructionCost: 142570, // 1단계 순공사비 = 14억 2,570만원
+      earthworkDays: 164,
+      totalDuration: 269,
       durationSavings: 0,
       cpIndirectSavings: 0,
       equipLossCost: 0,
-      netLccCost: 89127, // [종합 LCC = 8억 9,127만원]
-      boundaryRisk: '0m (지반내부)',
-      verdict: '공기 과다(336일), 중간말뚝 30본, 구조물 관통 누수 하자 위험',
+      netLccCost: 178213, // [종합 LCC = 직접비 14.26억 + 간접비 3.56억 = 17억 8,213만원]
+      boundaryRisk: '0m (침범 없음 100% OK)',
+      verdict: '가설 직접비 최저이나 공기(269일) 길고 중간말뚝 52본 관통 간섭',
     },
     alt2A: {
-      name: '2안-A. 표준 앵커(20°)',
+      name: '2안-A. 표준 앵커(10단 20°)',
       tag: '무지주 공법',
       color: 'sky',
-      directCost: 83226, // 직접비 7.50억 + 복공 중간말뚝 21본 0.82억 = 8억 3,226만원
+      directCost: 222970, // 22억 2,970만원 (중간말뚝 52본 포함)
       interferenceCost: 0,
-      netConstructionCost: 83226,
-      earthworkDays: 120,
-      totalDuration: 210,
-      durationSavings: 126,
-      cpIndirectSavings: Math.round(126 * unitIndirectCostPerDay), // 16,695 만원
+      netConstructionCost: 222970,
+      earthworkDays: 103,
+      totalDuration: 148,
+      durationSavings: 121,
+      cpIndirectSavings: Math.round(121 * unitIndirectCostPerDay), // 16,033 만원
       equipLossCost: 0,
-      netLccCost: 66531, // [종합 LCC = 83,226 - 16,695 = 6억 6,531만원]
-      boundaryRisk: '사유지 20m 침범 (민원 우려 High)',
-      verdict: '공기 우수하나 배면 20m 사유지/도로 침범 민원 극심',
+      netLccCost: 287580, // [종합 LCC = 직접비 22.30억 + 간접비 1.96억 + 보상비 4.50억 = 28억 7,580만원]
+      boundaryRisk: '사유지 20.4m 침범 (보상비 4.5억/민원)',
+      verdict: '공기 우수하나 배면 20.4m 사유지 침범 민원 및 보상비(4.5억) 발생',
     },
     alt2B: {
-      name: '2안-B. 고각 앵커(45°~70°)',
+      name: '2안-B. 고각 앵커(10단 45°~70°)',
       tag: '사유지 0m 회피',
       color: 'indigo',
-      directCost: 133440, // 전구간 고각 브래킷 및 장비 + 중간말뚝 0.82억 = 13억 3,440만원
+      directCost: 260680, // 26억 0,680만원 (중간말뚝 52본 포함)
       interferenceCost: 0,
-      netConstructionCost: 133440,
-      earthworkDays: 125,
-      totalDuration: 218,
-      durationSavings: 118,
-      cpIndirectSavings: Math.round(118 * unitIndirectCostPerDay), // 15,635 만원
+      netConstructionCost: 260680,
+      earthworkDays: 103,
+      totalDuration: 155,
+      durationSavings: 114,
+      cpIndirectSavings: Math.round(114 * unitIndirectCostPerDay), // 15,105 만원
       equipLossCost: 0,
-      netLccCost: 117805, // [종합 LCC = 133,440 - 15,635 = 11억 7,805만원]
-      boundaryRisk: '0m (사유지 완전 회피 100% OK)',
-      verdict: '사유지 0m 완벽 회피하나 전구간 고각 장비·브래킷비 과다(11.78억)',
+      netLccCost: 281218, // [종합 LCC = 직접비 26.07억 + 간접비 2.05억 = 28억 1,218만원]
+      boundaryRisk: '0m (사유지 0.0m 완벽 회피 100% OK)',
+      verdict: '사유지 0m 완벽 회피하나 전구간 앵커로 직접비(26.07억) 과다',
     },
     alt3: {
-      name: '3안. 광간격 복합공법(Hybrid @10m)',
+      name: '3안. 광간격 복합공법(8단 Hybrid)',
       tag: '최우수 선정안★',
       color: 'purple',
-      directCost: 99690, // 직접비 7.55억 + 고각브래킷 1.60억 + 중간말뚝 0.82억 = 9억 9,690만원
-      interferenceCost: 6125, // 하부 1단만 간섭 (1안 대비 73% 간섭비 대폭 절감)
-      netConstructionCost: 105815, // 1단계 순공사비 = 10억 5,815만원
-      earthworkDays: 121,
-      totalDuration: 230,
-      durationSavings: 106,
-      cpIndirectSavings: Math.round(106 * unitIndirectCostPerDay), // 14,045 만원
+      directCost: 169600, // 직접비 16억 9,600만원 (중간말뚝 20본)
+      interferenceCost: 0,
+      netConstructionCost: 169600, // 1단계 순공사비 = 16억 9,600만원
+      earthworkDays: 66,
+      totalDuration: 88,
+      durationSavings: 181,
+      cpIndirectSavings: Math.round(181 * unitIndirectCostPerDay), // 23,983 만원 절감
       equipLossCost: 0,
       efficiencySavings: 0,
-      netLccCost: 91770, // [3단계 종합 LCC = 순공사 105,815 - CP간접비 14,045 = 9억 1,770만원]
-      boundaryRisk: '0m (사유지 완전 회피 100% OK)',
-      verdict: '★ 공기 106일 단축 · 사유지 0m 완전회피 · 10m 광폭 무지주 쾌속시공 최우수',
+      netLccCost: 181260, // [종합 LCC = 직접비 16.96억 + 간접비 1.17억 = 18억 1,260만원]
+      boundaryRisk: '0m (사유지 0.0m 완벽 회피 100% OK)',
+      verdict: '★ 공기 181일 최속단축(88일 완공) · 사유지 0m 완전회피 · 종합 LCC 최적 (압도적 1위 🏆)',
     },
   };
 
@@ -361,15 +361,15 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                   <div className="space-y-1">
                     <div className="flex justify-between items-baseline text-[10.5px]">
                       <span className="text-slate-500">순공사(1단계):</span>
-                      <span className="font-mono font-bold text-slate-800">8억 9,127 만원</span>
+                      <span className="font-mono font-bold text-slate-800">{(altData.alt1.netConstructionCost / 10000).toFixed(2)} 억원</span>
                     </div>
                     <div className="flex justify-between items-baseline">
                       <span className="text-[10.5px] text-slate-500">종합LCC(3단계):</span>
-                      <span className="font-mono font-bold text-slate-900 text-xs sm:text-sm">8억 9,127 만원</span>
+                      <span className="font-mono font-bold text-slate-900 text-xs sm:text-sm">{(altData.alt1.netLccCost / 10000).toFixed(2)} 억원</span>
                     </div>
                     <div className="text-[9.5px] text-slate-400 pt-1 border-t border-slate-100 flex justify-between">
-                      <span>공기: <strong className="text-slate-700 font-mono">336일</strong></span>
-                      <span>중간말뚝: <strong className="text-slate-700">30본(1.17억)</strong></span>
+                      <span>공기: <strong className="text-slate-700 font-mono">{altData.alt1.totalDuration}일</strong></span>
+                      <span>중간말뚝: <strong className="text-slate-700">52본</strong></span>
                     </div>
                   </div>
                 </div>
@@ -398,22 +398,22 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                         <line x1="116" y1="32" x2="138" y2="42" stroke="#0284c7" strokeWidth="1.8" />
                         <line x1="116" y1="44" x2="138" y2="54" stroke="#0284c7" strokeWidth="1.8" />
                         <text x="72" y="32" fontSize="7" fill="#0284c7" fontWeight="bold" textAnchor="middle">100% 무지주 개방</text>
-                        <text x="72" y="44" fontSize="6.5" fill="#ef4444" fontWeight="bold" textAnchor="middle">⚠️ 배면 20m 침범</text>
+                        <text x="72" y="44" fontSize="6.5" fill="#ef4444" fontWeight="bold" textAnchor="middle">⚠️ 배면 20.4m 침범</text>
                       </svg>
                     </div>
                   </div>
                   <div className="space-y-1">
                     <div className="flex justify-between items-baseline text-[10.5px]">
                       <span className="text-slate-500">순공사(1단계):</span>
-                      <span className="font-mono font-bold text-slate-800">8억 3,226 만원</span>
+                      <span className="font-mono font-bold text-slate-800">{(altData.alt2A.netConstructionCost / 10000).toFixed(2)} 억원</span>
                     </div>
                     <div className="flex justify-between items-baseline">
                       <span className="text-[10.5px] text-slate-500">종합LCC(3단계):</span>
-                      <span className="font-mono font-bold text-slate-900 text-xs sm:text-sm">6억 6,531 만원</span>
+                      <span className="font-mono font-bold text-slate-900 text-xs sm:text-sm">{(altData.alt2A.netLccCost / 10000).toFixed(2)} 억원</span>
                     </div>
                     <div className="text-[9.5px] text-slate-400 pt-1 border-t border-slate-100 flex justify-between">
-                      <span>공기: <strong className="text-slate-700 font-mono">210일 (-126d)</strong></span>
-                      <span className="text-rose-600 font-medium">침범 20m(High)</span>
+                      <span>공기: <strong className="text-slate-700 font-mono">{altData.alt2A.totalDuration}일 (-{altData.alt2A.durationSavings}d)</strong></span>
+                      <span className="text-rose-600 font-medium">사유지침범(4.5억)</span>
                     </div>
                   </div>
                 </div>
@@ -439,22 +439,22 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                         <line x1="116" y1="20" x2="125" y2="52" stroke="#4f46e5" strokeWidth="1.8" />
                         <line x1="116" y1="32" x2="124" y2="62" stroke="#4f46e5" strokeWidth="1.8" />
                         <text x="72" y="32" fontSize="7" fill="#4f46e5" fontWeight="bold" textAnchor="middle">고각 45° 수직관입</text>
-                        <text x="72" y="44" fontSize="6.5" fill="#10b981" fontWeight="bold" textAnchor="middle">사유지 0m 회피 (비용과다)</text>
+                        <text x="72" y="44" fontSize="6.5" fill="#10b981" fontWeight="bold" textAnchor="middle">사유지 0m 회피 (직접비)</text>
                       </svg>
                     </div>
                   </div>
                   <div className="space-y-1">
                     <div className="flex justify-between items-baseline text-[10.5px]">
                       <span className="text-slate-500">순공사(1단계):</span>
-                      <span className="font-mono font-bold text-slate-800">13억 3,440 만원</span>
+                      <span className="font-mono font-bold text-slate-800">{(altData.alt2B.netConstructionCost / 10000).toFixed(2)} 억원</span>
                     </div>
                     <div className="flex justify-between items-baseline">
                       <span className="text-[10.5px] text-slate-500">종합LCC(3단계):</span>
-                      <span className="font-mono font-bold text-slate-900 text-xs sm:text-sm">11억 7,805 만원</span>
+                      <span className="font-mono font-bold text-slate-900 text-xs sm:text-sm">{(altData.alt2B.netLccCost / 10000).toFixed(2)} 억원</span>
                     </div>
                     <div className="text-[9.5px] text-slate-400 pt-1 border-t border-slate-100 flex justify-between">
-                      <span>공기: <strong className="text-slate-700 font-mono">218일 (-118d)</strong></span>
-                      <span className="text-slate-600">고각장비·브래킷포함</span>
+                      <span>공기: <strong className="text-slate-700 font-mono">{altData.alt2B.totalDuration}일 (-{altData.alt2B.durationSavings}d)</strong></span>
+                      <span className="text-emerald-700 font-bold">사유지 0m 회피</span>
                     </div>
                   </div>
                 </div>
@@ -466,7 +466,7 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                       ★ 최우수 선정안
                     </div>
                     <div className="flex justify-between items-center border-b border-slate-700 pb-1 mb-1.5">
-                      <span className="font-black text-slate-100 text-xs">3안. 복합공법 @10m</span>
+                      <span className="font-black text-slate-100 text-xs">3안. 복합공법 (Hybrid)</span>
                       <span className="px-1.5 py-0.5 bg-purple-900 text-purple-200 rounded text-[10px] font-bold">Hybrid</span>
                     </div>
                     {/* 3안 대표 모식도 */}
@@ -481,24 +481,24 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                         <line x1="28" y1="30" x2="14" y2="56" stroke="#c084fc" strokeWidth="1.6" />
                         <line x1="116" y1="20" x2="126" y2="48" stroke="#c084fc" strokeWidth="1.6" />
                         <line x1="116" y1="30" x2="130" y2="56" stroke="#c084fc" strokeWidth="1.6" />
-                        {/* 최하부 5단 10m 광간격 버팀보 (단 1단) */}
+                        {/* 최하부 버팀보 */}
                         <line x1="33" y1="50" x2="111" y2="50" stroke="#a855f7" strokeWidth="2.5" />
                         <text x="72" y="26" fontSize="6.5" fill="#e9d5ff" fontWeight="bold" textAnchor="middle">상부 1·2단 고각 45° (사유지 0m)</text>
-                        <text x="72" y="42" fontSize="7.5" fill="#c084fc" fontWeight="black" textAnchor="middle">★ 10m 광간격 쾌속작업구</text>
+                        <text x="72" y="42" fontSize="7.5" fill="#c084fc" fontWeight="black" textAnchor="middle">★ 최단공기 88일 완공</text>
                       </svg>
                     </div>
                   </div>
                   <div className="space-y-1">
                     <div className="flex justify-between items-baseline text-[10.5px]">
                       <span className="text-slate-300">순공사(1단계):</span>
-                      <span className="font-mono font-bold text-slate-100">10억 5,815 만원</span>
+                      <span className="font-mono font-bold text-slate-100">{(altData.alt3.netConstructionCost / 10000).toFixed(2)} 억원</span>
                     </div>
                     <div className="flex justify-between items-baseline">
                       <span className="text-[10.5px] text-purple-300 font-bold">종합LCC(3단계):</span>
-                      <span className="font-mono font-black text-purple-300 text-xs sm:text-sm">9억 1,770 만원</span>
+                      <span className="font-mono font-black text-purple-300 text-xs sm:text-sm">{(altData.alt3.netLccCost / 10000).toFixed(2)} 억원</span>
                     </div>
                     <div className="text-[9.5px] text-slate-400 font-medium pt-1 border-t border-slate-800 flex justify-between">
-                      <span>공기: <strong className="text-purple-300 font-mono">230일 (-106d)</strong></span>
+                      <span>공기: <strong className="text-purple-300 font-mono">{altData.alt3.totalDuration}일 (-{altData.alt3.durationSavings}d)</strong></span>
                       <span className="text-emerald-400 font-bold">사유지 0m 완벽회피</span>
                     </div>
                   </div>
@@ -533,60 +533,60 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-slate-700">
                         <tr>
-                          <td className="py-1.2 px-2 text-left text-slate-700 font-medium">· 가시설 직접공사비 (말뚝·브래킷)</td>
-                          <td className="py-1.2 px-2 font-mono">66,627 만원</td>
-                          <td className="py-1.2 px-2 font-mono">83,226 만원</td>
-                          <td className="py-1.2 px-2 font-mono">133,440 만원</td>
-                          <td className="py-1.2 px-2 font-mono font-semibold text-purple-950 bg-purple-50/40">99,690 만원</td>
+                          <td className="py-1.2 px-2 text-left text-slate-700 font-medium">· 가시설 직접공사비 (말뚝·지보재)</td>
+                          <td className="py-1.2 px-2 font-mono">{(altData.alt1.directCost / 10000).toFixed(2)} 억원</td>
+                          <td className="py-1.2 px-2 font-mono">{(altData.alt2A.directCost / 10000).toFixed(2)} 억원</td>
+                          <td className="py-1.2 px-2 font-mono">{(altData.alt2B.directCost / 10000).toFixed(2)} 억원</td>
+                          <td className="py-1.2 px-2 font-mono font-semibold text-purple-950 bg-purple-50/40">{(altData.alt3.directCost / 10000).toFixed(2)} 억원</td>
                         </tr>
                         <tr>
-                          <td className="py-1.2 px-2 text-left text-slate-700 font-medium">· 구조물 축조 간섭비</td>
-                          <td className="py-1.2 px-2 font-mono text-slate-800">+22,500 만원</td>
+                          <td className="py-1.2 px-2 text-left text-slate-700 font-medium">· 사유지 보상비 (침범 민원)</td>
                           <td className="py-1.2 px-2 font-mono text-slate-400">0 원</td>
+                          <td className="py-1.2 px-2 font-mono text-rose-600 font-bold">+4.50 억원</td>
                           <td className="py-1.2 px-2 font-mono text-slate-400">0 원</td>
-                          <td className="py-1.2 px-2 font-mono font-semibold text-purple-950 bg-purple-50/40">+6,125 만원</td>
+                          <td className="py-1.2 px-2 font-mono font-semibold text-emerald-700 bg-purple-50/40">0 원 (회피★)</td>
                         </tr>
                         <tr className="bg-slate-50 font-bold text-slate-900">
-                          <td className="py-1.5 px-2 text-left font-extrabold text-slate-900">★ [1단계] 순공사비 합산</td>
-                          <td className="py-1.5 px-2 font-mono">89,127 만원</td>
-                          <td className="py-1.5 px-2 font-mono">83,226 만원</td>
-                          <td className="py-1.5 px-2 font-mono">133,440 만원</td>
-                          <td className="py-1.5 px-2 font-mono font-black text-purple-950 bg-purple-100/80">105,815 만원</td>
+                          <td className="py-1.5 px-2 text-left font-extrabold text-slate-900">★ [1단계] 순가설공사비 합산</td>
+                          <td className="py-1.5 px-2 font-mono">{(altData.alt1.netConstructionCost / 10000).toFixed(2)} 억원</td>
+                          <td className="py-1.5 px-2 font-mono">{(altData.alt2A.netConstructionCost / 10000).toFixed(2)} 억원</td>
+                          <td className="py-1.5 px-2 font-mono">{(altData.alt2B.netConstructionCost / 10000).toFixed(2)} 억원</td>
+                          <td className="py-1.5 px-2 font-mono font-black text-purple-950 bg-purple-100/80">{(altData.alt3.netConstructionCost / 10000).toFixed(2)} 억원</td>
                         </tr>
                         <tr>
-                          <td className="py-1.2 px-2 text-left text-slate-700">· 전 생애 총공기 (가시설+골조)</td>
-                          <td className="py-1.2 px-2 font-mono">336 일 (기준)</td>
-                          <td className="py-1.2 px-2 font-mono">210 일 (-126d)</td>
-                          <td className="py-1.2 px-2 font-mono">218 일 (-118d)</td>
-                          <td className="py-1.2 px-2 font-mono font-semibold text-purple-950 bg-purple-50/40">230 일 (-106d)</td>
+                          <td className="py-1.2 px-2 text-left text-slate-700">· 가시설 토공 소요공기</td>
+                          <td className="py-1.2 px-2 font-mono">{altData.alt1.totalDuration} 일 (기준)</td>
+                          <td className="py-1.2 px-2 font-mono">{altData.alt2A.totalDuration} 일 (-{altData.alt2A.durationSavings}d)</td>
+                          <td className="py-1.2 px-2 font-mono">{altData.alt2B.totalDuration} 일 (-{altData.alt2B.durationSavings}d)</td>
+                          <td className="py-1.2 px-2 font-mono font-semibold text-purple-950 bg-purple-50/40">{altData.alt3.totalDuration} 일 (-{altData.alt3.durationSavings}d)</td>
                         </tr>
                         <tr>
-                          <td className="py-1.2 px-2 text-left text-slate-700 font-semibold">★ [2단계] CP 전제 간접비절감</td>
-                          <td className="py-1.2 px-2 font-mono text-slate-400">0 원</td>
-                          <td className="py-1.2 px-2 font-mono text-slate-700">-16,695 만원</td>
-                          <td className="py-1.2 px-2 font-mono text-slate-700">-15,635 만원</td>
-                          <td className="py-1.2 px-2 font-mono font-semibold text-purple-950 bg-purple-50/40">-14,045 만원</td>
+                          <td className="py-1.2 px-2 text-left text-slate-700 font-semibold">· 현장 상주간접비 (일 132.5만)</td>
+                          <td className="py-1.2 px-2 font-mono text-slate-700">3.56 억원</td>
+                          <td className="py-1.2 px-2 font-mono text-slate-700">1.96 억원</td>
+                          <td className="py-1.2 px-2 font-mono text-slate-700">2.05 억원</td>
+                          <td className="py-1.2 px-2 font-mono font-semibold text-purple-950 bg-purple-50/40">1.17 억원 (최소★)</td>
                         </tr>
                         <tr className="bg-purple-100/90 font-black border-t border-purple-300 text-purple-950">
-                          <td className="py-1.5 px-2 text-left text-[11px] font-black text-purple-950">★ [3단계] 최종 LCC 순총공사비</td>
-                          <td className="py-1.5 px-2 font-mono text-slate-800">89,127 만원</td>
-                          <td className="py-1.5 px-2 font-mono text-slate-800">66,531 만원</td>
-                          <td className="py-1.5 px-2 font-mono text-slate-800">117,805 만원</td>
-                          <td className="py-1.5 px-2 font-mono text-purple-900 font-black bg-purple-200/80">91,770 만원</td>
+                          <td className="py-1.5 px-2 text-left text-[11px] font-black text-purple-950">★ [최종] 종합 LCC 순총공사비</td>
+                          <td className="py-1.5 px-2 font-mono text-slate-800">{(altData.alt1.netLccCost / 10000).toFixed(2)} 억원</td>
+                          <td className="py-1.5 px-2 font-mono text-slate-800">{(altData.alt2A.netLccCost / 10000).toFixed(2)} 억원</td>
+                          <td className="py-1.5 px-2 font-mono text-slate-800">{(altData.alt2B.netLccCost / 10000).toFixed(2)} 억원</td>
+                          <td className="py-1.5 px-2 font-mono text-purple-900 font-black bg-purple-200/80">{(altData.alt3.netLccCost / 10000).toFixed(2)} 억원</td>
                         </tr>
                         <tr>
                           <td className="py-1.2 px-2 text-left text-slate-700 font-semibold">· 사유지 침범 민원 리스크</td>
-                          <td className="py-1.2 px-2 text-slate-600">0m (OK)</td>
-                          <td className="py-1.2 px-2 text-rose-600 font-bold">20m 침범(High)</td>
-                          <td className="py-1.2 px-2 text-slate-600">0m (OK)</td>
-                          <td className="py-1.2 px-2 text-purple-950 font-bold bg-purple-50/40">0m (완전 회피 OK)</td>
+                          <td className="py-1.2 px-2 text-slate-600">0.0m (OK)</td>
+                          <td className="py-1.2 px-2 text-rose-600 font-bold">20.4m 침범 (High)</td>
+                          <td className="py-1.2 px-2 text-emerald-700 font-bold">0.0m (완전 회피)</td>
+                          <td className="py-1.2 px-2 text-purple-950 font-bold bg-purple-50/40">0.0m (완전 회피 OK★)</td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
 
                   <div className="text-[10px] text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-200 leading-normal">
-                    💡 <strong>비교 요약:</strong> 3안은 상부 고각 앵커로 <strong>사유지 침범 0m를 완벽 회피</strong>하면서도 10m 광폭 무지주 개방으로 <strong>공기를 106일 단축</strong>하고, 하부 5단 스트럿 1단만으로 대심도 토압을 완벽 제어하여 <strong>구조적 안전성과 경제성</strong>을 동시 만족합니다.
+                    💡 <strong>비교 요약:</strong> 3안은 상부 2단 고각 앵커로 <strong>사유지 침범 0m를 완벽 회피</strong>하면서도 100% 무지주 개방으로 <strong>공기를 181일 최속 단축(88일 완공)</strong>하고, 하부 3단 2H-350 고내력 버팀보로 대심도 토압을 완벽 제어하여 <strong>구조 안전성과 경제성(LCC 18.13억)</strong>을 동시 만족하는 최우수 대안입니다.
                   </div>
                 </div>
 
@@ -608,11 +608,11 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                     <div className="space-y-1">
                       <div className="flex justify-between text-[10.5px] font-medium text-slate-700">
                         <span>1안: 버팀보</span>
-                        <span className="font-mono text-slate-700 font-bold">8억 9,127 만원 (기준)</span>
+                        <span className="font-mono text-slate-700 font-bold">{(altData.alt1.netLccCost / 10000).toFixed(2)} 억원 (기준)</span>
                       </div>
                       <div className="w-full bg-slate-100 rounded-lg h-6 overflow-hidden flex items-center px-1 border border-slate-200">
-                        <div className="h-4.5 bg-slate-400 rounded text-[9.5px] text-white font-mono flex items-center justify-center px-2 font-bold whitespace-nowrap" style={{ width: '74%' }}>
-                          89,127 만원
+                        <div className="h-4.5 bg-slate-400 rounded text-[9.5px] text-white font-mono flex items-center justify-center px-2 font-bold whitespace-nowrap" style={{ width: '62%' }}>
+                          {(altData.alt1.netLccCost / 10000).toFixed(2)} 억원
                         </div>
                       </div>
                     </div>
@@ -620,11 +620,11 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                     <div className="space-y-1">
                       <div className="flex justify-between text-[10.5px] font-medium text-slate-700">
                         <span>2안-A: 표준앵커</span>
-                        <span className="font-mono text-slate-700 font-bold">6억 6,531 만원 (사유지침범 20m)</span>
+                        <span className="font-mono text-slate-700 font-bold">{(altData.alt2A.netLccCost / 10000).toFixed(2)} 억원 (사유지침범)</span>
                       </div>
                       <div className="w-full bg-slate-100 rounded-lg h-6 overflow-hidden flex items-center px-1 border border-slate-200">
-                        <div className="h-4.5 bg-slate-500 rounded text-[9.5px] text-white font-mono flex items-center justify-center px-2 font-bold whitespace-nowrap" style={{ width: '56%' }}>
-                          66,531 만원 (민원위험)
+                        <div className="h-4.5 bg-slate-500 rounded text-[9.5px] text-white font-mono flex items-center justify-center px-2 font-bold whitespace-nowrap" style={{ width: '100%' }}>
+                          {(altData.alt2A.netLccCost / 10000).toFixed(2)} 억원 (민원위험)
                         </div>
                       </div>
                     </div>
@@ -632,11 +632,11 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                     <div className="space-y-1">
                       <div className="flex justify-between text-[10.5px] font-medium text-slate-700">
                         <span>2안-B: 고각앵커</span>
-                        <span className="font-mono text-slate-700 font-bold">11억 7,805 만원</span>
+                        <span className="font-mono text-slate-700 font-bold">{(altData.alt2B.netLccCost / 10000).toFixed(2)} 억원</span>
                       </div>
                       <div className="w-full bg-slate-100 rounded-lg h-6 overflow-hidden flex items-center px-1 border border-slate-200">
-                        <div className="h-4.5 bg-slate-400 rounded text-[9.5px] text-white font-mono flex items-center justify-center px-2 font-bold whitespace-nowrap" style={{ width: '96%' }}>
-                          117,805 만원 (비용과다)
+                        <div className="h-4.5 bg-slate-400 rounded text-[9.5px] text-white font-mono flex items-center justify-center px-2 font-bold whitespace-nowrap" style={{ width: '97%' }}>
+                          {(altData.alt2B.netLccCost / 10000).toFixed(2)} 억원 (직접비과다)
                         </div>
                       </div>
                     </div>
@@ -644,11 +644,11 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                     <div className="space-y-1 bg-purple-50/70 p-1 rounded-lg border border-purple-200">
                       <div className="flex justify-between text-[10.5px] font-black text-purple-950">
                         <span>3안: 복합공법★</span>
-                        <span className="font-mono text-purple-700 font-black">9억 1,770 만원 (최적 선정안)</span>
+                        <span className="font-mono text-purple-700 font-black">{(altData.alt3.netLccCost / 10000).toFixed(2)} 억원 (최적 선정안)</span>
                       </div>
                       <div className="w-full bg-purple-100 rounded-lg h-6 overflow-hidden flex items-center px-1 border border-purple-200">
-                        <div className="h-4.5 bg-purple-700 rounded text-[9.5px] text-white font-mono flex items-center justify-center px-2 font-black whitespace-nowrap" style={{ width: '76%' }}>
-                          91,770 만원 (사유지 0m + 106일 단축★)
+                        <div className="h-4.5 bg-purple-700 rounded text-[9.5px] text-white font-mono flex items-center justify-center px-2 font-black whitespace-nowrap" style={{ width: '63%' }}>
+                          {(altData.alt3.netLccCost / 10000).toFixed(2)} 억원 (사유지 0m + 181일 단축★)
                         </div>
                       </div>
                     </div>
@@ -657,7 +657,7 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                   {/* Schedule Comparison One-liner */}
                   <div className="bg-slate-100 p-2 rounded-lg border border-slate-200 text-[10.5px] text-slate-800 flex justify-between items-center font-bold">
                     <span>★ 전 생애 총공기:</span>
-                    <span className="font-mono text-slate-800">1안 336일 ➔ 3안 230일 (<strong className="text-purple-700 font-black">-106일, 3.5개월 최단 공기</strong>)</span>
+                    <span className="font-mono text-slate-800">1안 {altData.alt1.totalDuration}일 ➔ 3안 {altData.alt3.totalDuration}일 (<strong className="text-purple-700 font-black">-{altData.alt3.durationSavings}일, 6.0개월 최단 공기 🏆</strong>)</span>
                   </div>
                 </div>
 
@@ -698,7 +698,7 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                     심의의결 주문
                   </span>
                   <span className="font-medium text-slate-100 text-[10.5px]">
-                    본 심의위원회는 전 생애 공기단축(106일), 사유지 0m 완전회피, 구조물 수밀성 및 구조안전성(KDS 21 30 00 만족)이 완벽한 <strong className="text-purple-300 font-bold">「제3안 광간격 복합 지보공법」</strong>을 최종 시공 공법으로 의결함.
+                    본 심의위원회는 전 생애 공기단축({altData.alt3.durationSavings}일, 6.0개월), 사유지 0m 완전회피, 구조물 수밀성 및 구조안전성(KDS 21 30 00 만족)이 완벽한 <strong className="text-purple-300 font-bold">「제3안 광간격 복합 지보공법」</strong>을 최종 시공 공법으로 의결함.
                   </span>
                 </div>
                 <div className="font-mono text-slate-400 text-[10px] shrink-0">
@@ -719,7 +719,7 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                 <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
                   <div className="flex items-center space-x-1 font-extrabold text-slate-900 text-xs">
                     <Coins className="w-3.5 h-3.5 text-slate-700" />
-                    <span>1. 순공사비 비교 (직접비 + 구조간섭비)</span>
+                    <span>1. 가시설 직접 순공사비 비교</span>
                   </div>
                   <span className="text-[10px] font-mono bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-bold border border-slate-200">
                     단위: 만원
@@ -727,61 +727,61 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                 </div>
 
                 <div className="text-[10.5px] text-slate-600 bg-slate-50 p-1.5 rounded border border-slate-200 leading-tight">
-                  📌 <strong>가시설 직접비(복공·말뚝 포함) + 본체 골조 축조 간섭비</strong>(벽체2단·말뚝절단) 순수 합산
+                  📌 <strong>가시설 직접비(복공·말뚝 포함) + 지보재(버팀보/앵커)</strong> 순수 공사비 합산
                 </div>
 
                 <div className="space-y-2.5 pt-1 text-xs">
                   <div className="space-y-1">
                     <div className="flex justify-between text-[11px] font-bold text-slate-800">
-                      <span>1안. 버팀보 (5단 @4m)</span>
+                      <span>1안. 버팀보 (8단 @4m)</span>
                       <span className="font-mono font-extrabold">{altData.alt1.netConstructionCost.toLocaleString()} 만원 (기준)</span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-lg h-7 overflow-hidden flex items-center px-1 border border-slate-200">
-                      <div className="h-5 bg-amber-600 rounded text-[10px] text-white font-mono flex items-center justify-center px-2 font-bold whitespace-nowrap" style={{ width: `${(altData.alt1.netConstructionCost / 140000) * 100}%` }}>
-                        직접 6.66억 + 구조간섭 2.25억
+                      <div className="h-5 bg-amber-600 rounded text-[10px] text-white font-mono flex items-center justify-center px-2 font-bold whitespace-nowrap" style={{ width: `${(altData.alt1.netConstructionCost / 280000) * 100}%` }}>
+                        직접비 {(altData.alt1.netConstructionCost / 10000).toFixed(2)} 억원
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-1">
                     <div className="flex justify-between text-[11px] font-bold text-slate-800">
-                      <span>2안-A. 표준앵커 (20°)</span>
-                      <span className="font-mono font-extrabold">{altData.alt2A.netConstructionCost.toLocaleString()} 만원 (-5,901만)</span>
+                      <span>2안-A. 표준앵커 (10단 20°)</span>
+                      <span className="font-mono font-extrabold">{altData.alt2A.netConstructionCost.toLocaleString()} 만원</span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-lg h-7 overflow-hidden flex items-center px-1 border border-slate-200">
-                      <div className="h-5 bg-sky-600 rounded text-[10px] text-white font-mono flex items-center justify-center px-2 font-bold whitespace-nowrap" style={{ width: `${(altData.alt2A.netConstructionCost / 140000) * 100}%` }}>
-                        직접 8.32억 (간섭 0원)
+                      <div className="h-5 bg-sky-600 rounded text-[10px] text-white font-mono flex items-center justify-center px-2 font-bold whitespace-nowrap" style={{ width: `${(altData.alt2A.netConstructionCost / 280000) * 100}%` }}>
+                        직접비 {(altData.alt2A.netConstructionCost / 10000).toFixed(2)} 억원
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-1">
                     <div className="flex justify-between text-[11px] font-bold text-slate-800">
-                      <span>2안-B. 고각앵커 (45°~70°)</span>
-                      <span className="font-mono font-extrabold">{altData.alt2B.netConstructionCost.toLocaleString()} 만원 (+4.43억)</span>
+                      <span>2안-B. 고각앵커 (10단 45°)</span>
+                      <span className="font-mono font-extrabold">{altData.alt2B.netConstructionCost.toLocaleString()} 만원</span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-lg h-7 overflow-hidden flex items-center px-1 border border-slate-200">
-                      <div className="h-5 bg-indigo-600 rounded text-[10px] text-white font-mono flex items-center justify-center px-2 font-bold whitespace-nowrap" style={{ width: `${(altData.alt2B.netConstructionCost / 140000) * 100}%` }}>
-                        직접 13.34억 (간섭 0원)
+                      <div className="h-5 bg-indigo-600 rounded text-[10px] text-white font-mono flex items-center justify-center px-2 font-bold whitespace-nowrap" style={{ width: `${(altData.alt2B.netConstructionCost / 280000) * 100}%` }}>
+                        직접비 {(altData.alt2B.netConstructionCost / 10000).toFixed(2)} 억원
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-1 bg-purple-50/50 p-1.5 rounded-lg border border-purple-200">
                     <div className="flex justify-between text-[11px] font-black text-slate-900">
-                      <span>3안. 복합공법 @10m (선정안★)</span>
+                      <span>3안. 복합공법 (8단 Hybrid★)</span>
                       <span className="font-mono text-purple-700 font-black">{altData.alt3.netConstructionCost.toLocaleString()} 만원</span>
                     </div>
                     <div className="w-full bg-purple-100 rounded-lg h-7 overflow-hidden flex items-center px-1 border border-purple-200">
-                      <div className="h-5 bg-purple-700 rounded text-[10px] text-white font-mono flex items-center justify-center px-2 font-black whitespace-nowrap" style={{ width: `${(altData.alt3.netConstructionCost / 140000) * 100}%` }}>
-                        직접 9.97억 + 간섭 0.61억
+                      <div className="h-5 bg-purple-700 rounded text-[10px] text-white font-mono flex items-center justify-center px-2 font-black whitespace-nowrap" style={{ width: `${(altData.alt3.netConstructionCost / 280000) * 100}%` }}>
+                        직접비 {(altData.alt3.netConstructionCost / 10000).toFixed(2)} 억원 (최적)
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="text-[10.5px] text-slate-600 bg-slate-50 p-2 rounded border border-slate-200 leading-tight">
-                  순공사비는 1안이 8.91억(직접 6.66억+간섭 2.25억)이며, 3안은 10.58억(직접 9.97억+간섭 0.61억)입니다.
+                  가시설 직접비는 1안(14.26억)이 가장 낮으나 공기가 길고, 3안(16.96억)은 사유지 0m 회피 공법 중 가장 경제적입니다.
                 </div>
               </div>
 
@@ -790,21 +790,21 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                 <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
                   <div className="flex items-center space-x-1 font-extrabold text-slate-900 text-xs">
                     <Clock className="w-3.5 h-3.5 text-slate-700" />
-                    <span>2. 정거장 CP(주공정) 전제 간접비 절감</span>
+                    <span>2. 토공사 공기 단축 및 간접비 절감</span>
                   </div>
                   <span className="text-[10px] font-mono bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-bold border border-slate-200">
-                    일132.5만원 기준
+                    일 132.5만원 기준
                   </span>
                 </div>
 
                 <div className="text-[10.5px] text-slate-700 bg-slate-50 p-1.5 rounded border border-slate-200 leading-tight">
-                  ⚖️ <strong>전제 조건:</strong> 정거장 공정이 전체 사업의 <strong>CP(Critical Path)</strong>인 경우에 한해 공기단축 간접비 절감 적용
+                  ⚖️ <strong>공기 단축 효과:</strong> 1안(269일) 대비 공기 단축에 따른 현장 상주간접비 절감액
                 </div>
 
                 <div className="space-y-2.5 pt-1 text-xs">
                   <div className="space-y-1">
                     <div className="flex justify-between text-[11px] font-bold text-slate-600">
-                      <span>1안. 버팀보 (총 336일)</span>
+                      <span>1안. 버팀보 (총 {altData.alt1.totalDuration}일)</span>
                       <span className="font-mono text-slate-500 font-bold">절감 0원 (기준 0일)</span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-lg h-7 overflow-hidden flex items-center px-2 text-[10px] text-slate-500 border border-slate-200 font-medium">
@@ -814,43 +814,43 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
 
                   <div className="space-y-1">
                     <div className="flex justify-between text-[11px] font-bold text-slate-800">
-                      <span>2안-A. 표준앵커 20° (총 210일)</span>
-                      <span className="font-mono text-slate-800 font-extrabold">-1억 6,695만원 (-126일)</span>
+                      <span>2안-A. 표준앵커 20° (총 {altData.alt2A.totalDuration}일)</span>
+                      <span className="font-mono text-slate-800 font-extrabold">-{altData.alt2A.cpIndirectSavings.toLocaleString()}만원 (-{altData.alt2A.durationSavings}일)</span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-lg h-7 overflow-hidden flex items-center px-1 border border-slate-200">
-                      <div className="h-5 bg-sky-600 rounded text-[10px] text-white font-mono flex items-center justify-center px-2 font-bold whitespace-nowrap" style={{ width: `${(126 / 130) * 100}%` }}>
-                        126일 단축 ➔ -1.67억원 절감
+                      <div className="h-5 bg-sky-600 rounded text-[10px] text-white font-mono flex items-center justify-center px-2 font-bold whitespace-nowrap" style={{ width: `${(altData.alt2A.durationSavings / 200) * 100}%` }}>
+                        {altData.alt2A.durationSavings}일 단축 ➔ -{(altData.alt2A.cpIndirectSavings / 10000).toFixed(2)}억원 절감
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-1">
                     <div className="flex justify-between text-[11px] font-bold text-slate-800">
-                      <span>2안-B. 고각앵커 (총 218일)</span>
-                      <span className="font-mono text-slate-800 font-extrabold">-1억 5,635만원 (-118일)</span>
+                      <span>2안-B. 고각앵커 (총 {altData.alt2B.totalDuration}일)</span>
+                      <span className="font-mono text-slate-800 font-extrabold">-{altData.alt2B.cpIndirectSavings.toLocaleString()}만원 (-{altData.alt2B.durationSavings}일)</span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-lg h-7 overflow-hidden flex items-center px-1 border border-slate-200">
-                      <div className="h-5 bg-indigo-600 rounded text-[10px] text-white font-mono flex items-center justify-center px-2 font-bold whitespace-nowrap" style={{ width: `${(118 / 130) * 100}%` }}>
-                        118일 단축 ➔ -1.56억원 절감
+                      <div className="h-5 bg-indigo-600 rounded text-[10px] text-white font-mono flex items-center justify-center px-2 font-bold whitespace-nowrap" style={{ width: `${(altData.alt2B.durationSavings / 200) * 100}%` }}>
+                        {altData.alt2B.durationSavings}일 단축 ➔ -{(altData.alt2B.cpIndirectSavings / 10000).toFixed(2)}억원 절감
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-1 bg-purple-50/50 p-1.5 rounded-lg border border-purple-200">
                     <div className="flex justify-between text-[11px] font-black text-slate-900">
-                      <span>3안. 복합공법 @10m (총 230일)★</span>
-                      <span className="font-mono text-purple-700 font-black">-1억 4,045만원 (-106일★)</span>
+                      <span>3안. 복합공법 (총 {altData.alt3.totalDuration}일)★</span>
+                      <span className="font-mono text-purple-700 font-black">-{altData.alt3.cpIndirectSavings.toLocaleString()}만원 (-{altData.alt3.durationSavings}일★)</span>
                     </div>
                     <div className="w-full bg-purple-100 rounded-lg h-7 overflow-hidden flex items-center px-1 border border-purple-200">
-                      <div className="h-5 bg-purple-700 rounded text-[10px] text-white font-mono flex items-center justify-center px-2 font-black whitespace-nowrap" style={{ width: `${(106 / 130) * 100}%` }}>
-                        106일 단축(3.5개월) ➔ -1.40억원 절감
+                      <div className="h-5 bg-purple-700 rounded text-[10px] text-white font-mono flex items-center justify-center px-2 font-black whitespace-nowrap" style={{ width: `${(altData.alt3.durationSavings / 200) * 100}%` }}>
+                        {altData.alt3.durationSavings}일 단축 (6.0개월) ➔ -{(altData.alt3.cpIndirectSavings / 10000).toFixed(2)}억원 최단 공기 절감 🏆
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="text-[10.5px] text-slate-700 bg-slate-50 p-2 rounded border border-slate-200 leading-tight">
-                  정거장이 CP일 경우 3안은 106일 단축으로 <strong>1.40억원의 현장간접비 절감</strong>이 실현됩니다.
+                  3안은 상부 무지주 쾌속 굴착으로 181일 단축하여 <strong>2.40억원의 현장간접비 절감</strong>을 달성합니다.
                 </div>
               </div>
 
@@ -877,8 +877,8 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                       <span className="font-mono font-extrabold">{altData.alt1.netLccCost.toLocaleString()} 만원 (기준)</span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-lg h-7 overflow-hidden flex items-center px-1 border border-slate-200">
-                      <div className="h-5 bg-amber-600 rounded text-[10px] text-white font-mono flex items-center justify-center px-2 font-bold whitespace-nowrap" style={{ width: `${(altData.alt1.netLccCost / 140000) * 100}%` }}>
-                        89,127 만원 (순공사 8.91억 - 간접비 0원)
+                      <div className="h-5 bg-amber-600 rounded text-[10px] text-white font-mono flex items-center justify-center px-2 font-bold whitespace-nowrap" style={{ width: `${(altData.alt1.netLccCost / 300000) * 100}%` }}>
+                        {(altData.alt1.netLccCost / 10000).toFixed(2)} 억원 (직접 14.26억 + 간접 3.56억)
                       </div>
                     </div>
                   </div>
@@ -886,11 +886,11 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                   <div className="space-y-1">
                     <div className="flex justify-between text-[11px] font-bold text-slate-800">
                       <span>2안-A. 표준 앵커 (20°)</span>
-                      <span className="font-mono font-extrabold">{altData.alt2A.netLccCost.toLocaleString()} 만원 (-2.26억)</span>
+                      <span className="font-mono font-extrabold">{altData.alt2A.netLccCost.toLocaleString()} 만원</span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-lg h-7 overflow-hidden flex items-center px-1 border border-slate-200">
-                      <div className="h-5 bg-sky-600 rounded text-[10px] text-white font-mono flex items-center justify-center px-2 font-bold whitespace-nowrap" style={{ width: `${(altData.alt2A.netLccCost / 140000) * 100}%` }}>
-                        66,531 만원 (순공사 8.32억 - CP간접비 1.67억)
+                      <div className="h-5 bg-sky-600 rounded text-[10px] text-white font-mono flex items-center justify-center px-2 font-bold whitespace-nowrap" style={{ width: `${(altData.alt2A.netLccCost / 300000) * 100}%` }}>
+                        {(altData.alt2A.netLccCost / 10000).toFixed(2)} 억원 (보상비 4.5억 포함 / 제외 24.26억)
                       </div>
                     </div>
                   </div>
@@ -898,11 +898,11 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                   <div className="space-y-1">
                     <div className="flex justify-between text-[11px] font-bold text-slate-800">
                       <span>2안-B. 고각 앵커 (45°~70°)</span>
-                      <span className="font-mono font-extrabold">{altData.alt2B.netLccCost.toLocaleString()} 만원 (+2.87억)</span>
+                      <span className="font-mono font-extrabold">{altData.alt2B.netLccCost.toLocaleString()} 만원</span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-lg h-7 overflow-hidden flex items-center px-1 border border-slate-200">
-                      <div className="h-5 bg-indigo-600 rounded text-[10px] text-white font-mono flex items-center justify-center px-2 font-bold whitespace-nowrap" style={{ width: `${(altData.alt2B.netLccCost / 140000) * 100}%` }}>
-                        117,805 만원 (순공사 13.34억 - CP간접비 1.56억)
+                      <div className="h-5 bg-indigo-600 rounded text-[10px] text-white font-mono flex items-center justify-center px-2 font-bold whitespace-nowrap" style={{ width: `${(altData.alt2B.netLccCost / 300000) * 100}%` }}>
+                        {(altData.alt2B.netLccCost / 10000).toFixed(2)} 억원 (직접 26.07억 + 간접 2.05억)
                       </div>
                     </div>
                   </div>
@@ -910,18 +910,18 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                   <div className="space-y-1 bg-purple-50/50 p-1.5 rounded-lg border border-purple-200">
                     <div className="flex justify-between text-[11px] font-black text-slate-900">
                       <span>3안. 광간격 복합공법 (Hybrid) [선정안★]</span>
-                      <span className="font-mono text-purple-700 font-black text-xs">{altData.alt3.netLccCost.toLocaleString()} 만원 (최적 선정안★)</span>
+                      <span className="font-mono text-purple-700 font-black text-xs">{altData.alt3.netLccCost.toLocaleString()} 만원 (최적 1위★)</span>
                     </div>
                     <div className="w-full bg-purple-100 rounded-lg h-7 overflow-hidden flex items-center px-1 border border-purple-200">
-                      <div className="h-5 bg-purple-700 rounded text-[10px] text-white font-mono flex items-center justify-center px-2 font-black whitespace-nowrap" style={{ width: `${(altData.alt3.netLccCost / 140000) * 100}%` }}>
-                        91,770 만원 (순공사 10.58억 - CP간접비 1.40억)
+                      <div className="h-5 bg-purple-700 rounded text-[10px] text-white font-mono flex items-center justify-center px-2 font-black whitespace-nowrap" style={{ width: `${(altData.alt3.netLccCost / 300000) * 100}%` }}>
+                        {(altData.alt3.netLccCost / 10000).toFixed(2)} 억원 (사유지 0m 회피 공법 중 압도적 1위 🏆)
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="text-[10.5px] text-slate-800 font-bold bg-slate-100 p-2 rounded border border-slate-200 leading-tight">
-                  ★ 종합 LCC 관점에서는 3안이 <strong>9억 1,770만원(1안 8.91억 대비 실질 동등 수준)</strong>으로 사유지 0m 완벽 회피와 106일 공기단축을 동시 달성합니다.
+                  ★ 종합 LCC 관점에서는 3안이 <strong>{(altData.alt3.netLccCost / 10000).toFixed(2)}억원</strong>으로 사유지 0m 완벽 회피 및 88일 최속 완공을 동시 달성하여 최우수 대안으로 선정되었습니다.
                 </div>
               </div>
             </div>
