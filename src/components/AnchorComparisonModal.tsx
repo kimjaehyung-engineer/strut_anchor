@@ -2365,9 +2365,9 @@ ${(anchorResult.angleSensitivityMatrix || [])
         <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3 text-xs bg-slate-100/60">
 
           {/* ═══════════════════════════════════════════════════════════════════════
-              [Full-Width Sub-Navigation Tabs] 가시설 4대 대안 상위 전체 탭 네비게이션 (가로 4등분 풀배치)
+              [Full-Width Sub-Navigation Tabs] 가시설 4대 대안 상위 전체 탭 네비게이션 (모바일 1~2열 / 데스크톱 5등분 풀배치)
              ═══════════════════════════════════════════════════════════════════════ */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5 w-full">
             <button
               onClick={() => setActiveTab('1_STRUT')}
               className={`py-2.5 px-3 sm:px-4 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center space-x-2 shadow-2xs ${
