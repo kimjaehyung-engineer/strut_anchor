@@ -549,7 +549,7 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                         <tr className="bg-slate-50 font-bold text-slate-900">
                           <td className="py-1.5 px-2 text-left font-extrabold text-slate-900">★ [1단계] 순가설공사비 합산</td>
                           <td className="py-1.5 px-2 font-mono">{(altData.alt1.netConstructionCost / 10000).toFixed(2)} 억원</td>
-                          <td className="py-1.5 px-2 font-mono">{(altData.alt2A.netConstructionCost / 10000).toFixed(2)} 억원</td>
+                          <td className="py-1.5 px-2 font-mono">{((altData.alt2A.directCost + 45000) / 10000).toFixed(2)} 억원</td>
                           <td className="py-1.5 px-2 font-mono">{(altData.alt2B.netConstructionCost / 10000).toFixed(2)} 억원</td>
                           <td className="py-1.5 px-2 font-mono font-black text-purple-950 bg-purple-100/80">{(altData.alt3.netConstructionCost / 10000).toFixed(2)} 억원</td>
                         </tr>
@@ -950,24 +950,24 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                   <tbody className="divide-y divide-slate-100 text-slate-700">
                     <tr>
                       <td className="py-1 px-2 text-left font-semibold text-slate-800">1. 가시설 직접 시공비 소계</td>
-                      <td className="py-1 px-2 font-mono">66,627 만원</td>
-                      <td className="py-1 px-2 font-mono">83,226 만원</td>
-                      <td className="py-1 px-2 font-mono">133,440 만원</td>
-                      <td className="py-1 px-2 font-mono font-bold bg-purple-50/50 text-purple-950">99,690 만원</td>
+                      <td className="py-1 px-2 font-mono">{(altData.alt1.directCost / 10000).toFixed(2)} 억원</td>
+                      <td className="py-1 px-2 font-mono">{(altData.alt2A.directCost / 10000).toFixed(2)} 억원</td>
+                      <td className="py-1 px-2 font-mono">{(altData.alt2B.directCost / 10000).toFixed(2)} 억원</td>
+                      <td className="py-1 px-2 font-mono font-bold bg-purple-50/50 text-purple-950">{(altData.alt3.directCost / 10000).toFixed(2)} 억원</td>
                     </tr>
                     <tr>
-                      <td className="py-1 px-2 text-left font-semibold text-slate-800">2. 본체 구조물 추가 간섭비</td>
-                      <td className="py-1 px-2 font-mono text-slate-800">+22,500 만원</td>
-                      <td className="py-1 px-2 font-mono text-slate-400">0 만원</td>
-                      <td className="py-1 px-2 font-mono text-slate-400">0 만원</td>
-                      <td className="py-1 px-2 font-mono font-bold bg-purple-50/50 text-purple-950">+6,125 만원</td>
+                      <td className="py-1 px-2 text-left font-semibold text-slate-800">2. 사유지 보상비 (침범 민원)</td>
+                      <td className="py-1 px-2 font-mono text-slate-400">0 원</td>
+                      <td className="py-1 px-2 font-mono text-rose-600 font-bold">+4.50 억원</td>
+                      <td className="py-1 px-2 font-mono text-slate-400">0 원</td>
+                      <td className="py-1 px-2 font-mono font-bold bg-purple-50/50 text-purple-950">0 원 (회피★)</td>
                     </tr>
                     <tr className="bg-slate-100 font-bold border-t border-slate-300">
                       <td className="py-1.5 px-2 text-left font-black text-slate-900">★ [1단계 소계] 순공사비 합산</td>
-                      <td className="py-1.5 px-2 font-mono">89,127 만원</td>
-                      <td className="py-1.5 px-2 font-mono">83,226 만원</td>
-                      <td className="py-1.5 px-2 font-mono">133,440 만원</td>
-                      <td className="py-1.5 px-2 font-mono font-black text-purple-950 bg-purple-100">105,815 만원</td>
+                      <td className="py-1.5 px-2 font-mono">{(altData.alt1.netConstructionCost / 10000).toFixed(2)} 억원</td>
+                      <td className="py-1.5 px-2 font-mono">{((altData.alt2A.directCost + 45000) / 10000).toFixed(2)} 억원</td>
+                      <td className="py-1.5 px-2 font-mono">{(altData.alt2B.netConstructionCost / 10000).toFixed(2)} 억원</td>
+                      <td className="py-1.5 px-2 font-mono font-black text-purple-950 bg-purple-100">{(altData.alt3.netConstructionCost / 10000).toFixed(2)} 억원</td>
                     </tr>
                   </tbody>
                 </table>
@@ -990,25 +990,25 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">
                     <tr>
-                      <td className="py-1 px-2 text-left font-medium text-slate-800">1단계 순공사비</td>
-                      <td className="py-1 px-2 font-mono">{altData.alt1.netConstructionCost.toLocaleString()} 만원</td>
-                      <td className="py-1 px-2 font-mono">{altData.alt2A.netConstructionCost.toLocaleString()} 만원</td>
-                      <td className="py-1 px-2 font-mono">{altData.alt2B.netConstructionCost.toLocaleString()} 만원</td>
-                      <td className="py-1 px-2 font-mono font-bold bg-purple-50/50 text-purple-950">{altData.alt3.netConstructionCost.toLocaleString()} 만원</td>
+                      <td className="py-1 px-2 text-left font-medium text-slate-800">1단계 가설 직접비</td>
+                      <td className="py-1 px-2 font-mono">{(altData.alt1.directCost / 10000).toFixed(2)} 억원</td>
+                      <td className="py-1 px-2 font-mono">{(altData.alt2A.directCost / 10000).toFixed(2)} 억원</td>
+                      <td className="py-1 px-2 font-mono">{(altData.alt2B.directCost / 10000).toFixed(2)} 억원</td>
+                      <td className="py-1 px-2 font-mono font-bold bg-purple-50/50 text-purple-950">{(altData.alt3.directCost / 10000).toFixed(2)} 억원</td>
                     </tr>
                     <tr>
-                      <td className="py-1 px-2 text-left font-medium text-slate-800">2단계 CP간접비 절감</td>
-                      <td className="py-1 px-2 font-mono text-slate-400">0 만원</td>
-                      <td className="py-1 px-2 font-mono text-emerald-700 font-bold">-{altData.alt2A.cpIndirectSavings.toLocaleString()} 만원</td>
-                      <td className="py-1 px-2 font-mono text-emerald-700 font-bold">-{altData.alt2B.cpIndirectSavings.toLocaleString()} 만원</td>
-                      <td className="py-1 px-2 font-mono text-purple-900 font-black bg-purple-50/50">-{altData.alt3.cpIndirectSavings.toLocaleString()} 만원</td>
+                      <td className="py-1 px-2 text-left font-medium text-slate-800">2단계 현장 상주간접비</td>
+                      <td className="py-1 px-2 font-mono text-slate-700">3.56 억원 ({altData.alt1.totalDuration}일)</td>
+                      <td className="py-1 px-2 font-mono text-slate-700">1.96 억원 ({altData.alt2A.totalDuration}일)</td>
+                      <td className="py-1 px-2 font-mono text-slate-700">2.05 억원 ({altData.alt2B.totalDuration}일)</td>
+                      <td className="py-1 px-2 font-mono font-bold text-purple-900 bg-purple-50/50">1.17 억원 ({altData.alt3.totalDuration}일★)</td>
                     </tr>
                     <tr className="bg-purple-100 font-bold border-t-2 border-purple-300">
                       <td className="py-1.5 px-2 text-left font-black text-purple-950">★ 3단계 종합 LCC 금액</td>
-                      <td className="py-1.5 px-2 font-mono text-slate-900">{altData.alt1.netLccCost.toLocaleString()} 만원</td>
-                      <td className="py-1.5 px-2 font-mono text-slate-900">{altData.alt2A.netLccCost.toLocaleString()} 만원</td>
-                      <td className="py-1.5 px-2 font-mono text-slate-900">{altData.alt2B.netLccCost.toLocaleString()} 만원</td>
-                      <td className="py-1.5 px-2 font-mono font-black text-purple-950 bg-purple-200">{altData.alt3.netLccCost.toLocaleString()} 만원</td>
+                      <td className="py-1.5 px-2 font-mono text-slate-900">{(altData.alt1.netLccCost / 10000).toFixed(2)} 억원</td>
+                      <td className="py-1.5 px-2 font-mono text-slate-900">{(altData.alt2A.netLccCost / 10000).toFixed(2)} 억원 (보상포함)</td>
+                      <td className="py-1.5 px-2 font-mono text-slate-900">{(altData.alt2B.netLccCost / 10000).toFixed(2)} 억원</td>
+                      <td className="py-1.5 px-2 font-mono font-black text-purple-950 bg-purple-200">★ {(altData.alt3.netLccCost / 10000).toFixed(2)} 억원 (최적 1위)</td>
                     </tr>
                   </tbody>
                 </table>
@@ -1037,23 +1037,23 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
 
                 <div className="absolute top-2 left-3 text-[10px] text-slate-400 font-bold">공기단축 우수 / 민원·비용 리스크</div>
                 <div className="absolute top-2 right-3 text-[10px] text-purple-950 font-black bg-purple-200 px-2.5 py-0.5 rounded border border-purple-300">
-                  ★ 최적 선정 영역 (공기 106d 단축 + 사유지 0m + LCC 최적)
+                  ★ 최적 선정 영역 (공기 {altData.alt3.durationSavings}d 단축 + 사유지 0m + LCC 최적)
                 </div>
-                <div className="absolute bottom-2 left-3 text-[10px] text-slate-500 font-bold">비추천 영역 (공기 지연 336일 + 구조물 누수 리스크)</div>
+                <div className="absolute bottom-2 left-3 text-[10px] text-slate-500 font-bold">비추천 영역 (공기 지연 {altData.alt1.totalDuration}일 + 간섭 리스크)</div>
                 <div className="absolute bottom-2 right-3 text-[10px] text-slate-400 font-bold">공사비 양호 / 공기단축 낮음</div>
 
                 <div className="absolute bottom-6 left-8 bg-amber-700 text-white text-[10.5px] font-extrabold px-3 py-1.5 rounded-xl shadow border border-white">
-                  <span>1안: 버팀보 (순공사 8.91억, 336일)</span>
+                  <span>1안: 버팀보 (LCC {(altData.alt1.netLccCost / 10000).toFixed(2)}억, {altData.alt1.totalDuration}일)</span>
                 </div>
                 <div className="absolute top-6 left-12 bg-sky-700 text-white text-[10.5px] font-extrabold px-3 py-1.5 rounded-xl shadow border border-white">
-                  <span>2안-A: 표준앵커 (LCC 6.65억 / 사유지 침범 20m)</span>
+                  <span>2안-A: 표준앵커 (LCC {(altData.alt2A.netLccCost / 10000).toFixed(2)}억 / 사유지 침범 20.4m)</span>
                 </div>
                 <div className="absolute top-14 left-60 bg-indigo-700 text-white text-[10.5px] font-extrabold px-3 py-1.5 rounded-xl shadow border border-white">
-                  <span>2안-B: 고각앵커 (순공사 13.34억 / 0m 회피)</span>
+                  <span>2안-B: 고각앵커 (LCC {(altData.alt2B.netLccCost / 10000).toFixed(2)}억 / 0m 회피)</span>
                 </div>
                 <div className="absolute top-6 right-8 bg-purple-900 text-white text-xs font-black px-4 py-2.5 rounded-xl shadow-xl border-2 border-yellow-300 flex flex-col items-center animate-pulse">
-                  <span className="text-yellow-300 flex items-center gap-1"><Sparkles className="w-3.5 h-3.5" /> 3안: 복합공법 (종합 LCC 9.18억)★</span>
-                  <span className="text-[10px] text-purple-200 font-semibold mt-0.5">공기 106일 단축 + 사유지 0m 완전회피 + 무지주 쾌속시공</span>
+                  <span className="text-yellow-300 flex items-center gap-1"><Sparkles className="w-3.5 h-3.5" /> 3안: 복합공법 (종합 LCC {(altData.alt3.netLccCost / 10000).toFixed(2)}억)★</span>
+                  <span className="text-[10px] text-purple-200 font-semibold mt-0.5">공기 {altData.alt3.durationSavings}일 단축 + 사유지 0m 완전회피 + 무지주 쾌속시공</span>
                 </div>
               </div>
             </div>
