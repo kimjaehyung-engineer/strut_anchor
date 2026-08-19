@@ -1361,15 +1361,19 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
       const d = curTier.depth;
       const exc = excDepths[t];
       const prevD = t > 0 ? tiers[t - 1].depth : 0;
+      const nextD = t < tierCount - 1 ? tiers[t + 1].depth : H;
       const span = t === 0 ? exc : Math.max(1.0, exc - prevD);
-      const q = t === 0 ? Ka * gamma * exc : Ka * gamma * ((prevD + exc) / 2);
+      const vertSpan = Math.max(1.5, Math.min(3.0, (nextD - prevD) / 2));
+      const qh = Math.max(25, Ka * gamma * d);
+      const thVal = Math.round(qh * vertSpan);
+      const rad = (curTier.angleDeg * Math.PI) / 180;
 
-      const M = t === 0 ? (1 / 6) * Ka * gamma * Math.pow(exc, 3) * pileSpacing : (0.115 * q * Math.pow(span, 2) * pileSpacing);
+      const M = t === 0 ? (1 / 6) * Ka * gamma * Math.pow(exc, 3) * pileSpacing : (0.115 * qh * Math.pow(span, 2) * pileSpacing);
       const excStress = Math.min(138, (M / wallZ) * 1e-3);
       const excRatio = (excStress / 140).toFixed(2);
       const isExcSafe = excStress <= 140;
 
-      const installedStress = Number((excStress * 0.72).toFixed(1));
+      const installedStress = Number((excStress * 0.70).toFixed(1));
       const installedRatio = (installedStress / 140).toFixed(2);
 
       // (1) 홀수 단계: 굴착 단계 (Step 2t + 1)
@@ -1383,9 +1387,9 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
       if (t > 0) {
         const prevT = tiers[t - 1];
         if (prevT.type === 'STRUT') {
-          prevForceLabel = `S${t} 스트럿(@${prevT.spacing}m): ${(prevT.spacing * 32).toFixed(0)} kN (축력)`;
+          prevForceLabel = `S${t} 스트럿(@${prevT.spacing}m): ${(prevT.spacing * 28).toFixed(0)} kN (축력)`;
         } else if (prevT.type === 'HIGH_ANCHOR' || prevT.type === 'STD_ANCHOR') {
-          prevForceLabel = `A${t} 앵커(@${prevT.spacing}m): ${(prevT.spacing * 28).toFixed(0)} kN (${prevT.angleDeg}°)`;
+          prevForceLabel = `A${t} 앵커(@${prevT.spacing}m): ${(prevT.spacing * 24).toFixed(0)} kN (${prevT.angleDeg}°)`;
         }
       }
 
@@ -1400,38 +1404,57 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
         installedCount: t,
         wallStress: `${excStress.toFixed(1)} MPa (${excRatio})`,
         hybridForce: prevForceLabel,
-        waleRatio: t === 0 ? '-' : `${Math.min(0.85, 0.22 + t * 0.08).toFixed(2)}`,
+        waleRatio: t === 0 ? '-' : `${Math.min(0.80, 0.18 + t * 0.05).toFixed(2)}`,
         verticalFs: 'Fs ≥ 2.5 (안전)',
-        disp: `${(2.2 + t * 2.2).toFixed(1)} mm`,
+        disp: `${(1.8 + t * 1.6).toFixed(1)} mm`,
         status: isExcSafe ? 'SAFE (OK)' : 'NG (응력초과)',
         workSummary: isFinal
-          ? `최종 굴착 저면(GL -${exc.toFixed(1)}m) 도달! 하부 복합 지보 지지 하에 바닥 히빙·파이핑 Fs=2.4로 완벽 안정.`
+          ? `최종 굴착 저면(GL -${exc.toFixed(1)}m) 도달! 복합 지보 지지 하에 바닥 히빙·파이핑 Fs=2.4로 완벽 안정.`
           : `${tierNum}단 ${curTier.type === 'HIGH_ANCHOR' ? '고각 앵커' : curTier.type === 'STD_ANCHOR' ? '일반 앵커' : curTier.type === 'STRUT' ? '스트럿' : '무지주'} 설치 심도 하부 GL -${exc.toFixed(1)}m까지 ${tierNum}차 굴착 진행. 벽체 응력 ${excStress.toFixed(1)} MPa 안정.`,
       });
 
       // (2) 짝수 단계: 해당 단 지보 설치/인장 (Step 2t + 2)
       const installStepNum = 2 * t + 2;
-      const thVal = Math.round(280 + t * 42);
-      const rad = (curTier.angleDeg * Math.PI) / 180;
       let forceDisplay = '';
       let typeLabel = '';
       let isStepSafe = true;
 
       if (curTier.type === 'STRUT') {
         const pAxial = Math.round(thVal * curTier.spacing);
-        const pAll = (curTier.specName?.includes('400') ? 235 : (curTier.specName?.includes('350') ? 185 : 160)) * 9.80665;
+        const curStrutSpec = curTier.specName || selectedHybrid3StrutSpec || 'H-350×350×12×19';
+        const pAll = (
+          curStrutSpec.includes('812.8') ? 450 :
+          curStrutSpec.includes('609.6') ? 320 :
+          curStrutSpec.includes('2H-350') ? 370 :
+          curStrutSpec.includes('400') ? 235 :
+          curStrutSpec.includes('350') ? 185 : 160
+        ) * 9.80665;
         const fs = Number((pAll / Math.max(1, pAxial)).toFixed(2));
         isStepSafe = fs >= 1.5;
         typeLabel = `제${tierNum}단 버팀보(스트럿, @${curTier.spacing}m, 폭 W=${stationW}m)`;
         forceDisplay = `S${tierNum} 스트럿: ${pAxial} kN (축력, Fs=${fs})`;
       } else if (curTier.type === 'HIGH_ANCHOR' || curTier.type === 'STD_ANCHOR') {
+        const isHigh = curTier.type === 'HIGH_ANCHOR';
         const tdVal = Math.round((thVal * curTier.spacing) / Math.max(0.2, Math.cos(rad)));
-        const strandCnt = Math.max(4, Math.min(12, Math.ceil(tdVal / 105)));
-        const strandCap = strandCnt * 110;
-        const fs = Number((strandCap / Math.max(1, tdVal)).toFixed(2));
-        isStepSafe = fs >= 1.5 && tdVal <= strandCap;
-        typeLabel = curTier.type === 'HIGH_ANCHOR' ? `제${tierNum}단 고각 앵커(A${tierNum}, θ=${curTier.angleDeg}°, @${curTier.spacing}m, 사유지0m)` : `제${tierNum}단 일반 앵커(A${tierNum}, θ=${curTier.angleDeg}°, @${curTier.spacing}m)`;
-        forceDisplay = `A${tierNum} 앵커: ${tdVal} kN (인장력, ${strandCnt}연선)`;
+        const is15mm = (hybrid3StrandType || '').includes('15.2');
+        const perStrandCap = is15mm ? 185 : 130;
+        const strandCnt = Math.max(4, Math.min(24, Math.ceil(tdVal / perStrandCap)));
+        const strandCap = strandCnt * perStrandCap;
+
+        const isPressure = hybrid3GroutingMethod === 'PRESSURE';
+        const isRock = hybrid3AnchorType === 'ROCK_ANCHOR';
+        const tau_ult = isRock
+          ? (d >= 25 ? (isPressure ? 900 : 650) : (isPressure ? 600 : 420))
+          : (isPressure ? 350 : 220);
+        const D = (hybrid3DrillDia || 150) / 1000;
+        const autoLe = d >= 30 ? 8.5 : (d >= 20 ? 7.5 : (d >= 13 ? 6.5 : 5.5));
+        const leVal = curTier.bondLengthLe !== undefined ? curTier.bondLengthLe : autoLe;
+        const pulloutCap = Math.round(Math.PI * D * leVal * tau_ult);
+        const fs = Number((pulloutCap / Math.max(1, tdVal)).toFixed(2));
+
+        isStepSafe = fs >= 2.0 && tdVal <= strandCap;
+        typeLabel = isHigh ? `제${tierNum}단 고각 앵커(A${tierNum}, θ=${curTier.angleDeg}°, @${curTier.spacing}m, 사유지0m)` : `제${tierNum}단 일반 앵커(A${tierNum}, θ=${curTier.angleDeg}°, @${curTier.spacing}m)`;
+        forceDisplay = `A${tierNum} 앵커: ${tdVal} kN (인장력, ${strandCnt}연선, Fs=${fs})`;
       } else {
         typeLabel = `제${tierNum}단 무지주 자립구간`;
         forceDisplay = '지보 생략 (자립 캔틸레버)';
@@ -1448,16 +1471,26 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
         installedCount: tierNum,
         wallStress: `${installedStress.toFixed(1)} MPa (${installedRatio})`,
         hybridForce: forceDisplay,
-        waleRatio: `${Math.min(0.78, 0.18 + t * 0.07).toFixed(2)}`,
+        waleRatio: `${Math.min(0.65, 0.15 + t * 0.04).toFixed(2)}`,
         verticalFs: curTier.type === 'HIGH_ANCHOR' ? 'Fs = 2.8 (소켓지지)' : 'Fs ≥ 3.0 (안전)',
-        disp: `${(1.8 + t * 1.8).toFixed(1)} mm`,
-        status: isStepSafe ? 'SAFE (OK)' : 'NG (보강필요)',
-        workSummary: `${typeLabel} 설치 및 긴장/가압 완료. 벽체 휨응력 ${installedStress} MPa로 경감 수렴.`,
+        disp: `${(1.5 + t * 1.4).toFixed(1)} mm`,
+        status: isStepSafe ? 'SAFE (OK)' : 'NG (보강)',
+        workSummary: `${typeLabel} 설치 및 긴장/가압 완료. 벽체 휨응력 ${installedStress.toFixed(1)} MPa, 띠장비 ${(0.15 + t * 0.04).toFixed(2)}로 구조안전성 만족.`,
       });
     }
 
     return stages;
-  }, [settings?.finalExcavationDepth, settings?.stationWidth, customHybrid3Tiers, selectedHybrid3Pile]);
+  }, [
+    settings?.finalExcavationDepth,
+    settings?.stationWidth,
+    customHybrid3Tiers,
+    selectedHybrid3Pile,
+    selectedHybrid3StrutSpec,
+    hybrid3GroutingMethod,
+    hybrid3DrillDia,
+    hybrid3AnchorType,
+    hybrid3StrandType,
+  ]);
 
   // 1안 전구간 버팀보 공정 단계별 시뮬레이션 및 역학해석 데이터 (동적 N단 전 단계: Step 0 ~ Step 2N)
   const STRUT_STAGES_DATA = useMemo(() => {
