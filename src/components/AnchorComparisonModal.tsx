@@ -5917,26 +5917,28 @@ ${(anchorResult.angleSensitivityMatrix || [])
                                     const isSelected = strutStepIndex === row.step;
                                     const rowSpacingRatio = (strutHorizontalSpacing || 4.0) / 4.0;
                                     
-                                    // 행별 동적 역학 연산 (수평간격 및 심도 반영)
-                                    const rowWallStress = (parseFloat(row.wallStress) * Math.sqrt(rowSpacingRatio)).toFixed(1);
-                                    const rowWallRatio = (parseFloat(rowWallStress) / 140).toFixed(2);
-                                    const rowDisp = (parseFloat(row.disp) * Math.sqrt(rowSpacingRatio)).toFixed(1);
+                                    // 상단 6대 KPI 카드와 100% 동기화된 정밀 역학 수치 매핑
+                                    const rowWallStressNum = parseFloat(row.wallStress) || 0;
+                                    const rowWallStress = rowWallStressNum.toFixed(1);
+                                    const ratioMatch = row.wallStress.match(/\(([0-9.]+)\)/);
+                                    const rowWallRatio = ratioMatch ? ratioMatch[1] : (rowWallStressNum / 140).toFixed(2);
+                                    const rowDisp = (parseFloat(row.disp) || 0).toFixed(1);
                                     
                                     const isWaleInstalled = row.step >= 2;
                                     const rForceMatch = row.strutForce.match(/([0-9.]+)\s*(tonf|t)/);
                                     const rForceNum = rForceMatch ? parseFloat(rForceMatch[1]) : (row.step >= 2 ? (26.0 + row.step * 2.4) : 0);
                                     const rowStrutForce = row.step < 2 
                                       ? '-' 
-                                      : `${(rForceNum * rowSpacingRatio).toFixed(1)} tonf`;
+                                      : `${rForceNum.toFixed(1)} tonf`;
                                     
                                     const parsedWale = parseFloat(row.waleRatio);
                                     const rowWaleRatio = isWaleInstalled && !isNaN(parsedWale)
-                                      ? (parsedWale * Math.pow(rowSpacingRatio, 1.3)).toFixed(2)
+                                      ? parsedWale.toFixed(2)
                                       : '-';
                                     
                                     const isWaleRatioSafe = rowWaleRatio === '-' || parseFloat(rowWaleRatio) <= 1.0;
-                                    const isWallRatioSafe = parseFloat(rowWallStress) <= 140;
-                                    const rowSafe = isWallRatioSafe && isWaleRatioSafe;
+                                    const isWallRatioSafe = rowWallStressNum <= 140;
+                                    const rowSafe = isWallRatioSafe && isWaleRatioSafe && !row.status.includes('NG');
 
                                     return (
                                       <tr
