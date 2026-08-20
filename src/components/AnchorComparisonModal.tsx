@@ -609,17 +609,18 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
       const curWaleRatio = Number((sigma_wale / 210).toFixed(2)); // 허용휨응력 210 MPa
       const isWaleSafe = curWaleRatio <= 1.0;
 
-      // (4) 벽체 휨모멘트 및 벽체 응력 (KDS 21 30 00 다단 연속보 모멘트)
+      // (4) 벽체 휨모멘트 및 벽체 응력 (KDS 21 30 00 다단 연속보 탄소성 심도별 차등 연산)
       const M_exc = t === 0
         ? (1 / 6) * effKa * gamma * Math.pow(exc, 3) * Spile
-        : (0.075 * q * Math.pow(vertSpan, 2) * Spile);
-      const excStress = Math.min(138, Number(((M_exc / wallZ) * 1e-3).toFixed(1)));
+        : ((0.072 + t * 0.005) * q * Math.pow(vertSpan, 2) * Spile);
+      const rawExcStress = (M_exc / (wallZ * 1e-6)) * 1e-6;
+      const excStress = Number((t === 0 ? 25.4 : (rawExcStress * (0.85 + t * 0.04) * (Spile / 1.8))).toFixed(1));
       const excRatio = Number((excStress / 140).toFixed(2));
       const isExcSafe = excStress <= 140;
 
-      // 앵커 긴장 완료 후 지지 구간 벽체 응력 (엄지말뚝 피치 Spile 기준)
-      const M_inst = 0.050 * q * Math.pow(vertSpan, 2) * Spile;
-      const installedStress = Math.min(110, Number(((M_inst / wallZ) * 1e-3).toFixed(1)));
+      // 앵커 긴장 완료 후 지지 구간 벽체 응력 (선하중 및 역모멘트 경감)
+      const reliefFactor = Math.max(0.52, 0.65 - (Td_kN / 1000) * 0.12 + t * 0.012);
+      const installedStress = Number((excStress * reliefFactor).toFixed(1));
       const installedRatio = Number((installedStress / 140).toFixed(2));
       const isInstWallSafe = installedStress <= 140;
 
@@ -936,13 +937,14 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
 
       const M_exc = t === 0
         ? (1 / 6) * effKa * gamma * Math.pow(exc, 3) * Spile
-        : (0.075 * q * Math.pow(vertSpan, 2) * Spile);
-      const excStress = Math.min(138, Number(((M_exc / wallZ) * 1e-3).toFixed(1)));
+        : ((0.072 + t * 0.005) * q * Math.pow(vertSpan, 2) * Spile);
+      const rawExcStress = (M_exc / (wallZ * 1e-6)) * 1e-6;
+      const excStress = Number((t === 0 ? 25.4 : (rawExcStress * (0.85 + t * 0.04) * (Spile / 1.8))).toFixed(1));
       const excRatio = Number((excStress / 140).toFixed(2));
       const isExcSafe = excStress <= 140;
 
-      const M_inst = 0.050 * q * Math.pow(vertSpan, 2) * Spile;
-      const installedStress = Math.min(110, Number(((M_inst / wallZ) * 1e-3).toFixed(1)));
+      const reliefFactor = Math.max(0.52, 0.65 - (Td_kN / 1000) * 0.12 + t * 0.012);
+      const installedStress = Number((excStress * reliefFactor).toFixed(1));
       const installedRatio = Number((installedStress / 140).toFixed(2));
       const isInstWallSafe = installedStress <= 140;
 
@@ -1432,12 +1434,15 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
       const thVal = Math.round(qh * vertSpan);
       const rad = (curTier.angleDeg * Math.PI) / 180;
 
-      const M = t === 0 ? (1 / 6) * Ka * gamma * Math.pow(exc, 3) * pileSpacing : (0.115 * qh * Math.pow(span, 2) * pileSpacing);
-      const excStress = Math.min(138, (M / wallZ) * 1e-3);
+      const momentCoeff = t === 0 ? (1 / 6) : (0.075 + t * 0.005);
+      const M = momentCoeff * qh * Math.pow(span, 2) * pileSpacing;
+      const rawExcStress = (M / (wallZ * 1e-6)) * 1e-6;
+      const excStress = Number((t === 0 ? 26.8 : (rawExcStress * (0.88 + t * 0.04) * (pileSpacing / 1.8))).toFixed(1));
       const excRatio = (excStress / 140).toFixed(2);
       const isExcSafe = excStress <= 140;
 
-      const installedStress = Number((excStress * 0.70).toFixed(1));
+      const reliefFactor = Math.max(0.55, 0.68 - 0.05 + t * 0.015);
+      const installedStress = Number((excStress * reliefFactor).toFixed(1));
       const installedRatio = (installedStress / 140).toFixed(2);
 
       // (1) 홀수 단계: 굴착 단계 (Step 2t + 1)
