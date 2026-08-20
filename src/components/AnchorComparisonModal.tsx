@@ -4048,7 +4048,121 @@ ${(anchorResult.angleSensitivityMatrix || [])
                             <pattern id="strutSoilHatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
                               <line x1="0" y1="0" x2="0" y2="6" stroke="#b45309" strokeWidth="1.5" />
                             </pattern>
+                            <linearGradient id="soilPressureGradLeft" x1="0%" y1="0%" x2="100%" y2="0%">
+                              <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.15" />
+                              <stop offset="100%" stopColor="#d97706" stopOpacity="0.45" />
+                            </linearGradient>
+                            <linearGradient id="soilPressureGradRight" x1="0%" y1="0%" x2="100%" y2="0%">
+                              <stop offset="0%" stopColor="#d97706" stopOpacity="0.45" />
+                              <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.15" />
+                            </linearGradient>
+                            <linearGradient id="waterPressureGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.15" />
+                              <stop offset="100%" stopColor="#1d4ed8" stopOpacity="0.40" />
+                            </linearGradient>
                           </defs>
+
+                          {/* ══════════════════════════════════════════════════════════════
+                              🌟 [1안 2D 횡단면도] 실시간 굴착단계별 측압(토압+수압) 다이어그램 오버레이
+                             ══════════════════════════════════════════════════════════════ */}
+                          {(() => {
+                            const H_exc = Math.max(1.0, strutExcavationDepth);
+                            const y0 = getY(0);
+                            const y_quarter = getY(0.25 * H_exc);
+                            const y_exc = getY(H_exc);
+                            
+                            // Peck 사다리꼴 겉보기 토압 및 수압 산정 (kN/m²)
+                            const Ka_val = 0.28;
+                            const gamma_val = 19.0;
+                            const q_surcharge = 10.0;
+                            const p0_raw = q_surcharge * Ka_val; // 상단 토압 (2.8 kN/m²)
+                            const pmax_raw = 0.65 * Ka_val * gamma_val * H_exc + p0_raw; // 최대 토압 (kN/m²)
+                            const waterDepth = 3.0; // 지하수위 GL -3.0m
+                            const pwater_raw = H_exc > waterDepth ? (H_exc - waterDepth) * 9.81 : 0; // 정수압 (kN/m²)
+                            const ptotal_raw = pmax_raw + pwater_raw;
+                            
+                            // SVG 픽셀 스케일링 (최대 65px 폭)
+                            const scaleP = Math.min(65, 12 + (H_exc / finalDepth) * 50);
+                            const w_p0 = Math.max(5, scaleP * (p0_raw / ptotal_raw));
+                            const w_pmax = scaleP;
+                            const w_water = pwater_raw > 0 ? (pwater_raw / ptotal_raw) * scaleP : 0;
+
+                            // 좌측 토압 다이어그램 폴리곤 좌표
+                            const leftPoly = `${leftWallX},${y0} ${leftWallX - w_p0},${y0} ${leftWallX - w_pmax},${y_quarter} ${leftWallX - w_pmax},${y_exc} ${leftWallX},${y_exc}`;
+                            // 우측 토압 다이어그램 폴리곤 좌표
+                            const rightPoly = `${rightWallX},${y0} ${rightWallX + w_p0},${y0} ${rightWallX + w_pmax},${y_quarter} ${rightWallX + w_pmax},${y_exc} ${rightWallX},${y_exc}`;
+
+                            // 수압 다이어그램 폴리곤 좌표 (지하수위 이하)
+                            const y_water = getY(waterDepth);
+                            const leftWaterPoly = `${leftWallX},${y_water} ${leftWallX - w_water},${y_exc} ${leftWallX},${y_exc}`;
+                            const rightWaterPoly = `${rightWallX},${y_water} ${rightWallX + w_water},${y_exc} ${rightWallX},${y_exc}`;
+
+                            const totalThrust = Math.round(ptotal_raw * H_exc * 0.85);
+
+                            return (
+                              <g id="lateral-pressure-diagram-overlay" className="transition-all duration-300">
+                                {/* 1. 좌측 배면 토압 다이어그램 */}
+                                <polygon points={leftPoly} fill="url(#soilPressureGradLeft)" stroke="#d97706" strokeWidth="1.5" strokeDasharray="3 2" />
+                                {pwater_raw > 0 && (
+                                  <polygon points={leftWaterPoly} fill="url(#waterPressureGrad)" stroke="#2563eb" strokeWidth="1.2" />
+                                )}
+
+                                {/* 2. 우측 배면 토압 다이어그램 */}
+                                <polygon points={rightPoly} fill="url(#soilPressureGradRight)" stroke="#d97706" strokeWidth="1.5" strokeDasharray="3 2" />
+                                {pwater_raw > 0 && (
+                                  <polygon points={rightWaterPoly} fill="url(#waterPressureGrad)" stroke="#2563eb" strokeWidth="1.2" />
+                                )}
+
+                                {/* 3. 좌측 측압 작용 화살표 (Arrow markers to wall) */}
+                                {[0.15, 0.45, 0.75].map((ratio, i) => {
+                                  const yArrow = getY(ratio * H_exc);
+                                  const arrowLen = ratio === 0.15 ? w_p0 + 8 : w_pmax + 8;
+                                  return (
+                                    <g key={`l-arr-${i}`}>
+                                      <line x1={leftWallX - arrowLen} y1={yArrow} x2={leftWallX - 4} y2={yArrow} stroke="#b45309" strokeWidth="1.5" />
+                                      <polygon points={`${leftWallX - 4},${yArrow} ${leftWallX - 9},${yArrow - 3} ${leftWallX - 9},${yArrow + 3}`} fill="#b45309" />
+                                    </g>
+                                  );
+                                })}
+
+                                {/* 4. 우측 측압 작용 화살표 */}
+                                {[0.15, 0.45, 0.75].map((ratio, i) => {
+                                  const yArrow = getY(ratio * H_exc);
+                                  const arrowLen = ratio === 0.15 ? w_p0 + 8 : w_pmax + 8;
+                                  return (
+                                    <g key={`r-arr-${i}`}>
+                                      <line x1={rightWallX + arrowLen} y1={yArrow} x2={rightWallX + 4} y2={yArrow} stroke="#b45309" strokeWidth="1.5" />
+                                      <polygon points={`${rightWallX + 4},${yArrow} ${rightWallX + 9},${yArrow - 3} ${rightWallX + 9},${yArrow + 3}`} fill="#b45309" />
+                                    </g>
+                                  );
+                                })}
+
+                                {/* 5. 좌측 상단 측압 실시간 라벨 */}
+                                <rect x={12} y={marginTop + 2} width={116} height={44} rx="6" fill="#ffffff" fillOpacity="0.95" stroke="#f59e0b" strokeWidth="1.2" />
+                                <text x={18} y={marginTop + 14} fill="#b45309" fontSize="8.5" fontWeight="bold">
+                                  📊 실시간 측압(Peck)
+                                </text>
+                                <text x={18} y={marginTop + 26} fill="#9a3412" fontSize="9.5" fontWeight="black" fontFamily="monospace">
+                                  P_max = {ptotal_raw.toFixed(1)} kN/m²
+                                </text>
+                                <text x={18} y={marginTop + 38} fill="#475569" fontSize="7.5" fontWeight="semibold">
+                                  토압 {pmax_raw.toFixed(1)} + 수압 {pwater_raw.toFixed(1)}
+                                </text>
+
+                                {/* 6. 우측 상단 측압 합력 라벨 */}
+                                <rect x={canvasW - 128} y={marginTop + 2} width={116} height={44} rx="6" fill="#ffffff" fillOpacity="0.95" stroke="#f59e0b" strokeWidth="1.2" />
+                                <text x={canvasW - 122} y={marginTop + 14} fill="#b45309" fontSize="8.5" fontWeight="bold">
+                                  📐 총 측압 합력(∑P)
+                                </text>
+                                <text x={canvasW - 122} y={marginTop + 26} fill="#9a3412" fontSize="9.5" fontWeight="black" fontFamily="monospace">
+                                  ∑P = {totalThrust} kN/m
+                                </text>
+                                <text x={canvasW - 122} y={marginTop + 38} fill="#475569" fontSize="7.5" fontWeight="semibold">
+                                  굴착 H={H_exc.toFixed(1)}m 작용분포
+                                </text>
+                              </g>
+                            );
+                          })()}
 
                           {/* 1. Soil Layers */}
                           {layers.map((layer) => {
