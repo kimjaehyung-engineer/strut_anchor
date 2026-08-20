@@ -356,6 +356,9 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
 
   // 1안 전구간 버팀보 전용 Step 상태 및 2단계 워크플로우 (제원확정 -> 구조해석)
   const [strutStepIndex, setStrutStepIndex] = useState<number>(0);
+  const [anchorStepIndex, setAnchorStepIndex] = useState<number>(0);
+  const [isAnchorPlaying, setIsAnchorPlaying] = useState<boolean>(false);
+  const [selectedAnchorStrandSpec, setSelectedAnchorStrandSpec] = useState<string>('SWPC 7B Φ12.7mm × 5가닥 (Pu=935kN)');
   const [isStrutPlaying, setIsStrutPlaying] = useState<boolean>(false);
   const [isAnalyzingStrut, setIsAnalyzingStrut] = useState<boolean>(false);
   const [isStrutReportOpen, setIsStrutReportOpen] = useState<boolean>(false);
@@ -2920,167 +2923,602 @@ ${(anchorResult.angleSensitivityMatrix || [])
 
           {/* [2안-B 상단 풀위드 시뮬레이션 바] 2안-B 고각 어스앵커 공정단계별(Step 0 ~ Step 2N) 실시간 시뮬레이션 */}
           {(activeTab === '2B_HIGH_ANGLE' || activeTab === '2B_STEEP' || activeTab === 'DESIGN' || activeTab === 'SENSITIVITY') && (
-            (() => {
-              const curr2BStage = ANCHOR_2B_STAGES_DATA[anchor2BStepIndex] || ANCHOR_2B_STAGES_DATA[ANCHOR_2B_STAGES_DATA.length - 1];
-              const wallStressVal = parseFloat(curr2BStage.wallStress);
-              const isWallSafe = wallStressVal <= 140;
-              const waleRatioVal = curr2BStage.waleRatio !== '-' ? parseFloat(curr2BStage.waleRatio) : 0.0;
-              const isWaleSafe = curr2BStage.waleRatio === '-' || waleRatioVal <= 1.0;
-
-              return (
-                <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-slate-50 p-4 sm:p-5 rounded-2xl border-2 border-indigo-400 shadow-md space-y-3.5 w-full animate-in fade-in duration-200">
-                  {/* Title and Play/Step Controls */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-indigo-200 pb-3">
-                    <div className="flex items-center space-x-2.5">
-                      <div className="p-2 bg-indigo-600 rounded-xl text-white shadow-xs">
-                        <Sparkles className="w-5 h-5 text-yellow-300" />
-                      </div>
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <h3 className="font-black text-indigo-950 text-sm sm:text-base tracking-tight">
-                            제2안-B 고각 어스앵커(θ=45°~70°) 공정단계별(Step 0 ~ Step {ANCHOR_2B_STAGES_DATA.length - 1}) 실시간 시뮬레이션
-                          </h3>
-                          <span className="text-[11px] font-black bg-indigo-600 text-white px-2.5 py-0.5 rounded-full shadow-2xs">
-                            사유지 0m 침범 완벽 회피★
+                  <div className="space-y-4">
+                    {/* ══════════════════════════════════════════════════════════════
+                        🌟 [2안-B] 고각 어스앵커 6단계 시각적 설계 순서도 프로세스 (화살표 네비게이션)
+                       ══════════════════════════════════════════════════════════════ */}
+                    <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-4 rounded-2xl border-2 border-indigo-500/80 shadow-lg text-white space-y-3.5">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-indigo-700/60 pb-2.5">
+                        <div className="flex items-center space-x-2.5">
+                          <span className="p-1.5 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-lg text-white font-black text-xs shadow-sm">
+                            <Sparkles className="w-4 h-4" />
+                          </span>
+                          <span className="font-extrabold text-sm sm:text-base text-indigo-100">
+                            [2안] 고각 어스앵커(θ=45°~70°) 엔지니어링 표준 설계 프로세스 순서도
+                          </span>
+                          <span className="text-[11px] bg-indigo-500/30 text-indigo-200 px-2.5 py-0.5 rounded-full border border-indigo-400/40 font-mono font-bold">
+                            KDS 21 30 00 & 가시설 구조기준
                           </span>
                         </div>
-                        <p className="text-xs text-indigo-800 font-semibold mt-0.5">
-                          {curr2BStage.name} — {curr2BStage.workSummary}
-                        </p>
+                        <span className="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 px-3 py-1 rounded-md font-bold">
+                          사유지 침범 0m 완전 회피 (도로부지 20m 내 100% 정착)
+                        </span>
+                      </div>
+
+                      {/* 🌟 6단계 시각적 연결 화살표 순서도 카드 그리드 */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 relative">
+                        {[
+                          {
+                            step: 'STEP 1',
+                            title: '지반·토압 산정',
+                            desc: 'Peck 0.65Ka·γ·H',
+                            sub: '지층(c, φ, γ), 상재하중 q',
+                            color: 'from-blue-900/90 to-indigo-900/90',
+                            border: 'border-blue-500/60',
+                            badge: 'bg-blue-500/30 text-blue-200',
+                          },
+                          {
+                            step: 'STEP 2',
+                            title: '경사각(θ) 결정',
+                            desc: 'θ = 45°~70° 고각',
+                            sub: '수평도달 ≤ 20m (사유지 0m)',
+                            color: 'from-indigo-900/90 to-violet-900/90',
+                            border: 'border-indigo-400',
+                            badge: 'bg-indigo-500/40 text-indigo-100 font-bold',
+                            highlight: true,
+                          },
+                          {
+                            step: 'STEP 3',
+                            title: '인장력·분력 산정',
+                            desc: 'Td = Th / cosθ',
+                            sub: '연직분력 Tv = Td·sinθ',
+                            color: 'from-violet-900/90 to-purple-900/90',
+                            border: 'border-violet-500/60',
+                            badge: 'bg-violet-500/30 text-violet-200',
+                          },
+                          {
+                            step: 'STEP 4',
+                            title: '앵커체 상세설계',
+                            desc: 'Lf ≥ 4.5m + Lb',
+                            sub: '암반정착 Lb(Fs≥2.0), 강연선',
+                            color: 'from-purple-900/90 to-fuchsia-900/90',
+                            border: 'border-purple-500/60',
+                            badge: 'bg-purple-500/30 text-purple-200',
+                          },
+                          {
+                            step: 'STEP 5',
+                            title: '벽체·띠장 검토',
+                            desc: '엄지말뚝 + 이중띠장',
+                            sub: '연암소켓 Ra ≥ 2Tv, σ≤140',
+                            color: 'from-fuchsia-900/90 to-rose-900/90',
+                            border: 'border-fuchsia-500/60',
+                            badge: 'bg-fuchsia-500/30 text-fuchsia-200',
+                          },
+                          {
+                            step: 'STEP 6',
+                            title: '시공단계·LCC',
+                            desc: 'Step 0~12 해석',
+                            sub: '무지주 굴착, 공기 125일',
+                            color: 'from-emerald-950 to-teal-900/90',
+                            border: 'border-emerald-500',
+                            badge: 'bg-emerald-500/30 text-emerald-200 font-bold',
+                          },
+                        ].map((item, idx) => (
+                          <div key={item.step} className="relative flex flex-col justify-between">
+                            <div
+                              className={`p-3 rounded-xl bg-gradient-to-b ${item.color} border-2 ${item.border} shadow-md flex-1 flex flex-col justify-between space-y-1.5 transition-all hover:scale-[1.02] ${
+                                item.highlight ? 'ring-2 ring-indigo-300 ring-offset-1 ring-offset-slate-900' : ''
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className={`text-[10px] font-black font-mono px-1.5 py-0.5 rounded ${item.badge}`}>
+                                  {item.step}
+                                </span>
+                                {item.highlight && (
+                                  <span className="text-[9px] bg-yellow-400 text-slate-950 font-black px-1 rounded">핵심</span>
+                                )}
+                              </div>
+                              <div>
+                                <div className="font-extrabold text-xs text-white truncate">{item.title}</div>
+                                <div className="font-mono font-black text-xs text-yellow-300 mt-0.5">{item.desc}</div>
+                                <div className="text-[10px] text-slate-300 leading-tight mt-1">{item.sub}</div>
+                              </div>
+                            </div>
+
+                            {/* ➔ 오른쪽 연결 화살표 (마지막 아이템 제외, 데스크톱) */}
+                            {idx < 5 && (
+                              <div className="hidden lg:flex absolute -right-2.5 top-1/2 -translate-y-1/2 z-10 w-5 h-5 bg-indigo-600 rounded-full items-center justify-center border border-indigo-300 shadow-md text-white">
+                                <ArrowRight className="w-3 h-3 stroke-[3]" />
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
+                  <div className="space-y-4">
+                    {/* ══════════════════════════════════════════════════════════════
+                        [2안-B] 고각 어스앵커(45°~70°) 1안식 풀패키지 통합 설계 프로세스
+                       ══════════════════════════════════════════════════════════════ */}
+                    
+                    {(() => {
+                      const currAnchorStage = ANCHOR_2B_STAGES_DATA[anchorStepIndex] || ANCHOR_2B_STAGES_DATA[0];
+                      const finalDepth = settings?.finalExcavationDepth || 22.0;
+                      const maxDepth = finalDepth + 6.0;
+                      const canvasW = 600;
+                      const canvasH = 460;
+                      const marginTop = 35;
+                      const marginBottom = 30;
+                      const plotH = canvasH - marginTop - marginBottom;
+                      const getY = (d: number) => marginTop + (d / maxDepth) * plotH;
+                      const leftWallX = 140;
+                      const rightWallX = 460;
+                      const plotW = rightWallX - leftWallX;
+                      
+                      const ang = anchor2BAngle || 45;
+                      const rad = (ang * Math.PI) / 180;
+                      const cosAng = Math.cos(rad);
+                      const sinAng = Math.sin(rad);
 
-                    {/* Step Controller */}
-                    <div className="flex items-center space-x-1.5 bg-white p-1 rounded-xl border border-indigo-200 shadow-xs">
-                      <button
-                        onClick={() => setIsAnchor2BPlaying(!isAnchor2BPlaying)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-black flex items-center space-x-1 transition cursor-pointer shadow-2xs ${
-                          isAnchor2BPlaying
-                            ? 'bg-rose-600 text-white hover:bg-rose-700'
-                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                        }`}
-                      >
-                        {isAnchor2BPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                        <span>{isAnchor2BPlaying ? '일시정지' : '공정 재생'}</span>
-                      </button>
-                      <button
-                        onClick={() => setAnchor2BStepIndex(Math.max(0, anchor2BStepIndex - 1))}
-                        disabled={anchor2BStepIndex <= 0}
-                        className="p-2 rounded text-indigo-800 hover:bg-indigo-50 disabled:opacity-30 cursor-pointer"
-                        title="이전 단계"
-                      >
-                        <ChevronLeft className="w-4.5 h-4.5" />
-                      </button>
-                      <div className="px-2.5 font-mono font-black text-xs sm:text-sm text-indigo-950">
-                        Step {anchor2BStepIndex}/{ANCHOR_2B_STAGES_DATA.length - 1}
-                      </div>
-                      <button
-                        onClick={() => setAnchor2BStepIndex(Math.min(ANCHOR_2B_STAGES_DATA.length - 1, anchor2BStepIndex + 1))}
-                        disabled={anchor2BStepIndex >= ANCHOR_2B_STAGES_DATA.length - 1}
-                        className="p-2 rounded text-indigo-800 hover:bg-indigo-50 disabled:opacity-30 cursor-pointer"
-                        title="다음 단계"
-                      >
-                        <ChevronRight className="w-4.5 h-4.5" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setIsAnchor2BPlaying(false);
-                          setAnchor2BStepIndex(0);
-                        }}
-                        className="p-2 text-slate-500 hover:text-slate-800 rounded hover:bg-slate-100 cursor-pointer"
-                        title="처음으로 리셋"
-                      >
-                        <RotateCcw className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Step Pill Buttons Bar */}
-                  <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                    {ANCHOR_2B_STAGES_DATA.map((stg) => {
-                      const isSelected = anchor2BStepIndex === stg.step;
                       return (
-                        <button
-                          key={stg.step}
-                          onClick={() => {
-                            setIsAnchor2BPlaying(false);
-                            setAnchor2BStepIndex(stg.step);
-                          }}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-black transition whitespace-nowrap cursor-pointer flex items-center space-x-1 border shadow-xs ${
-                            isSelected
-                              ? 'bg-indigo-600 text-white border-indigo-700 ring-2 ring-indigo-400/50'
-                              : 'bg-white hover:bg-indigo-100 text-slate-700 border-slate-200'
-                          }`}
-                        >
-                          <span>{stg.shortName}</span>
-                        </button>
+                        <div className="space-y-4">
+                          {/* 🌟 1. 상단 시공단계 애니메이션 & 슬라이더 바 (Step 0 ~ Step N) */}
+                          <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 p-3 sm:p-4 rounded-xl border border-indigo-700 shadow-md text-white space-y-2.5">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="flex items-center space-x-2">
+                                <span className="p-1.5 bg-indigo-600 rounded-lg text-white font-black text-xs">
+                                  2안 고각 앵커
+                                </span>
+                                <span className="font-extrabold text-sm sm:text-base text-indigo-100">
+                                  시공단계별 실시간 탄소성 거동 모니터링
+                                </span>
+                                <span className="text-xs bg-indigo-500/40 text-indigo-200 px-2 py-0.5 rounded border border-indigo-400/40 font-mono">
+                                  θ={ang}° 고각타설 (사유지 침범 0m)
+                                </span>
+                              </div>
+
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setIsAnchorPlaying(!isAnchorPlaying)}
+                                  className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition cursor-pointer shadow-xs ${
+                                    isAnchorPlaying
+                                      ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 font-black ring-2 ring-amber-300'
+                                      : 'bg-indigo-600 hover:bg-indigo-500 text-white font-bold border border-indigo-400'
+                                  }`}
+                                >
+                                  {isAnchorPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                                  <span>{isAnchorPlaying ? '시공 일시정지' : '시공 자동재생'}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setIsAnchorPlaying(false);
+                                    setAnchorStepIndex(0);
+                                  }}
+                                  className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-600 cursor-pointer"
+                                  title="Step 0(원지반)으로 초기화"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* 슬라이더 버튼 트랙 */}
+                            <div className="overflow-x-auto pb-1">
+                              <div className="flex items-center space-x-1 min-w-max">
+                                {ANCHOR_2B_STAGES_DATA.map((st) => {
+                                  const isSelected = anchorStepIndex === st.step;
+                                  return (
+                                    <button
+                                      key={st.step}
+                                      type="button"
+                                      onClick={() => {
+                                        setIsAnchorPlaying(false);
+                                        setAnchorStepIndex(st.step);
+                                      }}
+                                      className={`px-2.5 py-1 rounded-md text-[11px] font-mono font-bold transition cursor-pointer border ${
+                                        isSelected
+                                          ? 'bg-gradient-to-r from-indigo-500 to-violet-500 text-white border-indigo-300 shadow-sm font-black ring-2 ring-indigo-300'
+                                          : 'bg-slate-800/90 text-slate-300 border-slate-700 hover:bg-indigo-950 hover:text-indigo-200'
+                                      }`}
+                                    >
+                                      {st.shortName}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 🌟 2. 상단 6대 실시간 구조 안전성 KPI 모니터링 카드 */}
+                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                            {/* ① 굴착 심도 */}
+                            <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
+                              <span className="text-[10px] text-slate-500 font-bold block">① 굴착 심도</span>
+                              <div className="text-base font-black font-mono text-indigo-950 mt-0.5">{currAnchorStage.depthLabel}</div>
+                              <span className="text-[10px] text-indigo-700 font-medium truncate block">{currAnchorStage.excavationStageName}</span>
+                            </div>
+
+                            {/* ② 벽체 최대휨응력 */}
+                            <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
+                              <span className="text-[10px] text-slate-500 font-bold block">② 벽체 최대휨응력</span>
+                              <div className="text-base font-black font-mono text-blue-700 mt-0.5">
+                                {currAnchorStage.wallStress.split(' ')[0]} <span className="text-xs text-slate-600 font-normal">MPa</span>
+                              </div>
+                              <span className="text-[10px] text-emerald-700 font-bold">안전율 만족 (≤ 1.0)</span>
+                            </div>
+
+                            {/* ③ 어스앵커 인장력 */}
+                            <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
+                              <span className="text-[10px] text-slate-500 font-bold block">③ 앵커 설계인장력(Td)</span>
+                              <div className="text-base font-black font-mono text-indigo-900 mt-0.5">
+                                {currAnchorStage.strutForce.includes(':') ? currAnchorStage.strutForce.split('(')[0] : currAnchorStage.strutForce}
+                              </div>
+                              <span className="text-[10px] text-emerald-700 font-bold">인발여유 Fs ≥ 2.0 OK</span>
+                            </div>
+
+                            {/* ④ 띠장 휨응력비 */}
+                            <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
+                              <span className="text-[10px] text-slate-500 font-bold block">④ 띠장 휨응력비</span>
+                              <div className="text-base font-black font-mono text-slate-900 mt-0.5">{currAnchorStage.waleRatio}</div>
+                              <span className="text-[10px] text-emerald-700 font-bold">이중띠장(2H) 안전</span>
+                            </div>
+
+                            {/* ⑤ 지반 수평변위 */}
+                            <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
+                              <span className="text-[10px] text-slate-500 font-bold block">⑤ 지반 최대변위</span>
+                              <div className="text-base font-black font-mono text-rose-600 mt-0.5">{currAnchorStage.disp}</div>
+                              <span className="text-[10px] text-slate-600 font-medium">허용 44mm 이내</span>
+                            </div>
+
+                            {/* ⑥ 사유지 침범 및 저면안정성 */}
+                            <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
+                              <span className="text-[10px] text-slate-500 font-bold block">⑥ 사유지 침범 여부</span>
+                              <div className="text-base font-black text-emerald-700 mt-0.5">0m (완전회피)</div>
+                              <span className="text-[10px] text-emerald-800 font-bold">{currAnchorStage.boundaryDist.split('(')[0]}</span>
+                            </div>
+                          </div>
+
+                          {/* 🌟 3. 본체 2단 그리드: 좌측 2D 도면 vs 우측 4단계 제원 및 규격 패널 */}
+                          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                            {/* [좌측 7컬럼] 2D 고각 어스앵커 인터랙티브 횡단면도 */}
+                            <div className="lg:col-span-7 bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-xs space-y-2.5">
+                              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                                <span className="font-bold text-indigo-950 flex items-center space-x-1.5 text-xs sm:text-sm">
+                                  <Anchor className="w-4 h-4 text-indigo-600" />
+                                  <span>2D 고각 어스앵커(θ={ang}°) & 굴착 횡단면도 (B=20m, H={finalDepth}m)</span>
+                                </span>
+                                <span className="text-xs bg-indigo-100 text-indigo-900 border border-indigo-300 px-2.5 py-0.5 rounded-md font-mono font-black">
+                                  Step {currAnchorStage.step}: {currAnchorStage.depthLabel} ({currAnchorStage.installedStrutCount}단 앵커)
+                                </span>
+                              </div>
+
+                              {/* SVG 2D Canvas */}
+                              <div className="w-full bg-slate-50/80 rounded-lg border border-slate-200 overflow-hidden flex items-center justify-center p-1">
+                                <svg viewBox={`0 0 ${canvasW} ${canvasH}`} className="w-full h-auto max-h-[460px] select-none font-sans">
+                                  <defs>
+                                    <pattern id="anchorSoilHatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                                      <line x1="0" y1="0" x2="0" y2="6" stroke="#6366f1" strokeWidth="1.2" opacity="0.3" />
+                                    </pattern>
+                                  </defs>
+
+                                  {/* 1. 지반 레이어 */}
+                                  {layers.map((layer) => {
+                                    const y1 = getY(layer.depthTop);
+                                    const y2 = getY(Math.min(maxDepth, layer.depthBottom));
+                                    return (
+                                      <g key={layer.id}>
+                                        <rect x={0} y={y1} width={canvasW} height={Math.max(2, y2 - y1)} fill={layer.color} opacity={0.22} />
+                                        <line x1={0} y1={y2} x2={canvasW} y2={y2} stroke="#94a3b8" strokeWidth="0.75" strokeDasharray="3 3" />
+                                        <text x={8} y={y1 + 13} fill="#475569" fontSize="9" fontWeight="bold">
+                                          {layer.name} (c={layer.cohesion}, φ={layer.frictionAngle}°)
+                                        </text>
+                                      </g>
+                                    );
+                                  })}
+
+                                  {/* 2. 굴착 공간 (백색) */}
+                                  <rect
+                                    x={leftWallX}
+                                    y={marginTop}
+                                    width={plotW}
+                                    height={Math.max(0, getY(currAnchorStage.depth) - marginTop)}
+                                    fill="#ffffff"
+                                    opacity={0.96}
+                                  />
+
+                                  {/* 굴착 저면 라인 */}
+                                  <line
+                                    x1={leftWallX}
+                                    y1={getY(currAnchorStage.depth)}
+                                    x2={rightWallX}
+                                    y2={getY(currAnchorStage.depth)}
+                                    stroke="#4f46e5"
+                                    strokeWidth="3"
+                                  />
+                                  <text
+                                    x={leftWallX + plotW / 2}
+                                    y={getY(currAnchorStage.depth) - 6}
+                                    fill="#4338ca"
+                                    fontSize="10"
+                                    fontWeight="bold"
+                                    textAnchor="middle"
+                                  >
+                                    현재 굴착 바닥: {currAnchorStage.depthLabel} (100% 무지주 광폭 작업공간)
+                                  </text>
+
+                                  {/* 3. 좌우 엄지말뚝 벽체 */}
+                                  <rect x={leftWallX - 5} y={marginTop} width={6} height={plotH} fill="#312e81" rx="1" />
+                                  <rect x={rightWallX - 1} y={marginTop} width={6} height={plotH} fill="#312e81" rx="1" />
+
+                                  {/* 4. 고각 어스앵커 가설선 (자유장 점선 + 정착장 실선) */}
+                                  {customAnchor2BDepths.slice(0, currAnchorStage.installedStrutCount).map((dVal, aIdx) => {
+                                    const yAnchor = getY(dVal);
+                                    const freeLen = 5.0;
+                                    const bondLen = 8.0;
+                                    
+                                    const x1_left = leftWallX;
+                                    const y1_left = yAnchor;
+                                    const x2_free_left = x1_left - (freeLen * cosAng * 8);
+                                    const y2_free_left = y1_left + (freeLen * sinAng * 8);
+                                    const x3_bond_left = x2_free_left - (bondLen * cosAng * 8);
+                                    const y3_bond_left = y2_free_left + (bondLen * sinAng * 8);
+
+                                    const x1_right = rightWallX;
+                                    const y1_right = yAnchor;
+                                    const x2_free_right = x1_right + (freeLen * cosAng * 8);
+                                    const y2_free_right = y1_right + (freeLen * sinAng * 8);
+                                    const x3_bond_right = x2_free_right + (bondLen * cosAng * 8);
+                                    const y3_bond_right = y2_free_right + (bondLen * sinAng * 8);
+
+                                    return (
+                                      <g key={aIdx}>
+                                        <line x1={x1_left} y1={y1_left} x2={x2_free_left} y2={y2_free_left} stroke="#3b82f6" strokeWidth="2.2" strokeDasharray="4 2" />
+                                        <line x1={x2_free_left} y1={y2_free_left} x2={x3_bond_left} y2={y3_bond_left} stroke="#7c3aed" strokeWidth="4.5" strokeLinecap="round" />
+                                        
+                                        <line x1={x1_right} y1={y1_right} x2={x2_free_right} y2={y2_free_right} stroke="#3b82f6" strokeWidth="2.2" strokeDasharray="4 2" />
+                                        <line x1={x2_free_right} y1={y2_free_right} x2={x3_bond_right} y2={y3_bond_right} stroke="#7c3aed" strokeWidth="4.5" strokeLinecap="round" />
+
+                                        <circle cx={x1_left} cy={y1_left} r="4" fill="#f59e0b" stroke="#78350f" strokeWidth="1" />
+                                        <circle cx={x1_right} cy={y1_right} r="4" fill="#f59e0b" stroke="#78350f" strokeWidth="1" />
+                                        
+                                        <text x={x1_left + 8} y={y1_left + 3} fill="#4338ca" fontSize="8" fontWeight="bold">
+                                          A{aIdx + 1} (GL -{dVal}m)
+                                        </text>
+                                      </g>
+                                    );
+                                  })}
+
+                                  {/* 사유지 경계선 (벽체에서 20m 도로 이격) */}
+                                  <line x1={20} y1={marginTop} x2={20} y2={plotH + marginTop} stroke="#ef4444" strokeWidth="1.5" strokeDasharray="5 3" />
+                                  <text x={24} y={marginTop + 14} fill="#dc2626" fontSize="8.5" fontWeight="bold">
+                                    사유지 경계선 (침범 0m 안전)
+                                  </text>
+                                </svg>
+                              </div>
+
+                              <div className="flex items-center justify-between text-[11px] text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                <span className="flex items-center gap-1.5 font-bold text-indigo-900">
+                                  <span className="w-2.5 h-2.5 bg-indigo-600 rounded-xs" />
+                                  고각 어스앵커(θ={ang}°): 무지주 광폭 작업공간 | 덤프·굴착기 100% 자유선회
+                                </span>
+                                <span className="text-emerald-700 font-bold font-mono">사유지 점용료 0원</span>
+                              </div>
+                            </div>
+
+                            {/* [우측 5컬럼] 4단계 가설부재 제원 및 앵커 규격 패널 */}
+                            <div className="lg:col-span-5 flex flex-col space-y-3">
+                              {/* 1단계: 현장 지반특성 요약 */}
+                              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-2xs space-y-1.5">
+                                <div className="font-bold text-slate-800 text-xs flex items-center justify-between border-b pb-1">
+                                  <span>■ 1단계: 지반 및 설계 토압 요약</span>
+                                  <span className="text-indigo-800 font-mono text-[11px] font-bold">Peck 사질토 (0.65Ka·γ·H)</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-700">
+                                  <div>· 굴착심도: <strong className="text-slate-900">H={finalDepth}m</strong></div>
+                                  <div>· 굴착폭: <strong className="text-slate-900">B=20m</strong></div>
+                                  <div>· 토압계수: <strong className="text-slate-900">Ka=0.28</strong></div>
+                                  <div>· 단위중량: <strong className="text-slate-900">γ=19.0 kN/m³</strong></div>
+                                </div>
+                              </div>
+
+                              {/* 2단계: 엄지말뚝 벽체 규격 */}
+                              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-2xs space-y-1.5">
+                                <div className="font-bold text-slate-800 text-xs flex items-center justify-between border-b pb-1">
+                                  <span>■ 2단계: 흙막이 엄지말뚝 규격</span>
+                                  <span className="text-indigo-900 font-mono text-[11px] font-bold">{selectedAnchor2BPile}</span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-1">
+                                  {[
+                                    { label: 'H-300×300', spec: 'H-300×300×10×15' },
+                                    { label: 'H-300×305★', spec: 'H-300×305×15×15' },
+                                    { label: 'H-350×350', spec: 'H-350×350×12×19' },
+                                  ].map((item) => (
+                                    <button
+                                      key={item.spec}
+                                      type="button"
+                                      onClick={() => setSelectedAnchor2BPile(item.spec)}
+                                      className={`p-1.5 rounded-lg text-xs font-bold border transition cursor-pointer ${
+                                        selectedAnchor2BPile === item.spec
+                                          ? 'bg-indigo-600 text-white border-indigo-700 shadow-2xs font-black'
+                                          : 'bg-white text-slate-800 border-slate-200 hover:bg-indigo-50'
+                                      }`}
+                                    >
+                                      {item.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* 3단계: 띠장(Wale) 규격 */}
+                              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-2xs space-y-1.5">
+                                <div className="font-bold text-slate-800 text-xs flex items-center justify-between border-b pb-1">
+                                  <span>■ 3단계: 이중 띠장(2H) 규격</span>
+                                  <span className="text-indigo-900 font-mono text-[11px] font-bold">{selectedAnchor2BWale}</span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-1">
+                                  {[
+                                    { label: '1H-300', spec: '1H-300×300×10×15' },
+                                    { label: '2H-300★', spec: '2H-300×300×10×15' },
+                                    { label: '2H-350', spec: '2H-350×350×12×19' },
+                                  ].map((item) => (
+                                    <button
+                                      key={item.spec}
+                                      type="button"
+                                      onClick={() => setSelectedAnchor2BWale(item.spec)}
+                                      className={`p-1.5 rounded-lg text-xs font-bold border transition cursor-pointer ${
+                                        selectedAnchor2BWale === item.spec
+                                          ? 'bg-indigo-600 text-white border-indigo-700 shadow-2xs font-black'
+                                          : 'bg-white text-slate-800 border-slate-200 hover:bg-indigo-50'
+                                      }`}
+                                    >
+                                      {item.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* 4단계: 고각 어스앵커 타설 각도 및 강연선 규격 카드 */}
+                              <div className="bg-slate-50 p-3 rounded-xl border-2 border-indigo-300 shadow-xs space-y-2 flex-1 flex flex-col justify-between">
+                                <div className="font-bold text-slate-800 text-xs flex items-center justify-between border-b border-indigo-200 pb-1.5">
+                                  <span className="flex items-center gap-1.5">
+                                    <span className="w-2 h-3.5 bg-indigo-600 rounded-2xs" />
+                                    <span>② 고각 어스앵커 경사각 (θ) 및 강연선</span>
+                                  </span>
+                                  <span className="text-indigo-950 font-mono text-xs font-black bg-indigo-100 px-2 py-0.5 rounded border border-indigo-300">
+                                    θ={ang}° (사유지 0m)
+                                  </span>
+                                </div>
+
+                                <div className="grid grid-cols-4 gap-1.5">
+                                  {[45, 50, 60, 70].map((deg) => (
+                                    <button
+                                      key={deg}
+                                      type="button"
+                                      onClick={() => {
+                                        setAnchor2BAngle(deg);
+                                        setAnchor2AAngle(deg);
+                                        setHybrid3TopAngle(deg);
+                                        setParams((p) => ({ ...p, angleDeg: deg }));
+                                      }}
+                                      className={`p-2 rounded-lg text-xs font-bold border transition cursor-pointer flex flex-col items-center justify-center ${
+                                        ang === deg
+                                          ? 'bg-indigo-600 text-white border-indigo-700 shadow-xs font-black ring-2 ring-indigo-300'
+                                          : 'bg-white text-slate-800 border-slate-200 hover:bg-indigo-50'
+                                      }`}
+                                    >
+                                      <span className="font-mono text-xs sm:text-sm font-black">{deg}°</span>
+                                      <span className={`text-[10px] ${ang === deg ? 'text-indigo-100' : 'text-slate-500'}`}>
+                                        {deg === 45 ? '표준고각★' : deg === 60 ? '초고각' : deg === 70 ? '직립근접' : '급경사'}
+                                      </span>
+                                    </button>
+                                  ))}
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-1.5 pt-1">
+                                  {[
+                                    { label: 'SWPC 7B 4가닥', spec: '4가닥 (Pu=748kN)' },
+                                    { label: 'SWPC 7B 5가닥★', spec: '5가닥 (Pu=935kN)' },
+                                    { label: 'SWPC 7B 6가닥', spec: '6가닥 (Pu=1,122kN)' },
+                                    { label: 'SWPC 7B 7가닥', spec: '7가닥 (Pu=1,309kN)' },
+                                  ].map((item) => (
+                                    <button
+                                      key={item.label}
+                                      type="button"
+                                      onClick={() => setSelectedAnchorStrandSpec(item.spec)}
+                                      className={`p-1.5 rounded-lg text-[11px] font-bold border transition cursor-pointer text-left ${
+                                        selectedAnchorStrandSpec.includes(item.label.split(' ')[2])
+                                          ? 'bg-indigo-600 text-white border-indigo-700 shadow-2xs font-black'
+                                          : 'bg-white text-slate-800 border-slate-200 hover:bg-indigo-50'
+                                      }`}
+                                    >
+                                      <div className="font-bold">{item.label}</div>
+                                      <div className={`text-[9px] font-mono ${selectedAnchorStrandSpec.includes(item.label.split(' ')[2]) ? 'text-indigo-100' : 'text-slate-500'}`}>
+                                        {item.spec}
+                                      </div>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 🌟 4. 하단 KDS 21 30 00 시공단계별 구조검토 종합 매트릭스 표 */}
+                          <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-xs space-y-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                              <div className="font-extrabold text-slate-900 text-sm sm:text-base flex items-center space-x-2">
+                                <span className="w-2.5 h-5 bg-indigo-600 rounded-xs" />
+                                <span>2안-B 고각 어스앵커(θ={ang}°) 시공단계별(Step 0~12) KDS 21 30 00 정밀 구조검토 종합표</span>
+                              </div>
+                              <span className="text-xs text-indigo-900 bg-indigo-100 px-3 py-1 rounded font-bold border border-indigo-300">
+                                100% 무지주 광폭 작업공간 확보 (공기 125일 완료)
+                              </span>
+                            </div>
+
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-xs text-center border-collapse">
+                                <thead>
+                                  <tr className="bg-indigo-50/90 text-indigo-950 font-bold border-b border-indigo-200">
+                                    <th className="py-2.5 px-2">단계</th>
+                                    <th className="py-2.5 px-3 text-left">시공 단계 및 작업 내용</th>
+                                    <th className="py-2.5 px-2">굴착심도</th>
+                                    <th className="py-2.5 px-2">벽체 최대응력비</th>
+                                    <th className="py-2.5 px-2">앵커 인장력(Td)</th>
+                                    <th className="py-2.5 px-2">사유지 침범거리</th>
+                                    <th className="py-2.5 px-2">지반 수평변위</th>
+                                    <th className="py-2.5 px-2">굴착저면 안정성</th>
+                                    <th className="py-2.5 px-2">종합판정</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-200 text-slate-800">
+                                  {ANCHOR_2B_STAGES_DATA.map((row) => {
+                                    const isSelected = anchorStepIndex === row.step;
+                                    const isWallSafe = parseFloat(row.wallStress) <= 140;
+
+                                    return (
+                                      <tr
+                                        key={row.step}
+                                        onClick={() => {
+                                          setIsAnchorPlaying(false);
+                                          setAnchorStepIndex(row.step);
+                                        }}
+                                        className={`cursor-pointer transition hover:bg-indigo-100/80 ${
+                                          isSelected ? 'bg-indigo-100 border-l-4 border-l-indigo-600 font-bold' : ''
+                                        }`}
+                                      >
+                                        <td className="py-2.5 px-2 font-black font-mono text-indigo-900">Step {row.step}</td>
+                                        <td className="py-2.5 px-3 text-left font-semibold text-slate-900">{row.name}</td>
+                                        <td className="py-2.5 px-2 font-mono text-slate-700 font-semibold">{row.depthLabel}</td>
+                                        <td className={`py-2.5 px-2 font-mono font-bold ${!isWallSafe ? 'text-rose-600 bg-rose-50' : 'text-blue-800'}`}>
+                                          {row.wallStress}
+                                        </td>
+                                        <td className="py-2.5 px-2 font-mono font-bold text-indigo-900">
+                                          {row.strutForce}
+                                        </td>
+                                        <td className="py-2.5 px-2 font-mono font-semibold text-emerald-800">
+                                          {row.boundaryDist}
+                                        </td>
+                                        <td className="py-2.5 px-2 font-mono text-slate-800 font-semibold">{row.disp}</td>
+                                        <td className="py-2.5 px-2 font-mono text-emerald-800 font-bold">{row.pipingFs}</td>
+                                        <td className="py-2.5 px-2">
+                                          <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold border whitespace-nowrap bg-emerald-100 text-emerald-800 border-emerald-300">
+                                            OK (안전)
+                                          </span>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
                       );
-                    })}
+                    })()}
                   </div>
+                )}
 
-                  {/* Current Active Step Engineering KPI Cards (6대 지표) */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-0.5 text-xs">
-                    <div className="bg-white p-2.5 rounded-xl border border-indigo-200 shadow-2xs space-y-0.5">
-                      <span className="text-slate-500 font-bold text-xs block">① 굴착 심도</span>
-                      <span className="text-indigo-900 font-mono font-black text-base sm:text-lg block">
-                        {curr2BStage.depthLabel}
-                      </span>
-                      <span className="text-[11px] font-medium text-slate-600 truncate block">{curr2BStage.excavationStageName}</span>
-                    </div>
-
-                    <div className="bg-white p-2.5 rounded-xl border border-indigo-200 shadow-2xs space-y-0.5">
-                      <span className="text-slate-500 font-bold text-xs block">② 벽체 최대휨응력</span>
-                      <span className={`font-mono font-black text-base sm:text-lg block ${isWallSafe ? 'text-indigo-700' : 'text-rose-600'}`}>
-                        {curr2BStage.wallStress.split(' ')[0]} <span className="text-xs font-normal text-slate-500">MPa</span>
-                      </span>
-                      <span className={`text-[11px] font-bold block ${isWallSafe ? 'text-emerald-700' : 'text-rose-600'}`}>
-                        {isWallSafe ? `안전율 만족 (${curr2BStage.wallStress.split(' ')[1] || 'OK'})` : '⚠️ 응력초과'}
-                      </span>
-                    </div>
-
-                    <div className="bg-white p-2.5 rounded-xl border border-indigo-200 shadow-2xs space-y-0.5">
-                      <span className="text-slate-500 font-bold text-xs block">③ 고각 설계인장력(Td)</span>
-                      <span className="font-mono font-black text-xs sm:text-sm truncate block text-purple-700">
-                        {curr2BStage.anchorForce}
-                      </span>
-                      <span className="text-[11px] font-semibold block text-emerald-700">
-                        {curr2BStage.pulloutFs}
-                      </span>
-                    </div>
-
-                    <div className="bg-white p-2.5 rounded-xl border border-indigo-200 shadow-2xs space-y-0.5">
-                      <span className="text-slate-500 font-bold text-xs block">④ 띠장 휨응력비</span>
-                      <span className={`font-mono font-black text-base sm:text-lg block ${isWaleSafe ? 'text-slate-900' : 'text-rose-600'}`}>
-                        {curr2BStage.waleRatio}
-                      </span>
-                      <span className={`text-[11px] font-bold block ${isWaleSafe ? 'text-emerald-700' : 'text-rose-600'}`}>
-                        {isWaleSafe ? '단면 안전 (SAFE)' : '⚠️ 띠장단면 보강'}
-                      </span>
-                    </div>
-
-                    <div className="bg-white p-2.5 rounded-xl border border-indigo-200 shadow-2xs space-y-0.5">
-                      <span className="text-slate-500 font-bold text-xs block">⑤ 말뚝 연직지지 Fs</span>
-                      <span className="text-purple-700 font-mono font-black text-base sm:text-lg block">
-                        {curr2BStage.verticalFs?.split(' ')[0] || 'Fs > 2.5'}
-                      </span>
-                      <span className="text-[11px] text-emerald-700 font-bold block">소켓 3.0m 지지 OK</span>
-                    </div>
-
-                    <div className="bg-white p-2.5 rounded-xl border border-indigo-200 shadow-2xs space-y-0.5">
-                      <span className="text-slate-500 font-bold text-xs block">⑥ 지반 최대변위</span>
-                      <span className="text-rose-700 font-mono font-black text-base sm:text-lg block">
-                        {curr2BStage.disp}
-                      </span>
-                      <span className="text-[11px] text-emerald-800 font-black block">{curr2BStage.status}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()
-          )}
-
-          {/* [3안 배너] 3안 광간격 복합 지보공법 공정단계별(Step 0 ~ Step 2N) 실시간 시뮬레이션 */}
-          {(activeTab === '3_HYBRID' || activeTab === 'HYBRID') && (() => {
+                {(activeTab === '3_HYBRID' || activeTab === 'HYBRID') && (() => {
             const curr3Stage = HYBRID_3_STAGES_DATA[hybrid3StepIndex] || HYBRID_3_STAGES_DATA[HYBRID_3_STAGES_DATA.length - 1];
             const wallStressVal = parseFloat(curr3Stage.wallStress);
             const isWallSafe = isNaN(wallStressVal) || wallStressVal <= 140;
