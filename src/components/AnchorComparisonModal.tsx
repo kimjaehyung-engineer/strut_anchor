@@ -3586,99 +3586,9 @@ ${(anchorResult.angleSensitivityMatrix || [])
                         </span>
                       </div>
 
-                      {/* 1안 상단 퀵 정보 바 (버팀보 수평간격 & 중간말뚝 수평간격/열수 설정 인터랙티브 바) */}
-                      {(() => {
-                        const strutSpecDisplay = (localStruts[0]?.specName || 'H-300×300×10×15').split(' ')[0];
-                        const totalLen = settings.stationLength || 100;
-                        const baysCount = Math.ceil(totalLen / (strutHorizontalSpacing || 4.0));
-                        const tiersCount = localStruts.length || 5;
-                        const totalStrutPcs = baysCount * tiersCount;
-                        
-                        const kingPostSpecDisplay = (selectedKingPostSpec || 'H-300×300×10×15').split('×')[0];
-                        const kingPostCols = kingPostColumns || ((settings.stationWidth || 20) >= 16 ? 2 : 1);
-                        const kingPostBayCount = Math.ceil(totalLen / (kingPostSpacing || 4.0));
-                        const kingPostTotalPcs = kingPostBayCount * kingPostCols;
 
-                        return (
-                          <div className="bg-gradient-to-r from-amber-50 via-amber-100/60 to-orange-50 p-2.5 rounded-xl border-2 border-amber-300 text-xs flex flex-wrap items-center justify-between gap-2 shadow-xs animate-in fade-in duration-100">
-                            {/* 1. 버팀보 수평간격 직접 설정 */}
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-amber-950 font-black text-xs flex items-center gap-1">
-                                <span>📐 버팀보 배치:</span>
-                              </span>
-                              <span className="bg-white px-2 py-1 rounded-lg border border-amber-300 font-mono font-black text-blue-900 text-xs shadow-2xs">
-                                {strutSpecDisplay}
-                              </span>
-                              <div className="flex items-center gap-1 bg-white px-2 py-0.5 rounded-lg border border-amber-300 shadow-2xs">
-                                <span className="text-[11px] text-slate-600 font-bold">수평간격 @</span>
-                                <input
-                                  type="number"
-                                  step="0.5"
-                                  min="1.0"
-                                  max="12.0"
-                                  value={strutHorizontalSpacing}
-                                  onChange={(e) => {
-                                    const val = Math.max(0.5, parseFloat(e.target.value) || 4.0);
-                                    setStrutHorizontalSpacing(val);
-                                    setIsStrutSpecModified(true);
-                                  }}
-                                  className="w-14 px-1.5 py-0.5 bg-amber-50/70 border border-amber-400 rounded text-center font-mono font-black text-blue-900 text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                                />
-                                <span className="text-[11px] text-slate-700 font-bold">m</span>
-                              </div>
-                              <span className="text-slate-600 font-mono text-[11px] bg-white/70 px-1.5 py-0.5 rounded">
-                                (총 <strong className="text-blue-900 font-black">{baysCount}열</strong> / {totalStrutPcs}본)
-                              </span>
-                            </div>
 
-                            {/* 2. 중간말뚝 수평간격 및 열수 직접 설정 */}
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-amber-950 font-black text-xs flex items-center gap-1">
-                                <span>🏗️ 중간말뚝:</span>
-                              </span>
-                              <span className="bg-white px-2 py-1 rounded-lg border border-amber-300 font-mono font-black text-rose-900 text-xs shadow-2xs">
-                                {kingPostSpecDisplay}
-                              </span>
-                              <div className="flex items-center gap-1 bg-white px-2 py-0.5 rounded-lg border border-amber-300 shadow-2xs">
-                                <span className="text-[11px] text-slate-600 font-bold">열수:</span>
-                                <select
-                                  value={kingPostCols}
-                                  onChange={(e) => {
-                                    setKingPostColumns(parseInt(e.target.value) || 2);
-                                    setIsStrutSpecModified(true);
-                                  }}
-                                  className="px-1.5 py-0.5 bg-amber-50/70 border border-amber-400 rounded font-mono font-black text-rose-900 text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none cursor-pointer"
-                                >
-                                  <option value={1}>1열</option>
-                                  <option value={2}>2열 (표준)</option>
-                                  <option value={3}>3열 (광폭)</option>
-                                  <option value={4}>4열</option>
-                                </select>
-                              </div>
-                              <div className="flex items-center gap-1 bg-white px-2 py-0.5 rounded-lg border border-amber-300 shadow-2xs">
-                                <span className="text-[11px] text-slate-600 font-bold">수평간격 @</span>
-                                <input
-                                  type="number"
-                                  step="0.5"
-                                  min="1.0"
-                                  max="12.0"
-                                  value={kingPostSpacing}
-                                  onChange={(e) => {
-                                    const val = Math.max(0.5, parseFloat(e.target.value) || 4.0);
-                                    setKingPostSpacing(val);
-                                    setIsStrutSpecModified(true);
-                                  }}
-                                  className="w-14 px-1.5 py-0.5 bg-amber-50/70 border border-amber-400 rounded text-center font-mono font-black text-rose-900 text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                                />
-                                <span className="text-[11px] text-slate-700 font-bold">m</span>
-                              </div>
-                              <span className="text-slate-600 font-mono text-[11px] bg-white/70 px-1.5 py-0.5 rounded">
-                                (총 <strong className="text-rose-900 font-black">{kingPostTotalPcs}본</strong>)
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })()}
+
 
                       {/* SVG 2D Canvas for Strut + King Post (Step 0 ~ Step 10 연동) */}
                       <div className="w-full bg-slate-50/80 rounded-lg border border-slate-200 overflow-hidden flex items-center justify-center p-1">
@@ -5721,93 +5631,112 @@ ${(anchorResult.angleSensitivityMatrix || [])
                                     })}
                                   </div>
                                 ) : (
-                                   /* 1안-A H형강 버팀보 전용 규격군 (H 단면 2D 도해 및 상세 치수선 실시간 렌더링) */
-                                   <div className="grid grid-cols-2 gap-2 flex-1">
-                                     {[
-                                       { label: 'H-300 (표준★)', H: 300, B: 300, t1: 10, t2: 15, spec: 'H-300×300×10×15 (SM355)', area: 119.8 },
-                                       { label: 'H-300×305 (후판)', H: 300, B: 305, t1: 15, t2: 15, spec: 'H-300×305×15×15 (SM355)', area: 134.8 },
-                                       { label: 'H-350 (대단면)', H: 350, B: 350, t1: 12, t2: 19, spec: 'H-350×350×12×19 (SM355)', area: 173.9 },
-                                       { label: 'H-400 (특대단면)', H: 400, B: 400, t1: 13, t2: 21, spec: 'H-400×400×13×21 (SM355)', area: 218.7 },
-                                     ].map((item) => {
-                                       const isSelected = (localStruts[0]?.specName || '').startsWith(item.spec.split(' ')[0]) || (localStruts[0]?.specName || '').includes(item.spec.split(' ')[0]);
-                                       const strokeColor = isSelected ? '#ffffff' : '#475569';
-                                       const dimColor = isSelected ? '#fef08a' : '#d97706';
-                                       const fillColor = isSelected ? 'rgba(255, 255, 255, 0.22)' : 'rgba(245, 158, 11, 0.12)';
-                                       
-                                       return (
-                                         <button
-                                           key={item.spec}
-                                           type="button"
-                                           onClick={() => {
-                                             const updated = localStruts.map((s) => ({ ...s, specName: item.spec, crossSectionArea: item.area }));
-                                             handleUpdateStruts(updated);
-                                           }}
-                                           className={`p-2.5 rounded-xl text-xs font-bold border transition cursor-pointer flex flex-col justify-between items-stretch shadow-2xs group ${
-                                             isSelected
-                                               ? 'bg-gradient-to-br from-amber-600 to-orange-600 text-white border-amber-700 shadow-md ring-2 ring-amber-300'
-                                               : 'bg-white text-slate-800 border-slate-200 hover:bg-amber-50/60 hover:border-amber-300'
-                                           }`}
-                                         >
-                                           {/* Card Header: Spec Name */}
-                                           <div className="flex items-center justify-between w-full border-b pb-1.5" style={{ borderColor: isSelected ? 'rgba(255,255,255,0.25)' : '#e2e8f0' }}>
-                                             <span className="font-black text-xs sm:text-sm truncate">{item.label}</span>
-                                             <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${isSelected ? 'bg-amber-800/80 text-yellow-200' : 'bg-slate-100 text-slate-600'}`}>
-                                               A={item.area}㎠
-                                             </span>
-                                           </div>
+                                    /* 1안-A H형강 버팀보 전용 규격군 (상호 배타적 단일 인덱스 선택 로직 및 H단면 치수 도해) */
+                                    {(() => {
+                                      const hStrutSpecs = [
+                                        { label: 'H-300 (표준★)', H: 300, B: 300, t1: 10, t2: 15, spec: 'H-300×300×10×15 (SM355)', area: 119.8 },
+                                        { label: 'H-300×305 (후판)', H: 300, B: 305, t1: 15, t2: 15, spec: 'H-300×305×15×15 (SM355)', area: 134.8 },
+                                        { label: 'H-350 (대단면)', H: 350, B: 350, t1: 12, t2: 19, spec: 'H-350×350×12×19 (SM355)', area: 173.9 },
+                                        { label: 'H-400 (특대단면)', H: 400, B: 400, t1: 13, t2: 21, spec: 'H-400×400×13×21 (SM355)', area: 218.7 },
+                                      ];
 
-                                           {/* 🌟 [H형강 단면 2D 도해 & 치수선 (Height H, Width B, Web t1, Flange t2)] */}
-                                           <div className="my-2 flex items-center justify-center p-1">
-                                             <svg viewBox="0 0 150 110" className="w-full h-24 max-h-26 select-none">
-                                               {/* Top Flange */}
-                                               <rect x="35" y="16" width="80" height="11" rx="1" fill={fillColor} stroke={strokeColor} strokeWidth="1.5" />
-                                               {/* Web */}
-                                               <rect x="71" y="27" width="8" height="56" rx="0.5" fill={fillColor} stroke={strokeColor} strokeWidth="1.5" />
-                                               {/* Bottom Flange */}
-                                               <rect x="35" y="83" width="80" height="11" rx="1" fill={fillColor} stroke={strokeColor} strokeWidth="1.5" />
+                                      // 현재 선택된 규격 단 1개의 인덱스(0, 1, 2, 3)만 정확히 산출
+                                      const curSpec = localStruts[0]?.specName || '';
+                                      let currentSelectedIdx = 0;
+                                      if (curSpec.includes('305')) {
+                                        currentSelectedIdx = 1;
+                                      } else if (curSpec.includes('350')) {
+                                        currentSelectedIdx = 2;
+                                      } else if (curSpec.includes('400')) {
+                                        currentSelectedIdx = 3;
+                                      } else {
+                                        currentSelectedIdx = 0;
+                                      }
 
-                                               {/* Width B Dimension (Top): B = 300 / 305 / 350 / 400 */}
-                                               <line x1="35" y1="8" x2="115" y2="8" stroke={dimColor} strokeWidth="1" />
-                                               <line x1="35" y1="5" x2="35" y2="11" stroke={dimColor} strokeWidth="1" />
-                                               <line x1="115" y1="5" x2="115" y2="11" stroke={dimColor} strokeWidth="1" />
-                                               <polygon points="35,8 39,6 39,10" fill={dimColor} />
-                                               <polygon points="115,8 111,6 111,10" fill={dimColor} />
-                                               <text x="75" y="6" textAnchor="middle" fill={dimColor} fontSize="7.5" fontWeight="bold" fontFamily="monospace">
-                                                 B={item.B}
-                                               </text>
+                                      return (
+                                        <div className="grid grid-cols-2 gap-2 flex-1">
+                                          {hStrutSpecs.map((item, itemIdx) => {
+                                            const isSelected = itemIdx === currentSelectedIdx;
+                                            const strokeColor = isSelected ? '#ffffff' : '#475569';
+                                            const dimColor = isSelected ? '#fef08a' : '#d97706';
+                                            const fillColor = isSelected ? 'rgba(255, 255, 255, 0.22)' : 'rgba(245, 158, 11, 0.12)';
+                                            
+                                            return (
+                                              <button
+                                                key={item.spec}
+                                                type="button"
+                                                onClick={() => {
+                                                  const updated = localStruts.map((s) => ({ ...s, specName: item.spec, crossSectionArea: item.area }));
+                                                  handleUpdateStruts(updated);
+                                                }}
+                                                className={`p-2.5 rounded-xl text-xs font-bold border transition cursor-pointer flex flex-col justify-between items-stretch shadow-2xs group ${
+                                                  isSelected
+                                                    ? 'bg-gradient-to-br from-amber-600 to-orange-600 text-white border-amber-700 shadow-md ring-2 ring-amber-300'
+                                                    : 'bg-white text-slate-800 border-slate-200 hover:bg-amber-50/60 hover:border-amber-300'
+                                                }`}
+                                              >
+                                                {/* Card Header: Spec Name */}
+                                                <div className="flex items-center justify-between w-full border-b pb-1.5" style={{ borderColor: isSelected ? 'rgba(255,255,255,0.25)' : '#e2e8f0' }}>
+                                                  <span className="font-black text-xs sm:text-sm truncate">{item.label}</span>
+                                                  <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${isSelected ? 'bg-amber-800/80 text-yellow-200' : 'bg-slate-100 text-slate-600'}`}>
+                                                    A={item.area}㎠
+                                                  </span>
+                                                </div>
 
-                                               {/* Height H Dimension (Left): H = 300 / 350 / 400 */}
-                                               <line x1="22" y1="16" x2="22" y2="94" stroke={dimColor} strokeWidth="1" />
-                                               <line x1="19" y1="16" x2="25" y2="16" stroke={dimColor} strokeWidth="1" />
-                                               <line x1="19" y1="94" x2="25" y2="94" stroke={dimColor} strokeWidth="1" />
-                                               <polygon points="22,16 20,20 24,20" fill={dimColor} />
-                                               <polygon points="22,94 20,90 24,90" fill={dimColor} />
-                                               <text x="18" y="58" textAnchor="end" fill={dimColor} fontSize="7.5" fontWeight="bold" fontFamily="monospace">
-                                                 H={item.H}
-                                               </text>
+                                                {/* 🌟 [H형강 단면 2D 도해 & 치수선 (Height H, Width B, Web t1, Flange t2)] */}
+                                                <div className="my-2 flex items-center justify-center p-1">
+                                                  <svg viewBox="0 0 150 110" className="w-full h-24 max-h-26 select-none">
+                                                    {/* Top Flange */}
+                                                    <rect x="35" y="16" width="80" height="11" rx="1" fill={fillColor} stroke={strokeColor} strokeWidth="1.5" />
+                                                    {/* Web */}
+                                                    <rect x="71" y="27" width="8" height="56" rx="0.5" fill={fillColor} stroke={strokeColor} strokeWidth="1.5" />
+                                                    {/* Bottom Flange */}
+                                                    <rect x="35" y="83" width="80" height="11" rx="1" fill={fillColor} stroke={strokeColor} strokeWidth="1.5" />
 
-                                               {/* Flange thickness t2 Leader (Right Top) */}
-                                               <path d="M117,21.5 L128,21.5" stroke={dimColor} strokeWidth="0.8" />
-                                               <text x="130" y="23.5" fill={dimColor} fontSize="7" fontWeight="bold" fontFamily="monospace">
-                                                 t₂={item.t2}
-                                               </text>
+                                                    {/* Width B Dimension (Top): B = 300 / 305 / 350 / 400 */}
+                                                    <line x1="35" y1="8" x2="115" y2="8" stroke={dimColor} strokeWidth="1" />
+                                                    <line x1="35" y1="5" x2="35" y2="11" stroke={dimColor} strokeWidth="1" />
+                                                    <line x1="115" y1="5" x2="115" y2="11" stroke={dimColor} strokeWidth="1" />
+                                                    <polygon points="35,8 39,6 39,10" fill={dimColor} />
+                                                    <polygon points="115,8 111,6 111,10" fill={dimColor} />
+                                                    <text x="75" y="6" textAnchor="middle" fill={dimColor} fontSize="7.5" fontWeight="bold" fontFamily="monospace">
+                                                      B={item.B}
+                                                    </text>
 
-                                               {/* Web thickness t1 Leader (Right Middle) */}
-                                               <path d="M80,55 L128,55" stroke={dimColor} strokeWidth="0.8" strokeDasharray="1.5,1.5" />
-                                               <text x="130" y="57" fill={dimColor} fontSize="7" fontWeight="bold" fontFamily="monospace">
-                                                 t₁={item.t1}
-                                               </text>
-                                             </svg>
-                                           </div>
+                                                    {/* Height H Dimension (Left): H = 300 / 350 / 400 */}
+                                                    <line x1="22" y1="16" x2="22" y2="94" stroke={dimColor} strokeWidth="1" />
+                                                    <line x1="19" y1="16" x2="25" y2="16" stroke={dimColor} strokeWidth="1" />
+                                                    <line x1="19" y1="94" x2="25" y2="94" stroke={dimColor} strokeWidth="1" />
+                                                    <polygon points="22,16 20,20 24,20" fill={dimColor} />
+                                                    <polygon points="22,94 20,90 24,90" fill={dimColor} />
+                                                    <text x="18" y="58" textAnchor="end" fill={dimColor} fontSize="7.5" fontWeight="bold" fontFamily="monospace">
+                                                      H={item.H}
+                                                    </text>
 
-                                           {/* Card Footer: Detailed Dimension Spec Formula */}
-                                           <div className={`text-[10px] font-mono font-bold text-center pt-1 border-t ${isSelected ? 'text-amber-100 border-amber-500/40' : 'text-slate-500 border-slate-100'}`}>
-                                             {item.H}×{item.B}×{item.t1}×{item.t2} (mm)
-                                           </div>
-                                         </button>
-                                       );
-                                     })}
-                                   </div>
+                                                    {/* Flange thickness t2 Leader (Right Top) */}
+                                                    <path d="M117,21.5 L128,21.5" stroke={dimColor} strokeWidth="0.8" />
+                                                    <text x="130" y="23.5" fill={dimColor} fontSize="7" fontWeight="bold" fontFamily="monospace">
+                                                      t₂={item.t2}
+                                                    </text>
+
+                                                    {/* Web thickness t1 Leader (Right Middle) */}
+                                                    <path d="M80,55 L128,55" stroke={dimColor} strokeWidth="0.8" strokeDasharray="1.5,1.5" />
+                                                    <text x="130" y="57" fill={dimColor} fontSize="7" fontWeight="bold" fontFamily="monospace">
+                                                      t₁={item.t1}
+                                                    </text>
+                                                  </svg>
+                                                </div>
+
+                                                {/* Card Footer: Detailed Dimension Spec Formula */}
+                                                <div className={`text-[10px] font-mono font-bold text-center pt-1 border-t ${isSelected ? 'text-amber-100 border-amber-500/40' : 'text-slate-500 border-slate-100'}`}>
+                                                  {item.H}×{item.B}×{item.t1}×{item.t2} (mm)
+                                                </div>
+                                              </button>
+                                            );
+                                          })}
+                                        </div>
+                                      );
+                                    })()}
                                 )}
                               </div>
                             </div>
