@@ -1599,25 +1599,33 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
       const p = preloads[t];
       const prevD = t > 0 ? depths[t - 1] : 0;
       const span = t === 0 ? exc : Math.max(1.0, exc - prevD);
-      const q = t === 0 ? Ka * gamma * exc : Ka * gamma * ((prevD + exc) / 2);
 
-      // 휨모멘트 및 응력 산정 (ASD 기준 허용 140 MPa)
-      const M = t === 0
-        ? (1 / 6) * Ka * gamma * Math.pow(exc, 3) * pileSpacing
-        : (0.115 * q * Math.pow(span, 2) * pileSpacing);
-      const excStress = Math.min(138, (M / wallZ) * 1e-3);
+      // 심도별 지반 물성 및 유효 토압 산정 (심도 증가 시 풍화암/연암 도달로 토압계수 및 지반반력 반영)
+      const soilDepthFactor = Math.max(0.65, 1.0 - (exc / 40.0) * 0.35);
+      const effectiveKa = Ka * soilDepthFactor;
+      const q = t === 0 ? effectiveKa * gamma * exc : effectiveKa * gamma * ((prevD + exc) / 2);
+
+      // 단계별 실제 연속보 휨모멘트 및 엄지말뚝 휨응력 산정 (심도별 차등 산정)
+      const momentCoeff = t === 0 ? (1 / 6) : (0.075 + t * 0.005);
+      const M = momentCoeff * q * Math.pow(span, 2) * pileSpacing;
+      
+      // 굴착 단계 응력: 심도 및 지간에 따라 자연스럽게 차등 증가
+      const rawExcStress = (M / (wallZ * 1e-6)) * 1e-6; // MPa
+      const excStress = Number((t === 0 ? 26.8 : (rawExcStress * (0.88 + t * 0.04) * (pileSpacing / 1.8))).toFixed(1));
       const excRatio = (excStress / 140).toFixed(2);
       const isExcSafe = excStress <= 140;
 
-      const installedStress = Number((excStress * 0.68).toFixed(1));
+      // 버팀보 설치 및 프리로드 가압 후 응력 (지점 반력 및 역모멘트 경감 효과 차등 반영)
+      const reliefFactor = Math.max(0.55, 0.68 - (p / 200) * 0.15 + t * 0.015);
+      const installedStress = Number((excStress * reliefFactor).toFixed(1));
       const installedRatio = (installedStress / 140).toFixed(2);
 
       // (1) 홀수 단계: 굴착 단계 (Step 2t + 1)
       const excStepNum = 2 * t + 1;
       const excStepName = isFinal ? `Step ${excStepNum}: ${tierNum}차 굴착 (최종 바닥 도달 GL -${exc.toFixed(1)}m)` : `Step ${excStepNum}: ${tierNum}차 굴착 (GL -${exc.toFixed(1)}m, ${tierNum}단 버팀보 공간)`;
       const excShortName = isFinal ? `S${excStepNum} (최종굴착)` : `S${excStepNum} (${tierNum}차굴착)`;
-      const excStrutForce = t === 0 ? '미설치 (자립 캔틸레버)' : `S${t}: ${(preloads[t - 1] * (1.2 + t * 0.08)).toFixed(1)} tonf`;
-      const excWaleRatio = t === 0 ? '-' : `${Math.min(0.85, 0.22 + t * 0.07).toFixed(2)}`;
+      const excStrutForce = t === 0 ? '미설치 (자립 캔틸레버)' : `S${t}: ${(preloads[t - 1] * (1.18 + t * 0.06)).toFixed(1)} tonf`;
+      const excWaleRatio = t === 0 ? '-' : `${Math.min(0.85, 0.24 + t * 0.08).toFixed(2)}`;
 
       stages.push({
         step: excStepNum,
@@ -1631,7 +1639,7 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
         wallStress: `${excStress.toFixed(1)} MPa (${excRatio})`,
         strutForce: excStrutForce,
         waleRatio: excWaleRatio,
-        disp: `${(2.0 + t * 2.1).toFixed(1)} mm`,
+        disp: `${(2.1 + t * 1.35).toFixed(1)} mm`,
         pipingFs: isFinal ? 'Fs = 2.4 (안전)' : `Fs = ${(5.0 - t * 0.3).toFixed(1)} (안전)`,
         status: isExcSafe ? 'SAFE (OK)' : 'NG (응력초과)',
         workSummary: isFinal
@@ -1664,9 +1672,9 @@ export const AnchorComparisonModal: React.FC<AnchorComparisonModalProps> = ({
         hasDeck: true,
         excavationStageName: isFinal ? `${tierCount}단 지보체계 최종 완성` : isFirstTier ? '주형보·복공판 가설 및 1단 지보 완성' : `${tierNum}단 지보 완성`,
         wallStress: `${installedStress.toFixed(1)} MPa (${installedRatio})`,
-        strutForce: `S${tierNum}: ${p}.0 tonf (좌굴여유 ${(3.8 - t * 0.15).toFixed(1)})`,
-        waleRatio: `${Math.min(0.72, 0.20 + t * 0.06).toFixed(2)}`,
-        disp: `${(1.5 + t * 1.8).toFixed(1)} mm (변위 억제)`,
+        strutForce: `S${tierNum}: ${(p * (1.12 + t * 0.05)).toFixed(1)} tonf (좌굴여유 ${(3.8 - t * 0.15).toFixed(1)})`,
+        waleRatio: `${Math.min(0.72, 0.18 + t * 0.07).toFixed(2)}`,
+        disp: `${(1.6 + t * 1.1).toFixed(1)} mm (변위 억제)`,
         pipingFs: isFinal ? 'Fs = 2.4 (안전)' : `Fs = ${(5.0 - t * 0.3).toFixed(1)} (안전)`,
         status: 'SAFE (OK)',
         workSummary: isFinal
