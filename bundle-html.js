@@ -12,12 +12,23 @@ const files = fs.readdirSync(assetsDir);
 const cssFile = files.find(f => f.endsWith('.css'));
 const jsFile = files.find(f => f.endsWith('.js'));
 
-if (!cssFile || !jsFile) {
-  console.error('CSS or JS file not found in dist/assets');
+if (!jsFile) {
+  console.error('JS file not found in dist/assets');
   process.exit(1);
 }
 
-const cssContent = fs.readFileSync(path.join(assetsDir, cssFile), 'utf-8');
+let cssContent = '';
+if (cssFile) {
+  cssContent = fs.readFileSync(path.join(assetsDir, cssFile), 'utf-8');
+} else {
+  // Extract CSS from dist/index.html style tag if inlined
+  const distIndexHtml = fs.readFileSync(path.join(distDir, 'index.html'), 'utf-8');
+  const styleMatch = distIndexHtml.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
+  if (styleMatch) {
+    cssContent = styleMatch[1];
+  }
+}
+
 const jsContent = fs.readFileSync(path.join(assetsDir, jsFile), 'utf-8');
 
 const singleHtml = `<!doctype html>
