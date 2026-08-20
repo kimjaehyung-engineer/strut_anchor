@@ -3756,11 +3756,17 @@ ${(anchorResult.angleSensitivityMatrix || [])
                                 stroke="#1e293b"
                                 strokeWidth="0.5"
                               />
-                              {/* 복공 주형보 (Main Girder H-400x400) 좌/우/중간말뚝 상단 거치 */}
+                              {/* 복공 주형보 (Main Girder H-400x400) 좌/우/중간말뚝 상단 동적 거치 */}
                               <rect x={leftWallX + 8} y={marginTop} width={14} height={10} fill="#334155" stroke="#0f172a" strokeWidth="1" />
-                              <rect x={leftWallX + plotW * 0.33 - 7} y={marginTop} width={14} height={10} fill="#334155" stroke="#0f172a" strokeWidth="1" />
-                              <rect x={leftWallX + plotW * 0.67 - 7} y={marginTop} width={14} height={10} fill="#334155" stroke="#0f172a" strokeWidth="1" />
                               <rect x={rightWallX - 22} y={marginTop} width={14} height={10} fill="#334155" stroke="#0f172a" strokeWidth="1" />
+                              {Array.from({ length: kingPostColumns || ((settings.stationWidth || 20) >= 16 ? 2 : 1) }, (_, i) => {
+                                const totalCols = kingPostColumns || ((settings.stationWidth || 20) >= 16 ? 2 : 1);
+                                const ratio = (i + 1) / (totalCols + 1);
+                                const postX = leftWallX + plotW * ratio;
+                                return (
+                                  <rect key={i} x={postX - 7} y={marginTop} width={14} height={10} fill="#334155" stroke="#0f172a" strokeWidth="1" />
+                                );
+                              })}
                               {/* 복공판 통행 차량 안내 */}
                               <text x={leftWallX + plotW / 2} y={marginTop - 8} fill="#0f172a" fontSize="9.5" fontWeight="black" textAnchor="middle">
                                 🚗 상부 주형보(H-400) & 복공판 거치 완료 (지상 차량 통행 중)
@@ -3778,21 +3784,41 @@ ${(anchorResult.angleSensitivityMatrix || [])
                           <rect x={leftWallX - 4} y={marginTop} width={8} height={getY(totalLength) - marginTop} fill="#2563eb" stroke="#1d4ed8" strokeWidth="1" />
                           <rect x={rightWallX - 4} y={marginTop} width={8} height={getY(totalLength) - marginTop} fill="#2563eb" stroke="#1d4ed8" strokeWidth="1" />
 
-                          {/* 4. Center King Posts (2열 가설 중간말뚝) */}
+                          {/* 4. Center King Posts (열수에 따른 동적 가설 중간말뚝 렌더링 1열~4열) */}
                           {(() => {
-                            const post1X = leftWallX + plotW * 0.33;
-                            const post2X = leftWallX + plotW * 0.67;
+                            const cols = kingPostColumns || ((settings.stationWidth || 20) >= 16 ? 2 : 1);
                             const postBottomY = getY(totalLength + 2.0);
+                            const posts = [];
+                            for (let c = 1; c <= cols; c++) {
+                              const ratio = c / (cols + 1);
+                              const postX = leftWallX + plotW * ratio;
+                              posts.push({ col: c, x: postX });
+                            }
                             return (
-                              <g>
-                                <rect x={post1X - 3.5} y={marginTop} width={7} height={postBottomY - marginTop} fill="#ea580c" stroke="#9a3412" strokeWidth="1" />
-                                <text x={post1X} y={marginTop + 14} fill="#c2410c" fontSize="8.5" fontWeight="bold" textAnchor="middle">
-                                  말뚝1열
-                                </text>
-                                <rect x={post2X - 3.5} y={marginTop} width={7} height={postBottomY - marginTop} fill="#ea580c" stroke="#9a3412" strokeWidth="1" />
-                                <text x={post2X} y={marginTop + 14} fill="#c2410c" fontSize="8.5" fontWeight="bold" textAnchor="middle">
-                                  말뚝2열
-                                </text>
+                              <g id="dynamic-king-posts">
+                                {posts.map((p) => (
+                                  <g key={p.col}>
+                                    <rect
+                                      x={p.x - 3.5}
+                                      y={marginTop}
+                                      width={7}
+                                      height={postBottomY - marginTop}
+                                      fill="#ea580c"
+                                      stroke="#9a3412"
+                                      strokeWidth="1"
+                                    />
+                                    <text
+                                      x={p.x}
+                                      y={marginTop + 14}
+                                      fill="#c2410c"
+                                      fontSize="8.5"
+                                      fontWeight="bold"
+                                      textAnchor="middle"
+                                    >
+                                      말뚝{p.col}열
+                                    </text>
+                                  </g>
+                                ))}
                               </g>
                             );
                           })()}
