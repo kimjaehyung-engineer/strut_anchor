@@ -44,6 +44,50 @@ import {
   Anchor,
 } from 'lucide-react';
 
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallbackText?: string },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode; fallbackText?: string }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-6 bg-rose-50 border-2 border-rose-400 rounded-xl text-rose-950 space-y-3 m-4">
+          <div className="flex items-center space-x-2 text-rose-700 font-black text-base">
+            <span className="text-xl">⚠️</span>
+            <span>컴포넌트 렌더링 중 일시적인 데이터 불일치 오류가 발생했습니다.</span>
+          </div>
+          <p className="text-xs text-rose-800 font-mono bg-white p-3 rounded border border-rose-200 overflow-x-auto">
+            {this.state.error?.message || 'Unknown render error'}
+          </p>
+          <button
+            onClick={() => {
+              this.setState({ hasError: false, error: null });
+              window.location.reload();
+            }}
+            className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-lg shadow cursor-pointer"
+          >
+            🔄 화면 새로고침 및 기본값으로 복구
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   // Preset selector
   const [selectedPresetId, setSelectedPresetId] = useState<string>(PRESET_PROJECTS[0].id);
@@ -370,23 +414,25 @@ export default function App() {
           {/* Tab 2: Full-Width Comparison Report Inline View (Current Window) */}
           {rightTab === 'COMPARISON' && (
             <div className="w-full flex-1 flex flex-col min-h-[85vh]">
-              <AnchorComparisonModal
-                key={comparisonKey}
-                isOpen={true}
-                isInline={true}
-                onClose={() => setRightTab('INPUTS')}
-                settings={settings}
-                layers={layers}
-                wall={wall}
-                struts={struts}
-                stages={stages}
-                currentStepIndex={currentStepIndex}
-                onSelectStep={(idx) => setCurrentStepIndex(idx)}
-                onUpdateWall={setWall}
-                onUpdateStruts={setStruts}
-                calcResult={calcResult}
-                initialTab="1_STRUT"
-              />
+              <ErrorBoundary>
+                <AnchorComparisonModal
+                  key={comparisonKey}
+                  isOpen={true}
+                  isInline={true}
+                  onClose={() => setRightTab('INPUTS')}
+                  settings={settings}
+                  layers={layers}
+                  wall={wall}
+                  struts={struts}
+                  stages={stages}
+                  currentStepIndex={currentStepIndex}
+                  onSelectStep={(idx) => setCurrentStepIndex(idx)}
+                  onUpdateWall={setWall}
+                  onUpdateStruts={setStruts}
+                  calcResult={calcResult}
+                  initialTab="1_STRUT"
+                />
+              </ErrorBoundary>
             </div>
           )}
 

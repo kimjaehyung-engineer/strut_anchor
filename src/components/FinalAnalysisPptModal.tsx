@@ -22,6 +22,8 @@ import {
   GitBranch,
   Presentation,
   Maximize2,
+  ExternalLink,
+  FileCode,
 } from 'lucide-react';
 import {
   CalculationResult,
@@ -269,6 +271,19 @@ export const FinalAnalysisPptModal: React.FC<FinalAnalysisPptModalProps> = ({
                 <span>2D 의사결정 사분면</span>
               </button>
             </div>
+
+            {/* 2안 최적설계 재검토 HTML 보고서 열기 */}
+            <a
+              href="./가시설_벽체_지지공법_2안_최적설계_재검토.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-bold flex items-center space-x-1.5 shadow-sm transition cursor-pointer no-underline"
+              title="[4대안 구조안전·경제성 최적설계 재검토] 가시설 벽체 지지공법 독립형 HTML 보고서 새 탭 열기"
+            >
+              <FileCode className="w-3.5 h-3.5 text-amber-200" />
+              <span>2안 최적설계 재검토(HTML)</span>
+              <ExternalLink className="w-3 h-3 text-amber-200" />
+            </a>
 
             {onOpenDetailedReport && (
               <button

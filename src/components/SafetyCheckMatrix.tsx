@@ -105,7 +105,7 @@ export const SafetyCheckMatrix: React.FC<SafetyCheckMatrixProps> = ({
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs font-bold text-slate-700">1. 히빙 (Heaving) 안전율</span>
             <span
-              className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+              className={`text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap ${
                 safety.heavingSafe
                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                   : 'bg-rose-50 text-rose-700 border border-rose-200'
@@ -133,7 +133,7 @@ export const SafetyCheckMatrix: React.FC<SafetyCheckMatrixProps> = ({
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs font-bold text-slate-700">2. 보일링 (Boiling) 안전율</span>
             <span
-              className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+              className={`text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap ${
                 safety.boilingSafe
                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                   : 'bg-rose-50 text-rose-700 border border-rose-200'
@@ -161,7 +161,7 @@ export const SafetyCheckMatrix: React.FC<SafetyCheckMatrixProps> = ({
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs font-bold text-slate-700">3. 파이핑 (Piping) 크리프비</span>
             <span
-              className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+              className={`text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap ${
                 safety.pipingSafe
                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                   : 'bg-rose-50 text-rose-700 border border-rose-200'
@@ -189,7 +189,7 @@ export const SafetyCheckMatrix: React.FC<SafetyCheckMatrixProps> = ({
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs font-bold text-slate-700">4. 근입장 수동저항 Fs</span>
             <span
-              className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+              className={`text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap ${
                 safety.embedmentSafe
                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                   : 'bg-rose-50 text-rose-700 border border-rose-200'

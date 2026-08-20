@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ProjectSettings,
   SoilLayer,
@@ -30,6 +30,8 @@ import {
   Layers3,
   SlidersHorizontal,
   ArrowRight,
+  Save,
+  ShieldCheck,
 } from 'lucide-react';
 import { MaterialVisualGuideModal } from './MaterialVisualGuideModal';
 import { StationLayoutViewer } from './StationLayoutViewer';
@@ -70,6 +72,26 @@ export const InputPanel: React.FC<InputPanelProps> = ({
   onOpenAnchorComparison,
 }) => {
   const [saveStatus, setSaveStatus] = useState<'IDLE' | 'SAVED'>('IDLE');
+  const [soilSaveStatus, setSoilSaveStatus] = useState<'IDLE' | 'SAVED'>('IDLE');
+
+  const handleSaveSoilData = () => {
+    try {
+      onUpdateLayers([...layers]);
+      localStorage.setItem(
+        'STRUT_ANCHOR_SOIL_LAYERS',
+        JSON.stringify({
+          layers,
+          savedAt: new Date().toISOString(),
+        })
+      );
+      setSoilSaveStatus('SAVED');
+      setTimeout(() => {
+        setSoilSaveStatus('IDLE');
+      }, 5000);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleSaveAllSettings = () => {
     try {
@@ -181,10 +203,18 @@ export const InputPanel: React.FC<InputPanelProps> = ({
     onUpdateStruts(updated);
   };
 
-  // Soil Layer Helpers
+  // Soil Layer Helpers (하단 심도 변경 시 다음 층 상단 심도 자동 동기화)
   const handleSoilChange = (index: number, field: keyof SoilLayer, value: any) => {
     const updated = [...layers];
     updated[index] = { ...updated[index], [field]: value };
+    // 하단 심도 변경 → 다음 층 상단 심도 자동 일치
+    if (field === 'depthBottom' && index < updated.length - 1) {
+      updated[index + 1] = { ...updated[index + 1], depthTop: value as number };
+    }
+    // 상단 심도 변경 → 이전 층 하단 심도 자동 일치
+    if (field === 'depthTop' && index > 0) {
+      updated[index - 1] = { ...updated[index - 1], depthBottom: value as number };
+    }
     onUpdateLayers(updated);
   };
 
@@ -1417,109 +1447,254 @@ export const InputPanel: React.FC<InputPanelProps> = ({
           </div>
         )}
 
-        {/* Tab 3: Soil Layers */}
-        {activeTab === 'SOIL' && (
+        {/* Tab 3: Soil Layers with Stratigraphy Diagram & Property Graphs */}
+        {activeTab === 'SOIL' && (() => {
+          const maxDepth = Math.max(...layers.map(l => l.depthBottom), 10);
+          const maxC = Math.max(...layers.map(l => l.cohesion || 0), 10);
+          const maxPhi = Math.max(...layers.map(l => l.frictionAngle || 0), 10);
+          const maxN = Math.max(...layers.map(l => l.nValue || 0), 10);
+          const graphH = 280;
+          const graphW = 90;
+          const depthToY = (d: number) => (d / maxDepth) * (graphH - 10) + 5;
+          // Build data points for line graphs
+          const cPoints = layers.map(l => ({ depth: (l.depthTop + l.depthBottom) / 2, val: l.cohesion || 0 }));
+          const phiPoints = layers.map(l => ({ depth: (l.depthTop + l.depthBottom) / 2, val: l.frictionAngle || 0 }));
+          const nPoints = layers.map(l => ({ depth: (l.depthTop + l.depthBottom) / 2, val: l.nValue || 0 }));
+          const makePath = (pts: {depth:number;val:number}[], maxVal: number) => {
+            if (pts.length === 0) return '';
+            return pts.map((p, i) => {
+              const x = 5 + (p.val / maxVal) * (graphW - 15);
+              const y = depthToY(p.depth);
+              return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
+            }).join(' ');
+          };
+          const makeDots = (pts: {depth:number;val:number}[], maxVal: number, color: string) => {
+            return pts.map((p, i) => {
+              const x = 5 + (p.val / maxVal) * (graphW - 15);
+              const y = depthToY(p.depth);
+              return <circle key={i} cx={x} cy={y} r={2.5} fill={color} stroke="white" strokeWidth={1} />;
+            });
+          };
+          return (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-slate-600 font-medium">지층별 심도 및 토질정수 매개변수 설정</span>
+              <span className="text-slate-600 font-medium text-xs sm:text-sm">지층별 심도 및 토질정수 매개변수 설정</span>
               <button
                 onClick={handleAddSoil}
-                className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold flex items-center space-x-1 shadow-sm"
+                className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold flex items-center space-x-1 shadow-sm cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>지층 추가</span>
               </button>
             </div>
 
-            <div className="space-y-2">
-              {layers.map((l, idx) => (
-                <div key={l.id} className="bg-slate-50 p-2.5 rounded border border-slate-200 space-y-1.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center space-x-2 flex-1">
-                      <span className="w-3 h-3 rounded-full shrink-0 border border-slate-300" style={{ backgroundColor: l.color }} />
-                      <input
-                        type="text"
-                        value={l.name}
-                        onChange={(e) => handleSoilChange(idx, 'name', e.target.value)}
-                        className="bg-transparent font-bold text-slate-900 focus:outline-none border-b border-transparent focus:border-blue-500 text-xs flex-1"
-                      />
+            {/* 2-Column Layout: 50% : 50% Half-and-Half split (same height) */}
+            <div className="flex flex-col lg:flex-row gap-3 items-stretch">
+              {/* Left Column (50%): Soil Layer Input Cards */}
+              <div className="w-full lg:w-1/2 space-y-2 min-w-0 flex flex-col justify-between">
+                <div className="space-y-2">
+                {layers.map((l, idx) => (
+                  <div key={l.id} className="bg-slate-50 p-2.5 rounded border border-slate-200 space-y-1.5 hover:border-blue-300 transition">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center space-x-2 flex-1">
+                        <span className="w-3 h-3 rounded-full shrink-0 border border-slate-300" style={{ backgroundColor: l.color }} />
+                        <span className="text-[10px] font-mono font-bold text-slate-500 bg-slate-200/80 px-1 py-0.5 rounded shrink-0">#{idx + 1}층</span>
+                        <input
+                          type="text"
+                          value={l.name}
+                          onChange={(e) => handleSoilChange(idx, 'name', e.target.value)}
+                          className="bg-transparent font-bold text-slate-900 focus:outline-none border-b border-transparent focus:border-blue-500 text-xs flex-1"
+                        />
+                      </div>
+                      <button
+                        onClick={() => handleDeleteSoil(idx)}
+                        disabled={layers.length <= 1}
+                        className="p-1 text-slate-400 hover:text-rose-600 disabled:opacity-30 cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                    <button
-                      onClick={() => handleDeleteSoil(idx)}
-                      disabled={layers.length <= 1}
-                      className="p-1 text-slate-400 hover:text-rose-600 disabled:opacity-30"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                      <div>
+                        <span className="text-[10px] text-slate-500 block font-semibold">상단 (m)</span>
+                        <input type="number" step="0.5" value={l.depthTop}
+                          onChange={(e) => handleSoilChange(idx, 'depthTop', parseFloat(e.target.value) || 0)}
+                          className={`w-full border rounded px-1.5 py-1 text-slate-800 font-mono text-[11px] ${idx > 0 ? 'bg-slate-100 border-slate-300 text-slate-500' : 'bg-white border-slate-200'}`}
+                          readOnly={idx > 0}
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 block font-semibold">하단 (m)</span>
+                        <input type="number" step="0.5" value={l.depthBottom}
+                          onChange={(e) => handleSoilChange(idx, 'depthBottom', parseFloat(e.target.value) || 0)}
+                          className="w-full bg-white border border-slate-200 rounded px-1.5 py-1 text-slate-800 font-mono text-[11px]"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 block font-semibold">γ (kN/m³)</span>
+                        <input type="number" step="0.5" value={l.unitWeight}
+                          onChange={(e) => handleSoilChange(idx, 'unitWeight', parseFloat(e.target.value) || 18)}
+                          className="w-full bg-white border border-slate-200 rounded px-1.5 py-1 text-slate-800 font-mono text-[11px]"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 block font-semibold">점착력 c (kPa)</span>
+                        <input type="number" step="1" value={l.cohesion}
+                          onChange={(e) => handleSoilChange(idx, 'cohesion', parseFloat(e.target.value) || 0)}
+                          className="w-full bg-white border border-slate-200 rounded px-1.5 py-1 text-slate-800 font-mono text-[11px]"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 block font-semibold">마찰각 φ (°)</span>
+                        <input type="number" step="1" value={l.frictionAngle}
+                          onChange={(e) => handleSoilChange(idx, 'frictionAngle', parseFloat(e.target.value) || 0)}
+                          className="w-full bg-white border border-slate-200 rounded px-1.5 py-1 text-slate-800 font-mono text-[11px]"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-500 block font-semibold">SPT N치</span>
+                        <input type="number" step="1" value={l.nValue}
+                          onChange={(e) => handleSoilChange(idx, 'nValue', parseInt(e.target.value) || 10)}
+                          className="w-full bg-white border border-slate-200 rounded px-1.5 py-1 text-slate-800 font-mono text-[11px]"
+                        />
+                      </div>
+                    </div>
                   </div>
+                ))}
+                </div>
+              </div>
 
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                    <div>
-                      <span className="text-[10px] text-slate-500 block">상단 (m)</span>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={l.depthTop}
-                        onChange={(e) => handleSoilChange(idx, 'depthTop', parseFloat(e.target.value) || 0)}
-                        className="w-full bg-white border border-slate-200 rounded px-1.5 py-1 text-slate-800 font-mono text-[11px]"
-                      />
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-500 block">하단 (m)</span>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={l.depthBottom}
-                        onChange={(e) => handleSoilChange(idx, 'depthBottom', parseFloat(e.target.value) || 0)}
-                        className="w-full bg-white border border-slate-200 rounded px-1.5 py-1 text-slate-800 font-mono text-[11px]"
-                      />
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-500 block">γ (kN/m³)</span>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={l.unitWeight}
-                        onChange={(e) => handleSoilChange(idx, 'unitWeight', parseFloat(e.target.value) || 18)}
-                        className="w-full bg-white border border-slate-200 rounded px-1.5 py-1 text-slate-800 font-mono text-[11px]"
-                      />
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-500 block">점착력 c (kPa)</span>
-                      <input
-                        type="number"
-                        step="1"
-                        value={l.cohesion}
-                        onChange={(e) => handleSoilChange(idx, 'cohesion', parseFloat(e.target.value) || 0)}
-                        className="w-full bg-white border border-slate-200 rounded px-1.5 py-1 text-slate-800 font-mono text-[11px]"
-                      />
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-500 block">마찰각 φ (°)</span>
-                      <input
-                        type="number"
-                        step="1"
-                        value={l.frictionAngle}
-                        onChange={(e) => handleSoilChange(idx, 'frictionAngle', parseFloat(e.target.value) || 0)}
-                        className="w-full bg-white border border-slate-200 rounded px-1.5 py-1 text-slate-800 font-mono text-[11px]"
-                      />
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-500 block">SPT N치</span>
-                      <input
-                        type="number"
-                        step="1"
-                        value={l.nValue}
-                        onChange={(e) => handleSoilChange(idx, 'nValue', parseInt(e.target.value) || 10)}
-                        className="w-full bg-white border border-slate-200 rounded px-1.5 py-1 text-slate-800 font-mono text-[11px]"
-                      />
-                    </div>
+              {/* Right Column (50%): Stratigraphy Diagram (40%) + Graphs (60%) */}
+              <div className="w-full lg:w-1/2 flex gap-2 items-stretch min-w-0">
+                {/* Stratigraphy Schematic (40% of right column) */}
+                <div className="w-5/12 bg-white border border-slate-200 rounded-xl p-2 shadow-2xs flex flex-col">
+                  <div className="text-[11px] font-bold text-slate-800 mb-1 text-center shrink-0 flex items-center justify-center gap-1">
+                    <span>🏔️</span>
+                    <span>지층 구분 모식도</span>
+                  </div>
+                  <div className="relative border border-slate-300 rounded-lg overflow-hidden flex-1 bg-slate-50/50" style={{ minHeight: '180px' }}>
+                    {/* GL ±0.0 marker */}
+                    <div className="absolute top-0 left-0 right-0 h-0.5 bg-slate-900 z-10" />
+                    <div className="absolute top-0.5 left-1 text-[8px] font-mono font-black text-slate-900 z-10 bg-white/80 px-1 rounded shadow-2xs">GL ±0.0m</div>
+                    {layers.map((l) => {
+                      const topPct = (l.depthTop / maxDepth) * 100;
+                      const botPct = (l.depthBottom / maxDepth) * 100;
+                      const hPct = botPct - topPct;
+                      if (hPct <= 0) return null;
+                      return (
+                        <div key={l.id} className="absolute left-0 right-0 flex items-center border-b border-slate-400/40 transition-all hover:brightness-95" style={{ top: `${topPct}%`, height: `${hPct}%` }}>
+                          <div className="absolute inset-0" style={{ backgroundColor: l.color, opacity: 0.4 }} />
+                          <div className="relative z-10 flex items-center justify-between w-full px-2">
+                            <div className="flex items-center space-x-1 truncate max-w-[65%]">
+                              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: l.color }} />
+                              <span className="text-[10px] font-black text-slate-900 truncate">{l.name.replace(/\(.*\)/, '').trim()}</span>
+                            </div>
+                            <span className="text-[9px] font-mono font-bold text-slate-700 bg-white/70 px-1 py-0.5 rounded shrink-0">
+                              GL -{l.depthTop}~-{l.depthBottom}m
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {[0, 10, 20, 30, 40, 50].filter(d => d <= maxDepth + 5).map(d => (
+                      <div key={d} className="absolute right-1 text-[7px] font-mono font-bold text-slate-500 bg-white/70 px-0.5 rounded" style={{ top: `${(d / maxDepth) * 100}%`, transform: 'translateY(-50%)' }}>
+                        -{d}m
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
+
+                {/* Property Graphs: c, φ, N (60% of right column) */}
+                <div className="w-7/12 flex gap-1.5 items-stretch min-w-0">
+                  {/* Cohesion c Graph */}
+                  <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-xl p-1.5 shadow-2xs">
+                    <div className="text-[10px] font-black text-rose-700 mb-1 text-center shrink-0 bg-rose-50 py-0.5 rounded border border-rose-200">
+                      c (kPa)
+                    </div>
+                    <svg className="flex-1 border border-slate-100 rounded-lg bg-slate-50/60" viewBox={`0 0 ${graphW} ${graphH}`} preserveAspectRatio="none">
+                      {[0, 10, 20, 30, 40].filter(d => d <= maxDepth).map(d => (
+                        <line key={d} x1={0} y1={depthToY(d)} x2={graphW} y2={depthToY(d)} stroke="#e2e8f0" strokeWidth={0.5} strokeDasharray="2,2" />
+                      ))}
+                      <path d={makePath(cPoints, maxC)} fill="none" stroke="#e11d48" strokeWidth={2.5} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+                      {makeDots(cPoints, maxC, '#e11d48')}
+                      {cPoints.map((p, i) => (
+                        <text key={i} x={Math.min(graphW - 18, 5 + (p.val / maxC) * (graphW - 15) + 3)} y={depthToY(p.depth) + 3} fontSize={8} fill="#be123c" fontWeight="bold">{p.val}</text>
+                      ))}
+                    </svg>
+                  </div>
+
+                  {/* Friction Angle φ Graph */}
+                  <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-xl p-1.5 shadow-2xs">
+                    <div className="text-[10px] font-black text-blue-700 mb-1 text-center shrink-0 bg-blue-50 py-0.5 rounded border border-blue-200">
+                      φ (°)
+                    </div>
+                    <svg className="flex-1 border border-slate-100 rounded-lg bg-slate-50/60" viewBox={`0 0 ${graphW} ${graphH}`} preserveAspectRatio="none">
+                      {[0, 10, 20, 30, 40].filter(d => d <= maxDepth).map(d => (
+                        <line key={d} x1={0} y1={depthToY(d)} x2={graphW} y2={depthToY(d)} stroke="#e2e8f0" strokeWidth={0.5} strokeDasharray="2,2" />
+                      ))}
+                      <path d={makePath(phiPoints, maxPhi)} fill="none" stroke="#2563eb" strokeWidth={2.5} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+                      {makeDots(phiPoints, maxPhi, '#2563eb')}
+                      {phiPoints.map((p, i) => (
+                        <text key={i} x={Math.min(graphW - 18, 5 + (p.val / maxPhi) * (graphW - 15) + 3)} y={depthToY(p.depth) + 3} fontSize={8} fill="#1d4ed8" fontWeight="bold">{p.val}</text>
+                      ))}
+                    </svg>
+                  </div>
+
+                  {/* SPT N Graph */}
+                  <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-xl p-1.5 shadow-2xs">
+                    <div className="text-[10px] font-black text-emerald-700 mb-1 text-center shrink-0 bg-emerald-50 py-0.5 rounded border border-emerald-200">
+                      SPT N
+                    </div>
+                    <svg className="flex-1 border border-slate-100 rounded-lg bg-slate-50/60" viewBox={`0 0 ${graphW} ${graphH}`} preserveAspectRatio="none">
+                      {[0, 10, 20, 30, 40].filter(d => d <= maxDepth).map(d => (
+                        <line key={d} x1={0} y1={depthToY(d)} x2={graphW} y2={depthToY(d)} stroke="#e2e8f0" strokeWidth={0.5} strokeDasharray="2,2" />
+                      ))}
+                      <path d={makePath(nPoints, maxN)} fill="none" stroke="#059669" strokeWidth={2.5} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+                      {makeDots(nPoints, maxN, '#059669')}
+                      {nPoints.map((p, i) => (
+                        <text key={i} x={Math.min(graphW - 18, 5 + (p.val / maxN) * (graphW - 15) + 3)} y={depthToY(p.depth) + 3} fontSize={8} fill="#047857" fontWeight="bold">{p.val}</text>
+                      ))}
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Save Success Toast Banner */}
+            {soilSaveStatus === 'SAVED' && (
+              <div className="bg-emerald-50 border-2 border-emerald-500 p-3 rounded-lg flex items-center justify-between gap-2 text-xs text-emerald-950 shadow-sm">
+                <div className="flex items-center space-x-2">
+                  <div className="w-5 h-5 bg-emerald-600 text-white rounded-full flex items-center justify-center font-black text-sm">✓</div>
+                  <div>
+                    <strong>지반데이터 저장 완료!</strong> {layers.length}개 지층의 토질정수(γ, c, φ, N치)가 1안(버팀보) · 2안(어스앵커) · 3안(복합공법) 해석에 즉시 반영되었습니다.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Bottom Save Action Bar */}
+            <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 p-3.5 rounded-xl text-white shadow-md flex flex-wrap items-center justify-between gap-3 border border-blue-700">
+              <div className="space-y-0.5">
+                <div className="font-bold text-sm flex items-center gap-2 text-white">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <span>지반데이터 확정 및 구조해석 연동</span>
+                </div>
+                <p className="text-[11px] text-blue-200">
+                  위에서 입력·수정한 지반 정수를 저장하면 1안(버팀보), 2안(앵커), 3안(복합)의 16단계 수치해석에 일괄 반영됩니다.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleSaveSoilData}
+                className="px-5 py-2.5 bg-gradient-to-r from-amber-400 via-orange-500 to-amber-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 rounded-lg font-black text-xs sm:text-sm flex items-center space-x-2 shadow-lg transition cursor-pointer active:scale-95 border border-amber-300"
+              >
+                <Save className="w-4 h-4" />
+                <span>💾 지반데이터 저장 및 1·2·3안 구조해석 즉시 반영하기</span>
+              </button>
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* Tab 4: Comprehensive Structural Material Specifications (가시설 자재 규격 상세) */}
         {activeTab === 'SPECS' && (
