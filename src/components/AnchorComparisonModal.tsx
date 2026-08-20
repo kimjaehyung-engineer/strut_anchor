@@ -5561,7 +5561,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                                     { label: 'H-400×400', desc: '특대단면', spec: 'H-400×400×13×21 (SM355)', Z: 3330 },
                                     { label: 'CIP D500★', desc: '차수주열벽', spec: 'CIP 현장타설말뚝 D500', Z: 4900 },
                                   ].map((item) => {
-                                    const isSelected = (localWall.specName || '').includes(item.label.split(' ')[0]) || (localWall.specName || '').includes(item.spec);
+                                    const isSelected = (localWall.specName || '').startsWith(item.spec.split(' ')[0]) || (localWall.specName || '').includes(item.spec.split(' ')[0]) || localWall.specName === item.spec;
                                     return (
                                       <button
                                         key={item.spec}
@@ -5601,7 +5601,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                                     { label: '2H-350 (대형)', desc: '이중 대형', spec: '2H-350×350×12×19' },
                                     { label: '2H-400 (특대)', desc: '초장지간용', spec: '2H-400×400×13×21' },
                                   ].map((item) => {
-                                    const isSelected = selectedWaleSpec.includes(item.label.split(' ')[0]) || selectedWaleSpec === item.spec;
+                                    const isSelected = selectedWaleSpec.startsWith(item.spec.split(' ')[0]) || selectedWaleSpec === item.spec;
                                     return (
                                       <button
                                         key={item.spec}
@@ -5641,7 +5641,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                                     { label: '배치: 1열 (KL=10m)', desc: '1열 중간배치', spec: '1열 배치 (KL=10m)' },
                                     { label: '배치: 2열 (@4m★)', desc: '2열 안정배치', spec: '2열 배치 (@4m)' },
                                   ].map((item) => {
-                                    const isSelected = selectedKingPostSpec.includes(item.label.split(' ')[0]) || selectedKingPostSpec === item.spec;
+                                    const isSelected = selectedKingPostSpec.startsWith(item.spec.split(' ')[0]) || selectedKingPostSpec === item.spec;
                                     return (
                                       <button
                                         key={item.label}
@@ -5692,7 +5692,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                                       { label: 'Φ812.8 × 12t', desc: 'D800 초대구경', spec: '강관 Φ812.8×12.0t (STK400)', area: 301.9, inertia: 241000 },
                                       { label: 'Φ812.8 × 16t', desc: 'D800 장지간특대', spec: '강관 Φ812.8×16.0t (STK500)', area: 400.4, inertia: 316000 },
                                     ].map((item) => {
-                                      const isSelected = (localStruts[0]?.specName || '').includes(item.label.split(' ')[0]) || (localStruts[0]?.specName || '').includes(item.desc.split(' ')[0]);
+                                      const isSelected = (localStruts[0]?.specName || '').startsWith(item.spec.split(' ')[0]) || (localStruts[0]?.specName || '').includes(item.spec.split(' ')[0]);
                                       return (
                                         <button
                                           key={item.spec}
@@ -5729,7 +5729,7 @@ ${(anchorResult.angleSensitivityMatrix || [])
                                        { label: 'H-350 (대단면)', H: 350, B: 350, t1: 12, t2: 19, spec: 'H-350×350×12×19 (SM355)', area: 173.9 },
                                        { label: 'H-400 (특대단면)', H: 400, B: 400, t1: 13, t2: 21, spec: 'H-400×400×13×21 (SM355)', area: 218.7 },
                                      ].map((item) => {
-                                       const isSelected = (localStruts[0]?.specName || '').includes(item.label.split(' ')[0]);
+                                       const isSelected = (localStruts[0]?.specName || '').startsWith(item.spec.split(' ')[0]) || (localStruts[0]?.specName || '').includes(item.spec.split(' ')[0]);
                                        const strokeColor = isSelected ? '#ffffff' : '#475569';
                                        const dimColor = isSelected ? '#fef08a' : '#d97706';
                                        const fillColor = isSelected ? 'rgba(255, 255, 255, 0.22)' : 'rgba(245, 158, 11, 0.12)';
