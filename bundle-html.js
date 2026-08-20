@@ -66,6 +66,9 @@ const targets = [
   path.resolve(__dirname, '가시설_벽체_지지공법_적용V2.html'),
   path.resolve(__dirname, 'public/가시설_벽체_지지공법_적용V2.html'),
   path.resolve(__dirname, 'dist/가시설_벽체_지지공법_적용V2.html'),
+  path.resolve(__dirname, '가시설_벽체_지지공법_최신버전_검토.html'),
+  path.resolve(__dirname, 'public/가시설_벽체_지지공법_최신버전_검토.html'),
+  path.resolve(__dirname, 'dist/가시설_벽체_지지공법_최신버전_검토.html'),
 ];
 
 console.log('Successfully bundled single HTML into:');
